@@ -68,7 +68,7 @@ function App() {
 
           {/* Donate Button */}
           <a
-            href="https://www.donationalerts.com/r/stepanda1"
+            href="https://dalink.to/stepanda1"
             target="_blank"
             rel="noopener noreferrer"
             className="w-[76px] h-12 rounded-2xl bg-gradient-to-br from-cyan-300/90 via-sky-300/80 to-blue-300/90 border-2 border-white/70 shadow-[0_8px_18px_rgba(56,189,248,0.55)] backdrop-blur-md flex items-center justify-center gap-1 text-black font-extrabold uppercase tracking-wide transition-all hover:scale-105 active:scale-95 mt-2"
