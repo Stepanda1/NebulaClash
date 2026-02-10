@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Tile as TileComponent } from './Tile';
 import type { Grid, Tile } from '../types';
@@ -12,10 +12,29 @@ interface GameBoardProps {
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, onTileClick }) => {
-    // Tile Size Calculation
-    const TILE_SIZE = 48;
+    const [itemSize, setItemSize] = useState(52);
     const GRID_GAP = 4;
-    const ITEM_SIZE = TILE_SIZE + GRID_GAP;
+
+    useEffect(() => {
+        const updateSize = () => {
+            if (typeof window === 'undefined') return;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            const horizontalPadding = 32;
+            const verticalPadding = 260;
+            const available = Math.max(240, Math.min(vw - horizontalPadding, vh - verticalPadding));
+            const tileSize = Math.floor((available - GRID_GAP * (COLS - 1)) / COLS);
+            const clampedTile = Math.max(32, Math.min(56, tileSize));
+            setItemSize(clampedTile + GRID_GAP);
+        };
+
+        updateSize();
+        window.addEventListener('resize', updateSize);
+        return () => window.removeEventListener('resize', updateSize);
+    }, []);
+
+    const ITEM_SIZE = itemSize;
     const BOARD_WIDTH = COLS * ITEM_SIZE;
     const BOARD_HEIGHT = ROWS * ITEM_SIZE;
 
