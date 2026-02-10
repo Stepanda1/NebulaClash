@@ -21,11 +21,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
             const vw = window.innerWidth;
             const vh = window.innerHeight;
 
-            const horizontalPadding = 16;
-            const verticalPadding = 180;
+            const isDesktop = vw >= 768;
+            const horizontalPadding = isDesktop ? 140 : 16;
+            const verticalPadding = isDesktop ? 320 : 180;
             const available = Math.max(280, Math.min(vw - horizontalPadding, vh - verticalPadding));
             const tileSize = Math.floor((available - GRID_GAP * (COLS - 1)) / COLS);
-            const clampedTile = Math.max(38, Math.min(60, tileSize));
+            const clampedTile = Math.max(isDesktop ? 36 : 38, Math.min(56, tileSize));
             setItemSize(clampedTile + GRID_GAP);
         };
 
