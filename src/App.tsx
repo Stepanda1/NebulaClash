@@ -23,7 +23,7 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-between h-full max-h-[900px] w-full max-w-lg mx-auto p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-md rounded-[3rem] border border-white/20 shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]">
+    <div className="flex flex-col items-center justify-between h-full w-full max-w-none max-h-none mx-auto p-2 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]">
 
       {/* Pause Overlay */}
       <AnimatePresence>
@@ -109,7 +109,7 @@ function App() {
       </div>
 
       {/* Bottom Bar: Moves (Left) & Boosters (Right) */}
-      <div className="w-full z-10 pb-6 px-4">
+      <div className="w-full z-10 pb-4 sm:pb-6 px-2 sm:px-4">
         <div className="flex items-end justify-between max-w-md mx-auto relative">
           {/* Moves Counter (Bottom Left) */}
           <div className="flex flex-col items-center justify-center bg-blue-600 w-20 h-20 rounded-2xl border-4 border-white shadow-xl relative z-20">
