@@ -254,9 +254,9 @@ export const useGame = () => {
         while (matchMap.size > 0 && iteration < 10) {
             // Separate regular matches from special pieces
             const regularMatches = new Set<string>();
-            matchMap.forEach((type) => {
+            matchMap.forEach((type, tileId) => {
                 if (type === 'match') {
-                    regularMatches.add(matchMap.keys().next().value);
+                    regularMatches.add(tileId);
                 }
             });
 

@@ -477,6 +477,6 @@ export const copyGrid = (grid: Grid): Grid => {
     return grid.map(row => row.map(tile => ({ ...tile })));
 };
 
-export const hasPossibleMoves = (grid: Grid): boolean => {
+export const hasPossibleMoves = (_grid: Grid): boolean => {
     return true;
 };

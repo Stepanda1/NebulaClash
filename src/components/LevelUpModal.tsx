@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, ArrowRight, Star } from 'lucide-react';
 
@@ -48,7 +47,7 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, score, onNext
                 {/* Stars / Score Box */}
                 <div className="flex flex-col items-center gap-2 p-4 w-full bg-black/20 rounded-xl border border-white/10 shadow-inner">
                     <div className="flex gap-2 mb-1">
-                        {[1, 2, 3].map((s, i) => (
+                        {[1, 2, 3].map((_, i) => (
                             <motion.div
                                 key={i}
                                 initial={{ scale: 0 }}

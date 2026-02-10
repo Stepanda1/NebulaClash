@@ -1,6 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import { RotateCcw, Trophy } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 interface GameOverMenuProps {
     score: number;
