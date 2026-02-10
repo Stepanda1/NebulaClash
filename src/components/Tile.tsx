@@ -1,0 +1,335 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import type { Tile as TileType, TileType as TType } from '../types';
+import { clsx } from 'clsx';
+
+interface TileProps {
+    tile: TileType;
+    isSelected: boolean;
+    isExploding: boolean;
+    onClick: (tile: TileType) => void;
+    size: number;
+}
+
+// VIVID CRYSTAL CONFIG: Multi-layered internal facets with high-contrast volumetric lighting
+const getGemConfig = (type: TType) => {
+    switch (type) {
+        case 'red': return {
+            // Smooth Heart Ruby - Brightened
+            path: "M50 88 C20 75 2 50 2 30 A18 18 0 0 1 45 15 L50 22 L55 15 A18 18 0 0 1 98 30 C98 50 80 75 50 88 Z",
+            base: ['#ff4d6d', '#ff0a54', '#800020'],
+            facets: [
+                { d: "M50 78 C25 65 12 50 12 35 Q12 25 25 25 L50 35 Z", fill: "white", op: 0.15 },
+                { d: "M50 78 L88 35 Q88 25 75 25 L50 35 Z", fill: "black", op: 0.2 },
+                { d: "M50 35 L25 25 Q35 15 50 22 L75 25 Z", fill: "white", op: 0.2 }
+            ],
+            table: "M30 35 Q30 25 50 25 Q70 25 70 35 Q50 55 30 35 Z",
+            scale: 0.88,
+            glow: 'rgba(255, 77, 109, 0.5)'
+        };
+        case 'blue': return {
+            // Hex Sapphire - Brightened
+            path: "M25 10 L75 10 L100 50 L75 90 L25 90 L0 50 Z",
+            base: ['#60a5fa', '#2563eb', '#1e3a8a'],
+            facets: [
+                { d: "M25 10 L75 10 L65 25 L35 25 Z", fill: "white", op: 0.25 },
+                { d: "M75 10 L100 50 L80 50 L65 25 Z", fill: "black", op: 0.15 },
+                { d: "M100 50 L75 90 L65 75 L80 50 Z", fill: "black", op: 0.3 },
+                { d: "M75 90 L25 90 L35 75 L65 75 Z", fill: "black", op: 0.45 },
+                { d: "M25 90 L0 50 L20 50 L35 75 Z", fill: "black", op: 0.3 },
+                { d: "M0 50 L25 10 L35 25 L20 50 Z", fill: "white", op: 0.15 }
+            ],
+            table: "M35 25 L65 25 L80 50 L65 75 L35 75 L20 50 Z",
+            scale: 0.95,
+            glow: 'rgba(96, 165, 250, 0.5)'
+        };
+        case 'green': return {
+            // Emerald - Brightened
+            path: "M25 5 L75 5 Q95 5 95 25 L95 75 Q95 95 75 95 L25 95 Q5 95 5 75 L5 25 Q5 5 25 5 Z",
+            base: ['#34d399', '#059669', '#064e3b'],
+            facets: [
+                { d: "M25 5 L75 5 L70 20 L30 20 Z", fill: "white", op: 0.3 },
+                { d: "M95 25 L95 75 L80 70 L80 30 Z", fill: "black", op: 0.2 },
+                { d: "M75 95 L25 95 L30 80 L70 80 Z", fill: "black", op: 0.4 },
+                { d: "M5 75 L5 25 L20 30 L20 70 Z", fill: "white", op: 0.15 }
+            ],
+            table: "M30 20 L70 20 L80 30 L80 70 L70 80 L30 80 L20 70 L20 30 Z",
+            scale: 0.9,
+            glow: 'rgba(52, 211, 153, 0.5)'
+        };
+        case 'yellow': return {
+            // Star - Brightened
+            path: "M50 5 L63 35 L98 35 L70 55 L81 90 L50 72 L19 90 L30 55 L2 35 L37 35 Z",
+            base: ['#fde047', '#f59e0b', '#78350f'],
+            facets: [
+                { d: "M50 5 L63 35 L50 48 Z", fill: "white", op: 0.4 },
+                { d: "M98 35 L70 55 L52 48 Z", fill: "black", op: 0.15 },
+                { d: "M81 90 L50 72 L50 55 Z", fill: "black", op: 0.3 },
+                { d: "M19 90 L30 55 L48 55 Z", fill: "black", op: 0.4 },
+                { d: "M2 35 L37 35 L48 48 Z", fill: "white", op: 0.25 }
+            ],
+            table: "M50 30 L55 42 L50 48 L45 42 Z",
+            scale: 1.0,
+            glow: 'rgba(253, 224, 71, 0.5)'
+        };
+        case 'purple': return {
+            // Sphere - Brightened
+            path: "M50 50 m-45 0 a45 45 0 1 0 90 0 a45 45 0 1 0 -90 0",
+            base: ['#c084fc', '#8b5cf6', '#4c1d95'],
+            facets: [
+                { d: "M50 15 Q85 15 85 50 Q50 65 15 50 Q15 15 50 15", fill: "white", op: 0.2 },
+                { d: "M50 85 Q85 85 85 50 Q50 35 15 50 Q15 85 50 85", fill: "black", op: 0.3 }
+            ],
+            table: "M30 30 A20 20 0 1 1 70 30 A20 20 0 1 1 30 30",
+            scale: 0.95,
+            glow: 'rgba(192, 132, 252, 0.5)'
+        };
+        case 'orange': return {
+            // Diamond - Brightened
+            path: "M50 5 L95 48 L50 92 L5 48 Z",
+            base: ['#fb923c', '#f97316', '#9a3412'],
+            facets: [
+                { d: "M50 5 L95 48 L50 48 Z", fill: "white", op: 0.3 },
+                { d: "M95 48 L50 92 L50 48 Z", fill: "black", op: 0.2 },
+                { d: "M50 92 L5 48 L50 48 Z", fill: "black", op: 0.45 },
+                { d: "M5 48 L50 5 L50 48 Z", fill: "white", op: 0.15 }
+            ],
+            table: "M32 48 L50 22 L68 48 L50 74 Z",
+            scale: 0.95,
+            glow: 'rgba(251, 146, 60, 0.5)'
+        };
+        default: return null;
+    }
+};
+
+export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, onClick, size }) => {
+    // For special pieces, use gemType for visual rendering, type for special effect
+    const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross') 
+        ? tile.gemType 
+        : tile.type;
+    
+    const config = getGemConfig(displayType as any);
+    const gradId = `vivid-grad-${tile.id}`;
+    const tableId = `table-grad-${tile.id}`;
+
+    if (!config) return null;
+
+    return (
+        <motion.div
+            layoutId={tile.id}
+            initial={{ y: -500, opacity: 0, scale: 0 }}
+            animate={{
+                x: tile.x * size,
+                y: tile.y * size,
+                scale: isSelected ? 1.05 : 1,
+                opacity: 1,
+                zIndex: isSelected ? 50 : 10
+            }}
+            transition={{
+                layout: { type: "spring", stiffness: 450, damping: 35 },
+                y: { type: "tween", ease: "easeOut", duration: 0.25 }
+            }}
+            exit={{ scale: 0, opacity: 0, transition: { duration: 0.2 } }}
+            style={{
+                position: 'absolute',
+                width: size,
+                height: size,
+                padding: size * 0.05,
+                cursor: 'pointer',
+                willChange: "transform"
+            }}
+            onClick={() => onClick(tile)}
+        >
+            <div className="w-full h-full relative flex items-center justify-center">
+                {/* Volumetric Glow */}
+                <div
+                    className="absolute inset-[10%] blur-3xl opacity-50 pointer-events-none"
+                    style={{ background: config.glow, borderRadius: '50%' }}
+                />
+
+                <svg
+                    viewBox="0 0 100 100"
+                    className={clsx(
+                        "w-full h-full relative z-10 transition-transform duration-300 drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)]",
+                        isSelected ? "scale-105" : "scale-100"
+                    )}
+                    style={{ transform: `scale(${config.scale})` }}
+                >
+                    <defs>
+                        {/* 3-Stop Base Gradient */}
+                        <radialGradient id={gradId} cx="35%" cy="30%" r="90%">
+                            <stop offset="0%" stopColor={config.base[0]} />
+                            <stop offset="55%" stopColor={config.base[1]} />
+                            <stop offset="100%" stopColor={config.base[2]} />
+                        </radialGradient>
+
+                        {/* High-Gloss Top Shell */}
+                        <linearGradient id={tableId} x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="white" stopOpacity="0.5" />
+                            <stop offset="100%" stopColor="white" stopOpacity="0" />
+                        </linearGradient>
+                    </defs>
+
+                    {/* Ground Matte Shadow */}
+                    <path d={config.path} fill="black" fillOpacity="0.4" transform="translate(0, 4)" />
+
+                    {/* Main Silhoutte */}
+                    <path
+                        d={config.path}
+                        fill={`url(#${gradId})`}
+                        stroke="rgba(0,0,0,0.4)"
+                        strokeWidth="0.5"
+                    />
+
+                    {/* Internal Facets (Sharp 3D) */}
+                    {config.facets.map((f, i) => (
+                        <path
+                            key={i}
+                            d={f.d}
+                            fill={f.fill}
+                            fillOpacity={f.op}
+                            className="pointer-events-none"
+                        />
+                    ))}
+
+                    {/* Table Face (The Polished Top) */}
+                    <path
+                        d={config.table}
+                        fill="white"
+                        fillOpacity="0.1"
+                        stroke="white"
+                        strokeOpacity="0.1"
+                        strokeWidth="0.5"
+                    />
+                    <path d={config.table} fill={`url(#${tableId})`} />
+
+                    {/* SPECULAR LIGHTING: Triple Glint */}
+                    <circle cx="30" cy="26" r="6" fill="white" fillOpacity="0.35" filter="blur(2px)" />
+                    <circle cx="28" cy="24" r="2.5" fill="white" fillOpacity="0.7" />
+                    <circle cx="75" cy="25" r="1.5" fill="white" fillOpacity="0.8" />
+
+                    {/* RIM LIGHT: Hard Edge Bottom */}
+                    <path
+                        d={config.path}
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="1.2"
+                        strokeOpacity="0.2"
+                        clipPath="inset(80% 0% 0% 0%)"
+                    />
+                </svg>
+
+                {/* Animated Star Twinkle */}
+                <motion.div
+                    className="absolute inset-[15%] pointer-events-none overflow-hidden rounded-full mix-blend-screen"
+                >
+                    <motion.div
+                        className="w-[200%] h-[15%] bg-gradient-to-r from-transparent via-white/30 to-transparent rotate-45"
+                        animate={{ translateX: ['-100%', '200%'] }}
+                        transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            repeatDelay: 5,
+                            ease: "easeInOut"
+                        }}
+                    />
+                </motion.div>
+
+                {/* Selection FX: Pulse & Glow */}
+                {isSelected && (
+                    <motion.div
+                        className="absolute inset-0 border-4 border-white rounded-2xl shadow-[0_0_30px_white] z-20"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ scale: [1, 1.06, 1], opacity: [0.6, 1, 0.6] }}
+                        transition={{
+                            opacity: { duration: 0.2 },
+                            scale: { repeat: Infinity, duration: 1.5 }
+                        }}
+                    />
+                )}
+
+                {/* Explosion FX */}
+                {isExploding && (
+                    <motion.div
+                        className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center"
+                        initial={{ opacity: 0.9, scale: 0.3 }}
+                        animate={{ opacity: 0, scale: 1.6 }}
+                        transition={{ duration: 0.25, ease: "easeOut" }}
+                    >
+                        <div className="w-10 h-10 rounded-full bg-[radial-gradient(circle,#ffffff_0%,rgba(255,255,255,0.5)_35%,rgba(255,255,255,0.0)_70%)] blur-[1px]" />
+                        <div className="absolute w-14 h-14 rounded-full border-2 border-white/70 blur-[1px]" />
+                    </motion.div>
+                )}
+
+                {/* Special Piece Indicators */}
+                {tile.type === 'bomb' && (
+                    <motion.div
+                        className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                    >
+                        <div className="relative w-9 h-9">
+                            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,#fff6b8,40%,#fbbf24_60%,#b45309_100%)] shadow-[0_0_18px_rgba(251,191,36,0.8)]" />
+                            <div className="absolute inset-1 rounded-full border border-yellow-200/60" />
+                            <div className="absolute inset-[-6px] rounded-full border-2 border-yellow-300/50 blur-[1px]" />
+                            <motion.div
+                                className="absolute inset-0 rounded-full"
+                                animate={{ boxShadow: ["0 0 8px rgba(251,191,36,0.4)", "0 0 20px rgba(251,191,36,0.9)", "0 0 8px rgba(251,191,36,0.4)"] }}
+                                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                            <motion.div
+                                className="absolute -top-1 left-1/2 h-2 w-4 -translate-x-1/2 rounded-full bg-gradient-to-r from-orange-200 via-yellow-200 to-orange-200 blur-[1px]"
+                                animate={{ scaleX: [0.9, 1.1, 0.9], opacity: [0.6, 1, 0.6] }}
+                                transition={{ duration: 1.2, repeat: Infinity }}
+                            />
+                        </div>
+                    </motion.div>
+                )}
+
+                {tile.type === 'lightning' && (
+                    <motion.div
+                        className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                        animate={{ opacity: [1, 0.6, 1] }}
+                        transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                        <div className="relative w-8 h-8">
+                            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.65),rgba(14,116,144,0.0))]" />
+                            <svg viewBox="0 0 100 100" className="absolute inset-0 drop-shadow-[0_0_12px_rgba(34,211,238,0.9)]">
+                                <defs>
+                                    <linearGradient id={`bolt-${tile.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#e0f2fe" />
+                                        <stop offset="50%" stopColor="#22d3ee" />
+                                        <stop offset="100%" stopColor="#0284c7" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M52 5 L32 52 L54 52 L28 95 L72 36 L48 36 Z" fill={`url(#bolt-${tile.id})`} />
+                            </svg>
+                            <motion.div
+                                className="absolute inset-0"
+                                animate={{ rotate: [0, -6, 0] }}
+                                transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                            >
+                                <svg viewBox="0 0 100 100" className="absolute inset-0 opacity-60">
+                                    <path d="M58 12 L40 46 L56 46 L36 86 L70 38 L52 38 Z" fill="#a5f3fc" />
+                                </svg>
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {tile.type === 'cross' && (
+                    <motion.div
+                        className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                        <svg viewBox="0 0 100 100" className="w-7 h-7 drop-shadow-lg">
+                            <line x1="30" y1="30" x2="70" y2="70" stroke="magenta" strokeWidth="4" strokeLinecap="round"/>
+                            <line x1="70" y1="30" x2="30" y2="70" stroke="magenta" strokeWidth="4" strokeLinecap="round"/>
+                        </svg>
+                    </motion.div>
+                )}
+            </div>
+        </motion.div>
+    );
+};
