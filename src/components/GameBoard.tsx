@@ -13,6 +13,7 @@ interface GameBoardProps {
 
 export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, onTileClick }) => {
     const [itemSize, setItemSize] = useState(52);
+    const [isMobile, setIsMobile] = useState(false);
     const GRID_GAP = 4;
 
     useEffect(() => {
@@ -22,6 +23,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
             const vh = window.visualViewport?.height ?? window.innerHeight;
 
             const isDesktop = vw >= 768;
+            setIsMobile(!isDesktop);
             const horizontalPadding = isDesktop ? 140 : 8;
             const verticalPadding = isDesktop ? 320 : 140;
             const available = Math.max(300, Math.min(vw - horizontalPadding, vh - verticalPadding));
@@ -69,6 +71,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         tile={tile}
                         isSelected={selectedTile?.id === tile.id}
                         isExploding={explodingIds.has(tile.id)}
+                        isMobile={isMobile}
                         onClick={() => onTileClick(tile)}
                         size={ITEM_SIZE}
                     />

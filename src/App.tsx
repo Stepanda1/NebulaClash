@@ -98,7 +98,7 @@ function App() {
         </div>
 
         {/* Board Frame */}
-        <div className="relative p-2 sm:p-3 bg-white/15 sm:bg-white/20 backdrop-blur-none sm:backdrop-blur-xl rounded-3xl border-4 border-white/40 shadow-2xl">
+        <div className="relative p-2 sm:p-3 bg-white/15 sm:bg-white/20 backdrop-blur-none sm:backdrop-blur-xl rounded-3xl border-4 border-white/40 shadow-2xl [transform:translateZ(0)]">
           <GameBoard
             grid={grid}
             selectedTile={selectedTile}
