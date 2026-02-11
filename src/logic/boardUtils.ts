@@ -500,13 +500,17 @@ export const findHintMove = (grid: Grid): { from: { x: number; y: number }; to: 
             if (x + 1 < COLS) {
                 const swapped = trySwap(grid, x, y, x + 1, y);
                 if (findMatches(swapped).size > 0) {
-                    return { from: { x, y }, to: { x: x + 1, y } };
+                    if (y > 0) {
+                        return { from: { x, y }, to: { x: x + 1, y } };
+                    }
                 }
             }
             if (y + 1 < ROWS) {
                 const swapped = trySwap(grid, x, y, x, y + 1);
                 if (findMatches(swapped).size > 0) {
-                    return { from: { x, y }, to: { x, y: y + 1 } };
+                    if (y > 0) {
+                        return { from: { x, y }, to: { x, y: y + 1 } };
+                    }
                 }
             }
         }
