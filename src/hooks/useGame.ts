@@ -2,14 +2,24 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Grid, Tile, GemType } from '../types';
 import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, expandSpecialChain, ROWS, COLS } from '../logic/boardUtils';
 
-const LEVEL_CONFIGS = [
+type Goal =
+    | { type: 'score'; value: number }
+    | { type: 'collect'; value: number; color: GemType };
+
+type LevelConfig = {
+    mode: 'moves' | 'time';
+    limit: number;
+    goal: Goal;
+};
+
+const LEVEL_CONFIGS: LevelConfig[] = [
     { mode: 'moves', limit: 30, goal: { type: 'score', value: 800 } },
-    { mode: 'moves', limit: 28, goal: { type: 'collect', value: 12, color: 'red' as GemType } },
+    { mode: 'moves', limit: 28, goal: { type: 'collect', value: 12, color: 'red' } },
     { mode: 'time', limit: 60, goal: { type: 'score', value: 900 } },
-    { mode: 'moves', limit: 26, goal: { type: 'collect', value: 14, color: 'blue' as GemType } },
+    { mode: 'moves', limit: 26, goal: { type: 'collect', value: 14, color: 'blue' } },
     { mode: 'time', limit: 75, goal: { type: 'score', value: 1200 } },
-    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 16, color: 'green' as GemType } },
-] as const;
+    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 16, color: 'green' } },
+];
 
 export const useGame = () => {
     const [grid, setGrid] = useState<Grid>(createBoard());
@@ -26,8 +36,8 @@ export const useGame = () => {
     const [isLevelTransition, setIsLevelTransition] = useState(false);
     const levelTransitionRef = useRef<number | null>(null);
     const [validMoves, setValidMoves] = useState(0);
-    const [moves, setMoves] = useState(LEVEL_CONFIGS[0].mode === 'moves' ? LEVEL_CONFIGS[0].limit : 30);
-    const [timeLeft, setTimeLeft] = useState(LEVEL_CONFIGS[0].mode === 'time' ? LEVEL_CONFIGS[0].limit : 60);
+    const [moves, setMoves] = useState<number>(LEVEL_CONFIGS[0].mode === 'moves' ? LEVEL_CONFIGS[0].limit : 30);
+    const [timeLeft, setTimeLeft] = useState<number>(LEVEL_CONFIGS[0].mode === 'time' ? LEVEL_CONFIGS[0].limit : 60);
     const [collected, setCollected] = useState<Record<GemType, number>>({
         red: 0,
         blue: 0,
@@ -178,7 +188,7 @@ export const useGame = () => {
             setIsLevelUp(true);
             // We wait for user to click "Next Level"
         }
-    }, [score, scoreToNextLevel, isLevelUp, goal, collected]);
+    }, [score, isLevelUp, goal, collected]);
 
     useEffect(() => {
         if (!isTimeMode || isPaused || isProcessing || isLevelUp) return;
