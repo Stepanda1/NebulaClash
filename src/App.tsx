@@ -51,18 +51,18 @@ function App() {
       <AudioPlayer isMuted={isMuted} volume={volume} />
 
       {/* Top Bar: Progress & Settings */}
-      <div className="w-full flex flex-col gap-2 z-10">
+      <div className="w-full flex flex-col gap-1 sm:gap-2 z-10">
         <div className="flex justify-between items-start">
           <button
             onClick={() => setIsPaused(true)}
-            className="w-12 h-12 rounded-full bg-blue-500 border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0 mt-2"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0 mt-1 sm:mt-2"
           >
             {/* Pause Icon / Settings */}
-            <Settings className="text-white w-6 h-6" />
+            <Settings className="text-white w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           {/* Star Progress Bar */}
-          <div className="flex-1 flex justify-center -mt-1">
+          <div className="flex-1 flex justify-center -mt-0.5 sm:-mt-1">
             <StarProgress score={score} target={scoreToNextLevel} level={level} />
           </div>
 
@@ -71,12 +71,12 @@ function App() {
             href="https://dalink.to/stepanda1"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-[76px] h-12 rounded-2xl bg-gradient-to-br from-cyan-300/90 via-sky-300/80 to-blue-300/90 border-2 border-white/70 shadow-[0_8px_18px_rgba(56,189,248,0.55)] backdrop-blur-md flex items-center justify-center gap-1 text-black font-extrabold uppercase tracking-wide transition-all hover:scale-105 active:scale-95 mt-2"
+            className="w-[68px] h-10 sm:w-[76px] sm:h-12 rounded-2xl bg-gradient-to-br from-cyan-300/90 via-sky-300/80 to-blue-300/90 border-2 border-white/70 shadow-[0_8px_18px_rgba(56,189,248,0.55)] backdrop-blur-md flex items-center justify-center gap-1 text-black font-extrabold uppercase tracking-wide transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
             title="Поддержать разработчика"
             aria-label="Поддержать разработчика"
           >
             <Coffee className="w-4 h-4" />
-            <span className="text-[10px]">Donate</span>
+            <span className="text-[9px] sm:text-[10px]">Donate</span>
           </a>
         </div>
       </div>
@@ -84,7 +84,7 @@ function App() {
       {/* Main Game Area */}
       <div className="flex-1 flex flex-col justify-center items-center w-full relative">
         {/* Score Popup Placeholder */}
-        <div className="flex justify-center items-center h-16 w-full z-10 shrink-0">
+        <div className="flex justify-center items-center h-12 sm:h-16 w-full z-10 shrink-0">
           <motion.span
             key={score}
             initial={{ scale: 1.5 }}
@@ -98,7 +98,7 @@ function App() {
         </div>
 
         {/* Board Frame */}
-        <div className="relative p-3 bg-white/20 backdrop-blur-xl rounded-3xl border-4 border-white/40 shadow-2xl">
+        <div className="relative p-2 sm:p-3 bg-white/20 backdrop-blur-xl rounded-3xl border-4 border-white/40 shadow-2xl">
           <GameBoard
             grid={grid}
             selectedTile={selectedTile}
@@ -109,19 +109,19 @@ function App() {
       </div>
 
       {/* Bottom Bar: Moves (Left) & Boosters (Right) */}
-      <div className="w-full z-10 pb-4 sm:pb-6 px-2 sm:px-4">
+      <div className="w-full z-10 pb-3 sm:pb-6 px-2 sm:px-4">
         <div className="flex items-end justify-between max-w-md mx-auto relative">
           {/* Moves Counter (Bottom Left) */}
-          <div className="flex flex-col items-center justify-center bg-blue-600 w-20 h-20 rounded-2xl border-4 border-white shadow-xl relative z-20">
+          <div className="flex flex-col items-center justify-center bg-blue-600 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-4 border-white shadow-xl relative z-20">
             <span className="text-white/80 text-[10px] font-bold uppercase mt-1">Moves</span>
-            <span className="text-3xl font-black text-white leading-none drop-shadow-md">{moves}</span>
+            <span className="text-2xl sm:text-3xl font-black text-white leading-none drop-shadow-md">{moves}</span>
           </div>
 
           {/* Boosters (Right side) */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 flex items-center gap-2 shadow-xl mb-1 ml-4 flex-1 justify-end">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 flex items-center gap-2 shadow-xl mb-1 ml-3 sm:ml-4 flex-1 justify-end">
             {[1, 2, 3].map((i) => (
-              <button key={i} className="w-12 h-12 bg-purple-500/20 hover:bg-purple-500/40 border-2 border-purple-400/30 rounded-xl flex items-center justify-center transition-all active:scale-95 group">
-                <div className="w-6 h-6 bg-purple-400/20 rounded-md rotate-45 border border-purple-300/20" />
+              <button key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500/20 hover:bg-purple-500/40 border-2 border-purple-400/30 rounded-xl flex items-center justify-center transition-all active:scale-95 group">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 bg-purple-400/20 rounded-md rotate-45 border border-purple-300/20" />
               </button>
             ))}
           </div>
