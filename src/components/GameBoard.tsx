@@ -10,10 +10,11 @@ interface GameBoardProps {
     explodingIds: Set<string>;
     isLevelTransition: boolean;
     showTutorial: boolean;
+    isProcessing: boolean;
     onTileClick: (tile: Tile) => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, showTutorial, onTileClick }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, showTutorial, isProcessing, onTileClick }) => {
     const [itemSize, setItemSize] = useState(52);
     const [isMobile, setIsMobile] = useState(false);
     const GRID_GAP = 4;
@@ -51,9 +52,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
     }, [grid]);
 
     const hint = useMemo(() => {
-        if (!showTutorial) return null;
+        if (!showTutorial || isProcessing || isLevelTransition) return null;
         return findHintMove(grid);
-    }, [grid, showTutorial]);
+    }, [grid, showTutorial, isProcessing, isLevelTransition]);
 
     return (
         <div
@@ -110,7 +111,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
                     />
                     <motion.div
-                        className="absolute text-white text-xs font-bold bg-black/60 px-2 py-1 rounded-full"
+                        className="absolute text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
                         style={{
                             left: (hint.from.x + hint.to.x) * ITEM_SIZE * 0.5,
                             top: Math.min(hint.from.y, hint.to.y) * ITEM_SIZE - 18,
@@ -119,7 +120,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         animate={{ opacity: [0.6, 1, 0.6] }}
                         transition={{ duration: 1.2, repeat: Infinity }}
                     >
-                        Свайпни
+                        Swipe
                     </motion.div>
                 </div>
             )}

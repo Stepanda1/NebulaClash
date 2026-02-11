@@ -126,6 +126,7 @@ function App() {
             explodingIds={explodingIds}
             isLevelTransition={isLevelTransition}
             showTutorial={showTutorial}
+            isProcessing={isProcessing}
             onTileClick={(tile) => !isPaused && handleTileClick(tile)}
           />
         </div>
