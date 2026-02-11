@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { useGame } from './hooks/useGame';
 import { PauseMenu } from './components/PauseMenu';
@@ -8,14 +8,13 @@ import { StarProgress } from './components/StarProgress';
 import { AudioPlayer } from './components/AudioPlayer';
 import { Coffee, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TutorialOverlay } from './components/TutorialOverlay';
 
 function App() {
   const { grid, score, moves, level, scoreToNextLevel, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, handleTileClick, handleRestart, isLevelUp, handleNextLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [tutorialStep, setTutorialStep] = useState(0);
+  const tutorialTimerRef = useRef<number | null>(null);
 
   // Game Over only when moves are 0 AND animations are done
   const isGameOver = moves <= 0 && !isProcessing;
@@ -27,14 +26,21 @@ function App() {
 
   useEffect(() => {
     const done = localStorage.getItem('match3_tutorial_done');
-    if (!done) setShowTutorial(true);
+    if (!done) {
+      setShowTutorial(true);
+      tutorialTimerRef.current = window.setTimeout(() => {
+        localStorage.setItem('match3_tutorial_done', '1');
+        setShowTutorial(false);
+        tutorialTimerRef.current = null;
+      }, 6000);
+    }
+    return () => {
+      if (tutorialTimerRef.current !== null) {
+        clearTimeout(tutorialTimerRef.current);
+        tutorialTimerRef.current = null;
+      }
+    };
   }, []);
-
-  const handleFinishTutorial = () => {
-    localStorage.setItem('match3_tutorial_done', '1');
-    setShowTutorial(false);
-    setTutorialStep(0);
-  };
 
   return (
     <div className="flex flex-col items-center justify-between h-full w-full max-w-none max-h-none sm:max-w-lg sm:max-h-[900px] mx-auto p-2 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-none sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]">
@@ -63,9 +69,6 @@ function App() {
       </AnimatePresence>
 
       <AudioPlayer isMuted={isMuted} volume={volume} />
-      {showTutorial && (
-        <TutorialOverlay onFinish={handleFinishTutorial} onStepChange={setTutorialStep} />
-      )}
 
       {/* Top Bar: Progress & Settings */}
       <div className="w-full flex flex-col gap-1 sm:gap-2 z-10">
@@ -122,7 +125,6 @@ function App() {
             explodingIds={explodingIds}
             isLevelTransition={isLevelTransition}
             showTutorial={showTutorial}
-            tutorialStep={tutorialStep}
             onTileClick={(tile) => !isPaused && handleTileClick(tile)}
           />
         </div>

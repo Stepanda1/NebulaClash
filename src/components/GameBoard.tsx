@@ -10,11 +10,10 @@ interface GameBoardProps {
     explodingIds: Set<string>;
     isLevelTransition: boolean;
     showTutorial: boolean;
-    tutorialStep: number;
     onTileClick: (tile: Tile) => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, showTutorial, tutorialStep, onTileClick }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, showTutorial, onTileClick }) => {
     const [itemSize, setItemSize] = useState(52);
     const [isMobile, setIsMobile] = useState(false);
     const GRID_GAP = 4;
@@ -52,9 +51,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
     }, [grid]);
 
     const hint = useMemo(() => {
-        if (!showTutorial || tutorialStep !== 0) return null;
+        if (!showTutorial) return null;
         return findHintMove(grid);
-    }, [grid, showTutorial, tutorialStep]);
+    }, [grid, showTutorial]);
 
     return (
         <div
