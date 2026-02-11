@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { useGame } from './hooks/useGame';
 import { PauseMenu } from './components/PauseMenu';
@@ -8,11 +8,13 @@ import { StarProgress } from './components/StarProgress';
 import { AudioPlayer } from './components/AudioPlayer';
 import { Coffee, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TutorialOverlay } from './components/TutorialOverlay';
 
 function App() {
   const { grid, score, moves, level, scoreToNextLevel, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, handleTileClick, handleRestart, isLevelUp, handleNextLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // Game Over only when moves are 0 AND animations are done
   const isGameOver = moves <= 0 && !isProcessing;
@@ -20,6 +22,16 @@ function App() {
   const onRestart = () => {
     handleRestart();
     // setIsPaused(false) is handled in handleRestart hook
+  };
+
+  useEffect(() => {
+    const done = localStorage.getItem('match3_tutorial_done');
+    if (!done) setShowTutorial(true);
+  }, []);
+
+  const handleFinishTutorial = () => {
+    localStorage.setItem('match3_tutorial_done', '1');
+    setShowTutorial(false);
   };
 
   return (
@@ -49,6 +61,9 @@ function App() {
       </AnimatePresence>
 
       <AudioPlayer isMuted={isMuted} volume={volume} />
+      {showTutorial && (
+        <TutorialOverlay onFinish={handleFinishTutorial} />
+      )}
 
       {/* Top Bar: Progress & Settings */}
       <div className="w-full flex flex-col gap-1 sm:gap-2 z-10">
