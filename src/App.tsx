@@ -94,7 +94,7 @@ function App() {
               target={levelConfig.goal.value}
               level={level}
             />
-            <div className="mt-1 text-[12px] sm:text-xs text-white font-bold tracking-wide bg-black/70 px-3 py-1 rounded-full border border-white/20">
+            <div className="mt-2 text-[14px] sm:text-sm text-slate-900 font-extrabold tracking-wide bg-sky-200/90 px-4 py-2 rounded-2xl border border-white/60 shadow-[0_6px_18px_rgba(14,165,233,0.35)]">
               {levelConfig.goal.type === 'score' && `GOAL: ${levelConfig.goal.value} PTS`}
               {levelConfig.goal.type === 'collect' && `GOAL: ${levelConfig.goal.value} ${levelConfig.goal.color?.toUpperCase()} (${levelConfig.goal.color ? collected[levelConfig.goal.color] : 0}/${levelConfig.goal.value})`}
               {levelConfig.mode === 'time' && ` • TIME: ${Math.max(0, timeLeft)}s`}

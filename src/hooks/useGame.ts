@@ -72,10 +72,9 @@ export const useGame = () => {
         setValidMoves(0);
     };
 
-    const countCollected = (g: Grid, ids: Set<string>) => {
+    const countCollected = useCallback((g: Grid, ids: Set<string>) => {
         if (goal.type !== 'collect') return;
         const color = goal.color;
-        if (!color) return;
         let add = 0;
         for (let y = 0; y < ROWS; y++) {
             for (let x = 0; x < COLS; x++) {
@@ -83,7 +82,7 @@ export const useGame = () => {
                 if (ids.has(tile.id)) {
                     const base = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross')
                         ? tile.gemType
-                        : (tile.type as GemType);
+                        : (tile.type === null ? null : (tile.type as GemType));
                     if (base === color) add++;
                 }
             }
@@ -91,7 +90,7 @@ export const useGame = () => {
         if (add > 0) {
             setCollected(prev => ({ ...prev, [color]: prev[color] + add }));
         }
-    };
+    }, [goal]);
 
     // Helper to safely swap two tiles in the grid
     const swapTiles = (g: Grid, t1: Tile, t2: Tile): Grid => {
@@ -402,7 +401,7 @@ export const useGame = () => {
         if (finalizeProcessing) {
             setIsProcessing(false);
         }
-    }, []);
+    }, [countCollected]);
 
     const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
         let activeGrid = copyGrid(currentGrid);
@@ -494,7 +493,7 @@ export const useGame = () => {
         }
 
         setIsProcessing(false);
-    }, []);
+    }, [countCollected]);
 
     const findTileById = (g: Grid, id: string): Tile | null => {
         for (let y = 0; y < ROWS; y++) {
@@ -507,7 +506,6 @@ export const useGame = () => {
 
     const handleRestart = () => {
         setIsPaused(false);
-        resetLevelState();
         setLevel(1);
         resetLevelState(LEVEL_CONFIGS[0]);
         setIsProcessing(false);
