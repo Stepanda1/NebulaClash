@@ -17,6 +17,7 @@ export const useGame = () => {
     const explodeTimeoutRef = useRef<number | null>(null);
     const [isLevelTransition, setIsLevelTransition] = useState(false);
     const levelTransitionRef = useRef<number | null>(null);
+    const [validMoves, setValidMoves] = useState(0);
 
     // Update ref when state changes
     useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
@@ -167,6 +168,7 @@ export const useGame = () => {
                 if (selectedWasSpecial || clickedWasSpecial) {
                     // Trigger special on swap
                     setMoves(m => m - 1);
+                    setValidMoves(v => v + 1);
                     setIsProcessing(true);
                     if (selectedWasSpecial && clickedWasSpecial) {
                         const t1 = findTileById(nextGrid, selectedTile.id);
@@ -195,6 +197,7 @@ export const useGame = () => {
                 if (matches.size > 0) {
                     // Valid move -> Process
                     setMoves(m => m - 1);
+                    setValidMoves(v => v + 1);
                     setIsProcessing(true); // Set immediately to prevent gaps
                     await processBoard(nextGrid);
                 } else {
@@ -420,6 +423,7 @@ export const useGame = () => {
         setLevel(1);
         setIsProcessing(false);
         setSelectedTile(null);
+        setValidMoves(0);
     };
 
     return {
@@ -435,6 +439,7 @@ export const useGame = () => {
         setIsPaused,
         explodingIds,
         isLevelTransition,
+        validMoves,
         handleTileClick,
         handleRestart,
         handleNextLevel
