@@ -19,7 +19,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         const updateSize = () => {
             if (typeof window === 'undefined') return;
             const vw = window.innerWidth;
-            const vh = window.innerHeight;
+            const vh = window.visualViewport?.height ?? window.innerHeight;
 
             const isDesktop = vw >= 768;
             const horizontalPadding = isDesktop ? 140 : 8;

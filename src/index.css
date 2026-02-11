@@ -27,7 +27,7 @@ body {
   display: flex;
   place-items: center;
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100svh;
 
   /* Deep Space Cosmic Base */
   background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #0c0a09 100%);
@@ -35,16 +35,26 @@ body {
   overflow: hidden;
   user-select: none;
   touch-action: none;
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
+  overscroll-behavior: none;
 }
 
 #root {
   width: 100%;
-  height: 100%;
+  height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+@supports not (height: 100dvh) {
+  body {
+    height: 100vh;
+  }
+  #root {
+    height: 100vh;
+  }
 }
 
 /* Nebula Clouds Layer */
