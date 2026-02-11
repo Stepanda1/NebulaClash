@@ -2,9 +2,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const STEPS = [
-    'Свайпни подсвеченные кристаллы, чтобы собрать 3 в ряд.',
-    'Собери 4 в ряд — появится бомба.',
-    'Собери 5 в ряд или форму T/L — появится молния.',
+    'Swipe the highlighted gems to make a match of 3.',
+    'Match 4 in a row to create a bomb.',
+    'Match 5 in a row or a T/L shape to create lightning.',
 ];
 
 export const TutorialHint: React.FC<{ step: number }> = ({ step }) => {

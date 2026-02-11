@@ -478,6 +478,14 @@ export const copyGrid = (grid: Grid): Grid => {
 };
 
 export const findHintMove = (grid: Grid): { from: { x: number; y: number }; to: { x: number; y: number } } | null => {
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            if ((grid[y][x] as any).type == null) {
+                return null;
+            }
+        }
+    }
+
     const trySwap = (g: Grid, x1: number, y1: number, x2: number, y2: number): Grid => {
         const newGrid = copyGrid(g);
         const t1 = newGrid[y1][x1];
