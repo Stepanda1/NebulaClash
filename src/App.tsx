@@ -10,7 +10,7 @@ import { Coffee, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
-  const { grid, score, moves, level, scoreToNextLevel, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, handleTileClick, handleRestart, isLevelUp, handleNextLevel } = useGame();
+  const { grid, score, moves, level, scoreToNextLevel, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, handleTileClick, handleRestart, isLevelUp, handleNextLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
 
@@ -103,6 +103,7 @@ function App() {
             grid={grid}
             selectedTile={selectedTile}
             explodingIds={explodingIds}
+            isLevelTransition={isLevelTransition}
             onTileClick={(tile) => !isPaused && handleTileClick(tile)}
           />
         </div>

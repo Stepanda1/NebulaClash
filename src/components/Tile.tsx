@@ -8,6 +8,7 @@ interface TileProps {
     isSelected: boolean;
     isExploding: boolean;
     isMobile: boolean;
+    isLevelTransition: boolean;
     onClick: (tile: TileType) => void;
     size: number;
 }
@@ -103,7 +104,7 @@ const getGemConfig = (type: TType) => {
     }
 };
 
-export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMobile, onClick, size }) => {
+export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMobile, isLevelTransition, onClick, size }) => {
     // For special pieces, use gemType for visual rendering, type for special effect
     const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross') 
         ? tile.gemType 
@@ -115,10 +116,12 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
 
     if (!config) return null;
 
+    const lowFX = isMobile || isLevelTransition;
+
     return (
         <motion.div
-            layoutId={tile.id}
-            initial={isMobile ? { opacity: 0, scale: 0.85 } : { y: -500, opacity: 0, scale: 0 }}
+            layoutId={isLevelTransition ? undefined : tile.id}
+            initial={lowFX ? { opacity: 0, scale: 0.9 } : { y: -500, opacity: 0, scale: 0 }}
             animate={{
                 x: tile.x * size,
                 y: tile.y * size,
@@ -128,7 +131,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
             }}
             transition={{
                 layout: { type: "spring", stiffness: 450, damping: 35 },
-                y: { type: "tween", ease: "easeOut", duration: isMobile ? 0.15 : 0.25 }
+                y: { type: "tween", ease: "easeOut", duration: lowFX ? 0.12 : 0.25 }
             }}
             exit={{ scale: 0, opacity: 0, transition: { duration: 0.2 } }}
             style={{
@@ -143,7 +146,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
         >
             <div className="w-full h-full relative flex items-center justify-center">
                 {/* Volumetric Glow */}
-                {!isMobile && (
+                {!lowFX && (
                     <div
                         className="absolute inset-[10%] blur-3xl opacity-50 pointer-events-none"
                         style={{ background: config.glow, borderRadius: '50%' }}
@@ -154,7 +157,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                     viewBox="0 0 100 100"
                     className={clsx(
                         "w-full h-full relative z-10 transition-transform duration-300",
-                        !isMobile && "drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)]",
+                        !lowFX && "drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)]",
                         isSelected ? "scale-105" : "scale-100"
                     )}
                     style={{ transform: `scale(${config.scale})` }}
@@ -224,7 +227,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                 </svg>
 
                 {/* Animated Star Twinkle */}
-                {!isMobile && (
+                {!lowFX && (
                     <motion.div
                         className="absolute inset-[15%] pointer-events-none overflow-hidden rounded-full mix-blend-screen"
                     >

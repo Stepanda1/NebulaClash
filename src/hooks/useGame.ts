@@ -15,6 +15,8 @@ export const useGame = () => {
     const isPausedRef = useRef(false);
     const [explodingIds, setExplodingIds] = useState<Set<string>>(new Set());
     const explodeTimeoutRef = useRef<number | null>(null);
+    const [isLevelTransition, setIsLevelTransition] = useState(false);
+    const levelTransitionRef = useRef<number | null>(null);
 
     // Update ref when state changes
     useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
@@ -115,12 +117,20 @@ export const useGame = () => {
     }, [score, scoreToNextLevel, isLevelUp]);
 
     const handleNextLevel = () => {
+        setIsLevelTransition(true);
+        if (levelTransitionRef.current !== null) {
+            clearTimeout(levelTransitionRef.current);
+        }
         setLevel(l => l + 1);
         setScore(0);
         setMoves(30);
         setGrid(createBoard());
         setIsLevelUp(false);
         setIsProcessing(false);
+        levelTransitionRef.current = window.setTimeout(() => {
+            setIsLevelTransition(false);
+            levelTransitionRef.current = null;
+        }, 500);
     };
 
     const handleTileClick = async (clickedTile: Tile) => {
@@ -424,6 +434,7 @@ export const useGame = () => {
         isPaused,
         setIsPaused,
         explodingIds,
+        isLevelTransition,
         handleTileClick,
         handleRestart,
         handleNextLevel

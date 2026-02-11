@@ -8,10 +8,11 @@ interface GameBoardProps {
     grid: Grid;
     selectedTile: Tile | null;
     explodingIds: Set<string>;
+    isLevelTransition: boolean;
     onTileClick: (tile: Tile) => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, onTileClick }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, onTileClick }) => {
     const [itemSize, setItemSize] = useState(52);
     const [isMobile, setIsMobile] = useState(false);
     const GRID_GAP = 4;
@@ -72,6 +73,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         isSelected={selectedTile?.id === tile.id}
                         isExploding={explodingIds.has(tile.id)}
                         isMobile={isMobile}
+                        isLevelTransition={isLevelTransition}
                         onClick={() => onTileClick(tile)}
                         size={ITEM_SIZE}
                     />
