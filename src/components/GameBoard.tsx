@@ -111,7 +111,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
                     />
                     <motion.div
-                        className="absolute text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
+                        className="absolute text-white text-xs font-bold bg-black/100 px-2 py-1 rounded-full"
                         style={{
                             left: (hint.from.x + hint.to.x) * ITEM_SIZE * 0.5,
                             top: Math.min(hint.from.y, hint.to.y) * ITEM_SIZE - 18,
