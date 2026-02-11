@@ -11,13 +11,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
 
 function App() {
-  const { grid, score, moves, level, scoreToNextLevel, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, handleTileClick, handleRestart, isLevelUp, handleNextLevel } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, handleTileClick, handleRestart, isLevelUp, handleNextLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
 
-  // Game Over only when moves are 0 AND animations are done
-  const isGameOver = moves <= 0 && !isProcessing;
+  // Game Over only when limit reached AND animations are done
+  const isGameOver = (
+    (levelConfig.mode === 'moves' && moves <= 0) ||
+    (levelConfig.mode === 'time' && timeLeft <= 0)
+  ) && !isProcessing;
 
   const onRestart = () => {
     handleRestart();
@@ -83,8 +86,20 @@ function App() {
           </button>
 
           {/* Star Progress Bar */}
-          <div className="flex-1 flex justify-center -mt-0.5 sm:-mt-1">
-            <StarProgress score={score} target={scoreToNextLevel} level={level} />
+          <div className="flex-1 flex flex-col items-center -mt-0.5 sm:-mt-1">
+            <StarProgress
+              score={levelConfig.goal.type === 'score'
+                ? score
+                : (levelConfig.goal.color ? collected[levelConfig.goal.color] : 0)}
+              target={levelConfig.goal.value}
+              level={level}
+            />
+            <div className="mt-1 text-xs text-white/80 font-semibold tracking-wide">
+              {levelConfig.goal.type === 'score' && `Goal: ${levelConfig.goal.value} pts`}
+              {levelConfig.goal.type === 'collect' && `Goal: ${levelConfig.goal.value} ${levelConfig.goal.color} (${levelConfig.goal.color ? collected[levelConfig.goal.color] : 0}/${levelConfig.goal.value})`}
+              {levelConfig.mode === 'time' && ` • Time: ${Math.max(0, timeLeft)}s`}
+              {levelConfig.mode === 'moves' && ` • Moves: ${moves}`}
+            </div>
           </div>
 
           {/* Donate Button */}
@@ -137,8 +152,12 @@ function App() {
         <div className="flex items-end justify-between max-w-md mx-auto relative">
           {/* Moves Counter (Bottom Left) */}
           <div className="flex flex-col items-center justify-center bg-blue-600 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-4 border-white shadow-xl relative z-20">
-            <span className="text-white/80 text-[10px] font-bold uppercase mt-1">Moves</span>
-            <span className="text-2xl sm:text-3xl font-black text-white leading-none drop-shadow-md">{moves}</span>
+            <span className="text-white/80 text-[10px] font-bold uppercase mt-1">
+              {levelConfig.mode === 'time' ? 'Time' : 'Moves'}
+            </span>
+            <span className="text-2xl sm:text-3xl font-black text-white leading-none drop-shadow-md">
+              {levelConfig.mode === 'time' ? `${Math.max(0, timeLeft)}s` : moves}
+            </span>
           </div>
 
           {/* Boosters (Right side) */}

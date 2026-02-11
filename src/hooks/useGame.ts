@@ -1,11 +1,19 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import type { Grid, Tile } from '../types';
+import type { Grid, Tile, GemType } from '../types';
 import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, expandSpecialChain, ROWS, COLS } from '../logic/boardUtils';
+
+const LEVEL_CONFIGS = [
+    { mode: 'moves', limit: 30, goal: { type: 'score', value: 800 } },
+    { mode: 'moves', limit: 28, goal: { type: 'collect', value: 12, color: 'red' as GemType } },
+    { mode: 'time', limit: 60, goal: { type: 'score', value: 900 } },
+    { mode: 'moves', limit: 26, goal: { type: 'collect', value: 14, color: 'blue' as GemType } },
+    { mode: 'time', limit: 75, goal: { type: 'score', value: 1200 } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 16, color: 'green' as GemType } },
+] as const;
 
 export const useGame = () => {
     const [grid, setGrid] = useState<Grid>(createBoard());
     const [score, setScore] = useState(0);
-    const [moves, setMoves] = useState(30);
 
     const [level, setLevel] = useState(1);
     const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
@@ -18,12 +26,62 @@ export const useGame = () => {
     const [isLevelTransition, setIsLevelTransition] = useState(false);
     const levelTransitionRef = useRef<number | null>(null);
     const [validMoves, setValidMoves] = useState(0);
+    const [moves, setMoves] = useState(LEVEL_CONFIGS[0].mode === 'moves' ? LEVEL_CONFIGS[0].limit : 30);
+    const [timeLeft, setTimeLeft] = useState(LEVEL_CONFIGS[0].mode === 'time' ? LEVEL_CONFIGS[0].limit : 60);
+    const [collected, setCollected] = useState<Record<GemType, number>>({
+        red: 0,
+        blue: 0,
+        green: 0,
+        yellow: 0,
+        purple: 0,
+        orange: 0,
+    });
+
+    const levelIndex = (level - 1) % LEVEL_CONFIGS.length;
+    const levelConfig = LEVEL_CONFIGS[levelIndex];
+
+    const isTimeMode = levelConfig.mode === 'time';
+    const goal = levelConfig.goal;
 
     // Update ref when state changes
     useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
 
-    // Level logic
-    const scoreToNextLevel = level * 1000;
+    const resetLevelState = (config = levelConfig) => {
+        setGrid(createBoard());
+        setScore(0);
+        setMoves(config.mode === 'moves' ? config.limit : 30);
+        setTimeLeft(config.mode === 'time' ? config.limit : 60);
+        setCollected({
+            red: 0,
+            blue: 0,
+            green: 0,
+            yellow: 0,
+            purple: 0,
+            orange: 0,
+        });
+        setValidMoves(0);
+    };
+
+    const countCollected = (g: Grid, ids: Set<string>) => {
+        if (goal.type !== 'collect') return;
+        const color = goal.color;
+        if (!color) return;
+        let add = 0;
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = g[y][x];
+                if (ids.has(tile.id)) {
+                    const base = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross')
+                        ? tile.gemType
+                        : (tile.type as GemType);
+                    if (base === color) add++;
+                }
+            }
+        }
+        if (add > 0) {
+            setCollected(prev => ({ ...prev, [color]: prev[color] + add }));
+        }
+    };
 
     // Helper to safely swap two tiles in the grid
     const swapTiles = (g: Grid, t1: Tile, t2: Tile): Grid => {
@@ -81,6 +139,7 @@ export const useGame = () => {
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
             // 2. Remove only regular matches, keep special pieces
+            countCollected(activeGrid, regularMatches);
             activeGrid = removeMatches(activeGrid, regularMatches);
             setGrid(activeGrid);
 
@@ -109,23 +168,37 @@ export const useGame = () => {
 
     // Level Up Check
     useEffect(() => {
-        if (score >= scoreToNextLevel && !isLevelUp) {
+        const goalReached =
+            (goal.type === 'score' && score >= goal.value) ||
+            (goal.type === 'collect' && goal.color && collected[goal.color] >= goal.value);
+
+        if (goalReached && !isLevelUp) {
             // Level Up Trigger
             setIsProcessing(true);
             setIsLevelUp(true);
             // We wait for user to click "Next Level"
         }
-    }, [score, scoreToNextLevel, isLevelUp]);
+    }, [score, scoreToNextLevel, isLevelUp, goal, collected]);
+
+    useEffect(() => {
+        if (!isTimeMode || isPaused || isProcessing || isLevelUp) return;
+        if (timeLeft <= 0) return;
+
+        const id = window.setInterval(() => {
+            setTimeLeft(t => Math.max(0, t - 1));
+        }, 1000);
+        return () => clearInterval(id);
+    }, [isTimeMode, isPaused, isProcessing, isLevelUp, timeLeft]);
 
     const handleNextLevel = () => {
         setIsLevelTransition(true);
         if (levelTransitionRef.current !== null) {
             clearTimeout(levelTransitionRef.current);
         }
-        setLevel(l => l + 1);
-        setScore(0);
-        setMoves(30);
-        setGrid(createBoard());
+        const nextLevel = level + 1;
+        const nextConfig = LEVEL_CONFIGS[(nextLevel - 1) % LEVEL_CONFIGS.length];
+        setLevel(nextLevel);
+        resetLevelState(nextConfig);
         setIsLevelUp(false);
         setIsProcessing(false);
         levelTransitionRef.current = window.setTimeout(() => {
@@ -135,7 +208,7 @@ export const useGame = () => {
     };
 
     const handleTileClick = async (clickedTile: Tile) => {
-        if (isProcessing || isPaused || moves <= 0 || isLevelUp) return;
+        if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
 
         // Check if clicking a special piece twice to activate it
         if (selectedTile && selectedTile.id === clickedTile.id) {
@@ -239,6 +312,8 @@ export const useGame = () => {
             explodeTimeoutRef.current = null;
         }, 250);
 
+        countCollected(activeGrid, toRemove);
+
         // Calculate score
         setScore(prev => prev + toRemove.size * 10);
 
@@ -341,6 +416,8 @@ export const useGame = () => {
             explodeTimeoutRef.current = null;
         }, 250);
 
+        countCollected(activeGrid, toRemove);
+
         setScore(prev => prev + toRemove.size * 10);
 
         await new Promise(r => setTimeout(r, 100));
@@ -417,21 +494,21 @@ export const useGame = () => {
 
     const handleRestart = () => {
         setIsPaused(false);
-        setGrid(createBoard());
-        setScore(0);
-        setMoves(30);
+        resetLevelState();
         setLevel(1);
+        resetLevelState(LEVEL_CONFIGS[0]);
         setIsProcessing(false);
         setSelectedTile(null);
-        setValidMoves(0);
     };
 
     return {
         grid,
         score,
         moves,
+        timeLeft,
+        levelConfig,
         level,
-        scoreToNextLevel,
+        collected,
         selectedTile,
         isProcessing,
         isLevelUp,
