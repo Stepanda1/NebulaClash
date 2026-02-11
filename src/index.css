@@ -97,6 +97,15 @@ body::after {
   animation: starsFlicker 4s linear infinite;
 }
 
+@media (max-width: 767px) {
+  body::before,
+  body::after {
+    animation: none;
+    filter: none;
+    opacity: 0.2;
+  }
+}
+
 @keyframes nebulaDrift {
   from {
     transform: scale(1) translate(0, 0);

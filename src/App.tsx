@@ -23,7 +23,7 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-between h-full w-full max-w-none max-h-none sm:max-w-lg sm:max-h-[900px] mx-auto p-2 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]">
+    <div className="flex flex-col items-center justify-between h-full w-full max-w-none max-h-none sm:max-w-lg sm:max-h-[900px] mx-auto p-2 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-none sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]">
 
       {/* Pause Overlay */}
       <AnimatePresence>
@@ -98,7 +98,7 @@ function App() {
         </div>
 
         {/* Board Frame */}
-        <div className="relative p-2 sm:p-3 bg-white/20 backdrop-blur-xl rounded-3xl border-4 border-white/40 shadow-2xl">
+        <div className="relative p-2 sm:p-3 bg-white/15 sm:bg-white/20 backdrop-blur-none sm:backdrop-blur-xl rounded-3xl border-4 border-white/40 shadow-2xl">
           <GameBoard
             grid={grid}
             selectedTile={selectedTile}
