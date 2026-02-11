@@ -15,6 +15,7 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
 
   // Game Over only when moves are 0 AND animations are done
   const isGameOver = moves <= 0 && !isProcessing;
@@ -32,6 +33,7 @@ function App() {
   const handleFinishTutorial = () => {
     localStorage.setItem('match3_tutorial_done', '1');
     setShowTutorial(false);
+    setTutorialStep(0);
   };
 
   return (
@@ -62,7 +64,7 @@ function App() {
 
       <AudioPlayer isMuted={isMuted} volume={volume} />
       {showTutorial && (
-        <TutorialOverlay onFinish={handleFinishTutorial} />
+        <TutorialOverlay onFinish={handleFinishTutorial} onStepChange={setTutorialStep} />
       )}
 
       {/* Top Bar: Progress & Settings */}
@@ -119,6 +121,8 @@ function App() {
             selectedTile={selectedTile}
             explodingIds={explodingIds}
             isLevelTransition={isLevelTransition}
+            showTutorial={showTutorial}
+            tutorialStep={tutorialStep}
             onTileClick={(tile) => !isPaused && handleTileClick(tile)}
           />
         </div>

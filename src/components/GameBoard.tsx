@@ -1,18 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Tile as TileComponent } from './Tile';
 import type { Grid, Tile } from '../types';
-import { COLS, ROWS } from '../logic/boardUtils';
+import { COLS, ROWS, findHintMove } from '../logic/boardUtils';
 
 interface GameBoardProps {
     grid: Grid;
     selectedTile: Tile | null;
     explodingIds: Set<string>;
     isLevelTransition: boolean;
+    showTutorial: boolean;
+    tutorialStep: number;
     onTileClick: (tile: Tile) => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, onTileClick }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, showTutorial, tutorialStep, onTileClick }) => {
     const [itemSize, setItemSize] = useState(52);
     const [isMobile, setIsMobile] = useState(false);
     const GRID_GAP = 4;
@@ -49,6 +51,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         return t;
     }, [grid]);
 
+    const hint = useMemo(() => {
+        if (!showTutorial || tutorialStep !== 0) return null;
+        return findHintMove(grid);
+    }, [grid, showTutorial, tutorialStep]);
+
     return (
         <div
             className="relative bg-black/60 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
@@ -79,6 +86,44 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     />
                 ))}
             </AnimatePresence>
+            {hint && (
+                <div className="absolute inset-0 pointer-events-none">
+                    <motion.div
+                        className="absolute rounded-2xl border-2 border-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.8)]"
+                        style={{
+                            left: hint.from.x * ITEM_SIZE,
+                            top: hint.from.y * ITEM_SIZE,
+                            width: ITEM_SIZE,
+                            height: ITEM_SIZE,
+                        }}
+                        animate={{ scale: [1, 1.08, 1] }}
+                        transition={{ duration: 1.2, repeat: Infinity }}
+                    />
+                    <motion.div
+                        className="absolute rounded-2xl border-2 border-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.8)]"
+                        style={{
+                            left: hint.to.x * ITEM_SIZE,
+                            top: hint.to.y * ITEM_SIZE,
+                            width: ITEM_SIZE,
+                            height: ITEM_SIZE,
+                        }}
+                        animate={{ scale: [1, 1.08, 1] }}
+                        transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
+                    />
+                    <motion.div
+                        className="absolute text-white text-xs font-bold bg-black/60 px-2 py-1 rounded-full"
+                        style={{
+                            left: (hint.from.x + hint.to.x) * ITEM_SIZE * 0.5,
+                            top: Math.min(hint.from.y, hint.to.y) * ITEM_SIZE - 18,
+                            transform: 'translateX(-50%)',
+                        }}
+                        animate={{ opacity: [0.6, 1, 0.6] }}
+                        transition={{ duration: 1.2, repeat: Infinity }}
+                    >
+                        Свайпни
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 };

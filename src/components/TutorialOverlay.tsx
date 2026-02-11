@@ -1,11 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TutorialOverlayProps {
     onFinish: () => void;
+    onStepChange?: (step: number) => void;
 }
 
-export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ onFinish }) => {
+export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ onFinish, onStepChange }) => {
     const steps = useMemo(() => ([
         {
             title: 'Добро пожаловать!',
@@ -27,6 +28,10 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ onFinish }) =>
 
     const [step, setStep] = useState(0);
     const isLast = step === steps.length - 1;
+
+    useEffect(() => {
+        onStepChange?.(step);
+    }, [step, onStepChange]);
 
     return (
         <AnimatePresence>

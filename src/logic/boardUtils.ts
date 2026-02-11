@@ -477,6 +477,35 @@ export const copyGrid = (grid: Grid): Grid => {
     return grid.map(row => row.map(tile => ({ ...tile })));
 };
 
+export const findHintMove = (grid: Grid): { from: { x: number; y: number }; to: { x: number; y: number } } | null => {
+    const trySwap = (g: Grid, x1: number, y1: number, x2: number, y2: number): Grid => {
+        const newGrid = copyGrid(g);
+        const t1 = newGrid[y1][x1];
+        const t2 = newGrid[y2][x2];
+        newGrid[y1][x1] = { ...t2, x: x1, y: y1 };
+        newGrid[y2][x2] = { ...t1, x: x2, y: y2 };
+        return newGrid;
+    };
+
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            if (x + 1 < COLS) {
+                const swapped = trySwap(grid, x, y, x + 1, y);
+                if (findMatches(swapped).size > 0) {
+                    return { from: { x, y }, to: { x: x + 1, y } };
+                }
+            }
+            if (y + 1 < ROWS) {
+                const swapped = trySwap(grid, x, y, x, y + 1);
+                if (findMatches(swapped).size > 0) {
+                    return { from: { x, y }, to: { x, y: y + 1 } };
+                }
+            }
+        }
+    }
+    return null;
+};
+
 export const hasPossibleMoves = (_grid: Grid): boolean => {
     return true;
 };
