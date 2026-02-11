@@ -94,11 +94,11 @@ function App() {
               target={levelConfig.goal.value}
               level={level}
             />
-            <div className="mt-1 text-xs text-white/80 font-semibold tracking-wide">
-              {levelConfig.goal.type === 'score' && `Goal: ${levelConfig.goal.value} pts`}
-              {levelConfig.goal.type === 'collect' && `Goal: ${levelConfig.goal.value} ${levelConfig.goal.color} (${levelConfig.goal.color ? collected[levelConfig.goal.color] : 0}/${levelConfig.goal.value})`}
-              {levelConfig.mode === 'time' && ` • Time: ${Math.max(0, timeLeft)}s`}
-              {levelConfig.mode === 'moves' && ` • Moves: ${moves}`}
+            <div className="mt-1 text-[12px] sm:text-xs text-white font-bold tracking-wide bg-black/70 px-3 py-1 rounded-full border border-white/20">
+              {levelConfig.goal.type === 'score' && `GOAL: ${levelConfig.goal.value} PTS`}
+              {levelConfig.goal.type === 'collect' && `GOAL: ${levelConfig.goal.value} ${levelConfig.goal.color?.toUpperCase()} (${levelConfig.goal.color ? collected[levelConfig.goal.color] : 0}/${levelConfig.goal.value})`}
+              {levelConfig.mode === 'time' && ` • TIME: ${Math.max(0, timeLeft)}s`}
+              {levelConfig.mode === 'moves' && ` • MOVES: ${moves}`}
             </div>
           </div>
 

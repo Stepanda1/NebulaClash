@@ -117,14 +117,18 @@ export const useGame = () => {
             // Separate regular matches from special pieces
             const specialPieceMap = new Map<string, string>();
             const regularMatches = new Set<string>();
+            const allMatched = new Set<string>();
             
             matchMap.forEach((type, tileId) => {
+                allMatched.add(tileId);
                 if (type !== 'match') {
                     specialPieceMap.set(tileId, type);
                 } else {
                     regularMatches.add(tileId);
                 }
             });
+
+            countCollected(activeGrid, allMatched);
 
             // 1. Convert matched 4+ to special pieces and remove only regular 3-matches
             activeGrid = convertToSpecialPieces(activeGrid, matchMap);
@@ -149,7 +153,6 @@ export const useGame = () => {
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
             // 2. Remove only regular matches, keep special pieces
-            countCollected(activeGrid, regularMatches);
             activeGrid = removeMatches(activeGrid, regularMatches);
             setGrid(activeGrid);
 
