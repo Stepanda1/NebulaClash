@@ -477,7 +477,7 @@ export const copyGrid = (grid: Grid): Grid => {
     return grid.map(row => row.map(tile => ({ ...tile })));
 };
 
-export const findHintMove = (grid: Grid): { from: { x: number; y: number }; to: { x: number; y: number } } | null => {
+export const findHintMove = (grid: Grid, requiredType: 'match' | 'bomb' | 'lightning' = 'match'): { from: { x: number; y: number }; to: { x: number; y: number } } | null => {
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
             if ((grid[y][x] as any).type == null) {
@@ -499,7 +499,12 @@ export const findHintMove = (grid: Grid): { from: { x: number; y: number }; to: 
         for (let x = 0; x < COLS; x++) {
             if (x + 1 < COLS) {
                 const swapped = trySwap(grid, x, y, x + 1, y);
-                if (findMatches(swapped).size > 0) {
+                const matches = findMatches(swapped);
+                let hasRequired = false;
+                matches.forEach((type) => {
+                    if (type === requiredType) hasRequired = true;
+                });
+                if (hasRequired) {
                     if (y > 0) {
                         return { from: { x, y }, to: { x: x + 1, y } };
                     }
@@ -507,11 +512,40 @@ export const findHintMove = (grid: Grid): { from: { x: number; y: number }; to: 
             }
             if (y + 1 < ROWS) {
                 const swapped = trySwap(grid, x, y, x, y + 1);
-                if (findMatches(swapped).size > 0) {
+                const matches = findMatches(swapped);
+                let hasRequired = false;
+                matches.forEach((type) => {
+                    if (type === requiredType) hasRequired = true;
+                });
+                if (hasRequired) {
                     if (y > 0) {
                         return { from: { x, y }, to: { x, y: y + 1 } };
                     }
                 }
+            }
+        }
+    }
+    return null;
+};
+
+export const findLightningSwap = (grid: Grid): { from: { x: number; y: number }; to: { x: number; y: number } } | null => {
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            const tile = grid[y][x];
+            if (tile.type !== 'lightning') continue;
+            const candidates = [
+                { x: x + 1, y },
+                { x: x - 1, y },
+                { x, y: y + 1 },
+                { x, y: y - 1 },
+            ];
+            for (const c of candidates) {
+                if (c.x < 0 || c.x >= COLS || c.y < 0 || c.y >= ROWS) continue;
+                if (c.y === 0) continue;
+                const target = grid[c.y][c.x];
+                if ((target as any).type == null) continue;
+                if (y === 0) continue;
+                return { from: { x, y }, to: { x: c.x, y: c.y } };
             }
         }
     }

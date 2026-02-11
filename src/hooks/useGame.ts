@@ -13,12 +13,12 @@ type LevelConfig = {
 };
 
 const LEVEL_CONFIGS: LevelConfig[] = [
-    { mode: 'moves', limit: 30, goal: { type: 'score', value: 800 } },
-    { mode: 'moves', limit: 28, goal: { type: 'collect', value: 12, color: 'red' } },
-    { mode: 'time', limit: 60, goal: { type: 'score', value: 900 } },
-    { mode: 'moves', limit: 26, goal: { type: 'collect', value: 14, color: 'blue' } },
-    { mode: 'time', limit: 75, goal: { type: 'score', value: 1200 } },
-    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 16, color: 'green' } },
+    { mode: 'moves', limit: 28, goal: { type: 'score', value: 1100 } },
+    { mode: 'moves', limit: 26, goal: { type: 'collect', value: 18, color: 'red' } },
+    { mode: 'time', limit: 55, goal: { type: 'score', value: 1300 } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'blue' } },
+    { mode: 'time', limit: 65, goal: { type: 'score', value: 1700 } },
+    { mode: 'moves', limit: 22, goal: { type: 'collect', value: 22, color: 'green' } },
 ];
 
 export const useGame = () => {
@@ -46,6 +46,13 @@ export const useGame = () => {
         purple: 0,
         orange: 0,
     });
+    const [match3Moves, setMatch3Moves] = useState(0);
+    const [bombDoubleActivations, setBombDoubleActivations] = useState(0);
+    const [lightningSwaps, setLightningSwaps] = useState(0);
+    const [matchTick, setMatchTick] = useState(0);
+    const [comboLevel, setComboLevel] = useState(0);
+    const [comboId, setComboId] = useState(0);
+    const [bigBlastId, setBigBlastId] = useState(0);
 
     const levelIndex = (level - 1) % LEVEL_CONFIGS.length;
     const levelConfig = LEVEL_CONFIGS[levelIndex];
@@ -72,6 +79,31 @@ export const useGame = () => {
         setValidMoves(0);
     };
 
+    const spawnSpecial = useCallback((type: 'bomb' | 'lightning') => {
+        setGrid(prev => {
+            const newGrid = copyGrid(prev);
+            const candidates: Tile[] = [];
+            for (let y = 1; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const tile = newGrid[y][x];
+                    if ((tile as any).type == null) continue;
+                    candidates.push(tile);
+                }
+            }
+            if (candidates.length === 0) return prev;
+            const pick = candidates[Math.floor(Math.random() * candidates.length)];
+            const base = (pick.type === 'bomb' || pick.type === 'lightning' || pick.type === 'cross')
+                ? pick.gemType
+                : (pick.type as GemType);
+            newGrid[pick.y][pick.x] = {
+                ...pick,
+                type,
+                gemType: base
+            };
+            return newGrid;
+        });
+    }, []);
+
     const countCollected = useCallback((g: Grid, ids: Set<string>) => {
         if (goal.type !== 'collect') return;
         const color = goal.color;
@@ -80,9 +112,10 @@ export const useGame = () => {
             for (let x = 0; x < COLS; x++) {
                 const tile = g[y][x];
                 if (ids.has(tile.id)) {
+                    if ((tile.type as any) == null) continue;
                     const base = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross')
                         ? tile.gemType
-                        : (tile.type === null ? null : (tile.type as GemType));
+                        : (tile.type as GemType);
                     if (base === color) add++;
                 }
             }
@@ -111,6 +144,7 @@ export const useGame = () => {
         let activeGrid = currentGrid;
         let matchMap = findMatches(activeGrid);
         let iteration = 0;
+        let comboCount = 0;
 
         while (matchMap.size > 0 && iteration < 10) { // Safety break
             // Separate regular matches from special pieces
@@ -127,7 +161,22 @@ export const useGame = () => {
                 }
             });
 
+            if (iteration === 0) {
+                let hasSpecial = false;
+                matchMap.forEach((type) => {
+                    if (type !== 'match') hasSpecial = true;
+                });
+                if (!hasSpecial) {
+                    setMatch3Moves(c => c + 1);
+                }
+            }
+
             countCollected(activeGrid, allMatched);
+            comboCount += 1;
+            setMatchTick(t => t + 1);
+            if (allMatched.size >= 12) {
+                setBigBlastId(id => id + 1);
+            }
 
             // 1. Convert matched 4+ to special pieces and remove only regular 3-matches
             activeGrid = convertToSpecialPieces(activeGrid, matchMap);
@@ -175,8 +224,12 @@ export const useGame = () => {
             iteration++;
         }
 
+        if (comboCount >= 2) {
+            setComboLevel(comboCount);
+            setComboId(id => id + 1);
+        }
         setIsProcessing(false);
-    }, []);
+    }, [countCollected]);
 
     // Level Up Check
     useEffect(() => {
@@ -219,6 +272,68 @@ export const useGame = () => {
         }, 500);
     };
 
+    const attemptSwap = async (firstTile: Tile, secondTile: Tile) => {
+        if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
+        const dx = Math.abs(secondTile.x - firstTile.x);
+        const dy = Math.abs(secondTile.y - firstTile.y);
+        const isAdjacent = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+        if (!isAdjacent) return;
+
+        const selectedWasSpecial = firstTile.type === 'bomb' || firstTile.type === 'lightning';
+        const clickedWasSpecial = secondTile.type === 'bomb' || secondTile.type === 'lightning';
+        const nextGrid = swapTiles(grid, firstTile, secondTile);
+        setGrid(nextGrid);
+        setSelectedTile(null);
+
+        if (selectedWasSpecial || clickedWasSpecial) {
+            setMoves(m => m - 1);
+            setValidMoves(v => v + 1);
+            setIsProcessing(true);
+            const selectedWasLightning = firstTile.type === 'lightning';
+            const clickedWasLightning = secondTile.type === 'lightning';
+            if (selectedWasLightning || clickedWasLightning) {
+                setLightningSwaps(c => c + 1);
+            }
+            if (selectedWasSpecial && clickedWasSpecial) {
+                const t1 = findTileById(nextGrid, firstTile.id);
+                const t2 = findTileById(nextGrid, secondTile.id);
+                if (t1 && t2) {
+                    await activateSpecialCombo(nextGrid, [t1, t2]);
+                } else {
+                    setIsProcessing(false);
+                }
+            } else {
+                const triggerId = selectedWasSpecial ? firstTile.id : secondTile.id;
+                const triggerTile = findTileById(nextGrid, triggerId);
+                if (triggerTile) {
+                    await activateSpecialPiece(nextGrid, triggerTile, false);
+                } else {
+                    setIsProcessing(false);
+                    return;
+                }
+                setIsProcessing(false);
+            }
+            return;
+        }
+
+        const matches = findMatches(nextGrid);
+        if (matches.size > 0) {
+            setMoves(m => m - 1);
+            setValidMoves(v => v + 1);
+            setIsProcessing(true);
+            await processBoard(nextGrid);
+        } else {
+            setIsProcessing(true);
+            await new Promise(r => setTimeout(r, 300));
+            setGrid(grid);
+            setIsProcessing(false);
+        }
+    };
+
+    const handleTileSwipe = async (fromTile: Tile, toTile: Tile) => {
+        await attemptSwap(fromTile, toTile);
+    };
+
     const handleTileClick = async (clickedTile: Tile) => {
         if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
 
@@ -229,6 +344,9 @@ export const useGame = () => {
                 // Activate special piece
                 setIsProcessing(true);
                 setSelectedTile(null);
+                if (tile.type === 'bomb') {
+                    setBombDoubleActivations(c => c + 1);
+                }
                 await activateSpecialPiece(grid, tile);
                 return;
             }
@@ -243,55 +361,7 @@ export const useGame = () => {
             const isAdjacent = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
 
             if (isAdjacent) {
-                // 1. Try Swap
-                const selectedWasSpecial = selectedTile.type === 'bomb' || selectedTile.type === 'lightning';
-                const clickedWasSpecial = clickedTile.type === 'bomb' || clickedTile.type === 'lightning';
-                const nextGrid = swapTiles(grid, selectedTile, clickedTile);
-                setGrid(nextGrid);
-                setSelectedTile(null); // Deselect immediately
-
-                if (selectedWasSpecial || clickedWasSpecial) {
-                    // Trigger special on swap
-                    setMoves(m => m - 1);
-                    setValidMoves(v => v + 1);
-                    setIsProcessing(true);
-                    if (selectedWasSpecial && clickedWasSpecial) {
-                        const t1 = findTileById(nextGrid, selectedTile.id);
-                        const t2 = findTileById(nextGrid, clickedTile.id);
-                        if (t1 && t2) {
-                            await activateSpecialCombo(nextGrid, [t1, t2]);
-                        } else {
-                            setIsProcessing(false);
-                        }
-                    } else {
-                        const triggerId = selectedWasSpecial ? selectedTile.id : clickedTile.id;
-                        const triggerTile = findTileById(nextGrid, triggerId);
-                        if (triggerTile) {
-                            await activateSpecialPiece(nextGrid, triggerTile, false);
-                        } else {
-                            setIsProcessing(false);
-                            return;
-                        }
-                        setIsProcessing(false);
-                    }
-                    return;
-                }
-
-                // 2. Check Valid
-                const matches = findMatches(nextGrid);
-                if (matches.size > 0) {
-                    // Valid move -> Process
-                    setMoves(m => m - 1);
-                    setValidMoves(v => v + 1);
-                    setIsProcessing(true); // Set immediately to prevent gaps
-                    await processBoard(nextGrid);
-                } else {
-                    // Invalid -> Swap back after small delay
-                    setIsProcessing(true);
-                    await new Promise(r => setTimeout(r, 300));
-                    setGrid(grid); // Revert to old grid
-                    setIsProcessing(false);
-                }
+                await attemptSwap(selectedTile, clickedTile);
             } else {
                 // Just select the new one
                 setSelectedTile(clickedTile);
@@ -304,6 +374,7 @@ export const useGame = () => {
         const x = tile.x;
         const y = tile.y;
         let toRemove = new Set<string>();
+        let comboCount = 0;
 
         if (tile.type === 'bomb') {
             toRemove = getBombAffectedTiles(activeGrid, x, y);
@@ -324,6 +395,9 @@ export const useGame = () => {
             explodeTimeoutRef.current = null;
         }, 250);
 
+        if (toRemove.size >= 10) {
+            setBigBlastId(id => id + 1);
+        }
         countCollected(activeGrid, toRemove);
 
         // Calculate score
@@ -363,6 +437,8 @@ export const useGame = () => {
             // Convert and remove
             activeGrid = convertToSpecialPieces(activeGrid, matchMap);
             setGrid(activeGrid);
+            comboCount += 1;
+            setMatchTick(t => t + 1);
 
             let scoreGain = 0;
             matchMap.forEach((type) => {
@@ -398,6 +474,10 @@ export const useGame = () => {
             iteration++;
         }
 
+        if (comboCount >= 2) {
+            setComboLevel(comboCount);
+            setComboId(id => id + 1);
+        }
         if (finalizeProcessing) {
             setIsProcessing(false);
         }
@@ -406,6 +486,7 @@ export const useGame = () => {
     const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
         let activeGrid = copyGrid(currentGrid);
         let toRemove = new Set<string>();
+        let comboCount = 0;
 
         for (const tile of tiles) {
             if (tile.type === 'bomb') {
@@ -428,6 +509,9 @@ export const useGame = () => {
             explodeTimeoutRef.current = null;
         }, 250);
 
+        if (toRemove.size >= 10) {
+            setBigBlastId(id => id + 1);
+        }
         countCollected(activeGrid, toRemove);
 
         setScore(prev => prev + toRemove.size * 10);
@@ -458,6 +542,8 @@ export const useGame = () => {
 
             activeGrid = convertToSpecialPieces(activeGrid, matchMap);
             setGrid(activeGrid);
+            comboCount += 1;
+            setMatchTick(t => t + 1);
 
             let scoreGain = 0;
             matchMap.forEach((type) => {
@@ -492,6 +578,10 @@ export const useGame = () => {
             iteration++;
         }
 
+        if (comboCount >= 2) {
+            setComboLevel(comboCount);
+            setComboId(id => id + 1);
+        }
         setIsProcessing(false);
     }, [countCollected]);
 
@@ -506,8 +596,7 @@ export const useGame = () => {
 
     const handleRestart = () => {
         setIsPaused(false);
-        setLevel(1);
-        resetLevelState(LEVEL_CONFIGS[0]);
+        resetLevelState(levelConfig);
         setIsProcessing(false);
         setSelectedTile(null);
     };
@@ -528,7 +617,16 @@ export const useGame = () => {
         explodingIds,
         isLevelTransition,
         validMoves,
+        match3Moves,
+        bombDoubleActivations,
+        lightningSwaps,
+        spawnSpecial,
+        handleTileSwipe,
         handleTileClick,
+        matchTick,
+        comboLevel,
+        comboId,
+        bigBlastId,
         handleRestart,
         handleNextLevel
     };

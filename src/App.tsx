@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { useGame } from './hooks/useGame';
 import { PauseMenu } from './components/PauseMenu';
@@ -11,10 +11,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, handleTileClick, handleRestart, isLevelUp, handleNextLevel } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, handleNextLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [pendingSpawn, setPendingSpawn] = useState<null | 'bomb' | 'lightning'>(null);
+  const [comboText, setComboText] = useState<string | null>(null);
+  const [comboFlash, setComboFlash] = useState(false);
+  const [shakeActive, setShakeActive] = useState(false);
+  const [pulseActive, setPulseActive] = useState(false);
+  const [comboPos, setComboPos] = useState<{ x: number; y: number }>({ x: 50, y: 18 });
+  const [comboStyle, setComboStyle] = useState<{ color: string; size: string }>({ color: 'text-amber-300', size: 'text-lg sm:text-2xl' });
+  const match3Ref = useRef(0);
+  const bombRef = useRef(0);
+  const lightningRef = useRef(0);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const parallaxEnabledRef = useRef(false);
 
   // Game Over only when limit reached AND animations are done
   const isGameOver = (
@@ -31,20 +44,153 @@ function App() {
     const done = localStorage.getItem('match3_tutorial_done');
     if (!done) {
       setShowTutorial(true);
+      setTutorialStep(0);
     }
     return () => {};
   }, []);
 
   useEffect(() => {
     if (!showTutorial) return;
-    if (validMoves >= 3) {
+    if (tutorialStep === 0 && match3Moves > match3Ref.current) {
+      match3Ref.current = match3Moves;
+      setTutorialStep(1);
+      setPendingSpawn('bomb');
+    }
+  }, [match3Moves, showTutorial, tutorialStep]);
+
+  useEffect(() => {
+    if (!showTutorial) return;
+    if (tutorialStep === 1 && bombDoubleActivations > bombRef.current) {
+      bombRef.current = bombDoubleActivations;
+      setTutorialStep(2);
+      setPendingSpawn('lightning');
+    }
+  }, [bombDoubleActivations, showTutorial, tutorialStep]);
+
+  useEffect(() => {
+    if (!showTutorial) return;
+    if (tutorialStep === 2 && lightningSwaps > lightningRef.current) {
+      lightningRef.current = lightningSwaps;
       localStorage.setItem('match3_tutorial_done', '1');
       setShowTutorial(false);
     }
-  }, [validMoves, showTutorial]);
+  }, [lightningSwaps, showTutorial, tutorialStep]);
+
+  useEffect(() => {
+    if (!pendingSpawn) return;
+    if (isProcessing) return;
+    spawnSpecial(pendingSpawn);
+    setPendingSpawn(null);
+  }, [pendingSpawn, isProcessing, spawnSpecial]);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) return;
+    parallaxEnabledRef.current = true;
+    const onMove = (e: PointerEvent) => {
+      if (!parallaxEnabledRef.current) return;
+      const x = (e.clientX / window.innerWidth - 0.5) * 12;
+      const y = (e.clientY / window.innerHeight - 0.5) * 12;
+      document.body.style.setProperty('--parallax-x', `${x.toFixed(2)}px`);
+      document.body.style.setProperty('--parallax-y', `${y.toFixed(2)}px`);
+    };
+    window.addEventListener('pointermove', onMove);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+    };
+  }, []);
+
+  const getAudioCtx = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new AudioContext();
+    }
+    return audioCtxRef.current;
+  };
+
+  const playClick = () => {
+    if (isMuted || volume <= 0) return;
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = 520;
+    gain.gain.value = 0.05 * volume;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  };
+
+  const playCombo = () => {
+    if (isMuted || volume <= 0) return;
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    const g = ctx.createGain();
+    g.gain.value = 0.08 * volume;
+    g.connect(ctx.destination);
+    const o1 = ctx.createOscillator();
+    const o2 = ctx.createOscillator();
+    o1.type = 'sine';
+    o2.type = 'sine';
+    o1.frequency.value = 320;
+    o2.frequency.value = 480;
+    o1.connect(g);
+    o2.connect(g);
+    const now = ctx.currentTime;
+    o1.start(now);
+    o2.start(now + 0.02);
+    o1.stop(now + 0.18);
+    o2.stop(now + 0.22);
+  };
+
+  useEffect(() => {
+    if (matchTick <= 0) return;
+    playClick();
+  }, [matchTick]);
+
+  useEffect(() => {
+    if (comboId <= 0) return;
+    setComboText(`Combo x${comboLevel}`);
+    setComboPos({
+      x: 22 + Math.random() * 56,
+      y: 18 + Math.random() * 52,
+    });
+    if (comboLevel <= 2) {
+      setComboStyle({ color: 'text-yellow-300', size: 'text-base sm:text-lg' });
+    } else if (comboLevel === 3) {
+      setComboStyle({ color: 'text-orange-300', size: 'text-lg sm:text-xl' });
+    } else {
+      setComboStyle({ color: 'text-red-400', size: 'text-xl sm:text-3xl' });
+    }
+    setComboFlash(true);
+    playCombo();
+    const t1 = window.setTimeout(() => setComboText(null), 900);
+    const t2 = window.setTimeout(() => setComboFlash(false), 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [comboId, comboLevel]);
+
+  useEffect(() => {
+    if (bigBlastId <= 0) return;
+    setShakeActive(true);
+    setPulseActive(true);
+    const t1 = window.setTimeout(() => setShakeActive(false), 350);
+    const t2 = window.setTimeout(() => setPulseActive(false), 600);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [bigBlastId]);
 
   return (
-    <div className="flex flex-col items-center justify-between h-full w-full max-w-none max-h-none sm:max-w-lg sm:max-h-[900px] mx-auto p-2 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-none sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]">
+    <div className={`flex flex-col items-center justify-between h-full w-full max-w-none max-h-none sm:max-w-lg sm:max-h-[900px] mx-auto p-1 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-none sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)] ${shakeActive ? 'shake-soft' : ''}`}>
 
       {/* Pause Overlay */}
       <AnimatePresence>
@@ -71,7 +217,7 @@ function App() {
 
       <AudioPlayer isMuted={isMuted} volume={volume} />
       {showTutorial && (
-        <TutorialHint step={Math.min(validMoves, 2)} />
+        <TutorialHint step={tutorialStep} />
       )}
 
       {/* Top Bar: Progress & Settings */}
@@ -79,7 +225,7 @@ function App() {
         <div className="flex justify-between items-start">
           <button
             onClick={() => setIsPaused(true)}
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0 mt-1 sm:mt-2"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-2 sm:border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0 mt-1 sm:mt-2"
           >
             {/* Pause Icon / Settings */}
             <Settings className="text-white w-5 h-5 sm:w-6 sm:h-6" />
@@ -94,11 +240,12 @@ function App() {
               target={levelConfig.goal.value}
               level={level}
             />
-            <div className="mt-2 text-[14px] sm:text-sm text-slate-900 font-extrabold tracking-wide bg-sky-200/90 px-4 py-2 rounded-2xl border border-white/60 shadow-[0_6px_18px_rgba(14,165,233,0.35)]">
-              {levelConfig.goal.type === 'score' && `GOAL: ${levelConfig.goal.value} PTS`}
-              {levelConfig.goal.type === 'collect' && `GOAL: ${levelConfig.goal.value} ${levelConfig.goal.color?.toUpperCase()} (${levelConfig.goal.color ? collected[levelConfig.goal.color] : 0}/${levelConfig.goal.value})`}
-              {levelConfig.mode === 'time' && ` • TIME: ${Math.max(0, timeLeft)}s`}
-              {levelConfig.mode === 'moves' && ` • MOVES: ${moves}`}
+            <div className="mt-2 w-full max-w-xs sm:max-w-sm px-4 py-2 rounded-2xl bg-sky-200 border border-white/80 shadow-[0_8px_20px_rgba(14,165,233,0.4)] text-slate-900 text-center">
+              <div className="text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase">Goal</div>
+              <div className="text-xl sm:text-2xl font-extrabold leading-tight">
+                {levelConfig.goal.type === 'score' && `${levelConfig.goal.value} pts`}
+                {levelConfig.goal.type === 'collect' && `${levelConfig.goal.value} ${levelConfig.goal.color?.toUpperCase()} (${levelConfig.goal.color ? collected[levelConfig.goal.color] : 0}/${levelConfig.goal.value})`}
+              </div>
             </div>
           </div>
 
@@ -120,13 +267,13 @@ function App() {
       {/* Main Game Area */}
       <div className="flex-1 flex flex-col justify-center items-center w-full relative">
         {/* Score Popup Placeholder */}
-        <div className="flex justify-center items-center h-12 sm:h-16 w-full z-10 shrink-0">
+        <div className="flex justify-center items-center h-8 sm:h-14 w-full z-10 shrink-0 -mt-1 sm:-mt-2 relative">
           <motion.span
             key={score}
             initial={{ scale: 1.5 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.2 }}
-            className="text-4xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] stroke-black"
+            className="text-2xl sm:text-3xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] stroke-black"
             style={{ WebkitTextStroke: '2px #000' }}
           >
             {score}
@@ -134,37 +281,53 @@ function App() {
         </div>
 
         {/* Board Frame */}
-        <div className="relative p-2 sm:p-3 bg-white/15 sm:bg-white/20 backdrop-blur-none sm:backdrop-blur-xl rounded-3xl border-4 border-white/40 shadow-2xl [transform:translateZ(0)]">
+        <div className={`relative p-2 sm:p-3 mb-1 sm:mb-3 bg-white/15 sm:bg-white/20 backdrop-blur-none sm:backdrop-blur-xl rounded-3xl border-4 border-white/40 shadow-2xl [transform:translateZ(0)] ${pulseActive ? 'frame-pulse' : ''}`}>
+          {comboFlash && (
+            <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle,rgba(255,255,255,0.45)_0%,rgba(59,130,246,0.15)_40%,rgba(0,0,0,0)_70%)] animate-[comboFlash_0.4s_ease-out]" />
+          )}
+          {comboText && (
+            <motion.div
+              className={`pointer-events-none absolute z-50 font-black drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] ${comboStyle.color} ${comboStyle.size}`}
+              style={{ left: `${comboPos.x}%`, top: `${comboPos.y}%`, transform: 'translate(-50%, -50%)' }}
+              initial={{ opacity: 0, y: 6, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {comboText}
+            </motion.div>
+          )}
           <GameBoard
             grid={grid}
             selectedTile={selectedTile}
             explodingIds={explodingIds}
             isLevelTransition={isLevelTransition}
             showTutorial={showTutorial}
+            tutorialStep={tutorialStep}
             isProcessing={isProcessing}
             onTileClick={(tile) => !isPaused && handleTileClick(tile)}
+            onTileSwipe={(from, to) => !isPaused && handleTileSwipe(from, to)}
           />
         </div>
       </div>
 
       {/* Bottom Bar: Moves (Left) & Boosters (Right) */}
-      <div className="w-full z-10 pb-3 sm:pb-6 px-2 sm:px-4">
+      <div className="w-full z-10 pb-1 sm:pb-6 px-2 sm:px-4 -mt-1 sm:mt-0">
         <div className="flex items-end justify-between max-w-md mx-auto relative">
           {/* Moves Counter (Bottom Left) */}
-          <div className="flex flex-col items-center justify-center bg-blue-600 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-4 border-white shadow-xl relative z-20">
-            <span className="text-white/80 text-[10px] font-bold uppercase mt-1">
+          <div className="flex flex-col items-center justify-center bg-blue-600 w-14 h-14 sm:w-20 sm:h-20 rounded-2xl border-2 sm:border-4 border-white shadow-xl relative z-20">
+            <span className="text-white/80 text-[8px] sm:text-[10px] font-bold uppercase mt-1">
               {levelConfig.mode === 'time' ? 'Time' : 'Moves'}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-white leading-none drop-shadow-md">
+            <span className="text-xl sm:text-3xl font-black text-white leading-none drop-shadow-md">
               {levelConfig.mode === 'time' ? `${Math.max(0, timeLeft)}s` : moves}
             </span>
           </div>
 
           {/* Boosters (Right side) */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 flex items-center gap-2 shadow-xl mb-1 ml-3 sm:ml-4 flex-1 justify-end">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-1.5 flex items-center gap-1.5 shadow-xl mb-1 ml-2 sm:ml-4 flex-1 justify-end">
             {[1, 2, 3].map((i) => (
-              <button key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500/20 hover:bg-purple-500/40 border-2 border-purple-400/30 rounded-xl flex items-center justify-center transition-all active:scale-95 group">
-                <div className="w-5 h-5 sm:w-6 sm:h-6 bg-purple-400/20 rounded-md rotate-45 border border-purple-300/20" />
+              <button key={i} className="w-7 h-7 sm:w-12 sm:h-12 bg-purple-500/20 hover:bg-purple-500/40 border-2 border-purple-400/30 rounded-xl flex items-center justify-center transition-all active:scale-95 group">
+                <div className="w-3 h-3 sm:w-6 sm:h-6 bg-purple-400/20 rounded-md rotate-45 border border-purple-300/20" />
               </button>
             ))}
           </div>

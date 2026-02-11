@@ -10,6 +10,9 @@ interface TileProps {
     isMobile: boolean;
     isLevelTransition: boolean;
     onClick: (tile: TileType) => void;
+    onPointerDown: (tile: TileType) => void;
+    onPointerEnter: (tile: TileType) => void;
+    onPointerUp: () => void;
     size: number;
 }
 
@@ -104,7 +107,7 @@ const getGemConfig = (type: TType) => {
     }
 };
 
-export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMobile, isLevelTransition, onClick, size }) => {
+export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMobile, isLevelTransition, onClick, onPointerDown, onPointerEnter, onPointerUp, size }) => {
     // For special pieces, use gemType for visual rendering, type for special effect
     const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross') 
         ? tile.gemType 
@@ -142,7 +145,13 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                 cursor: 'pointer',
                 willChange: "transform"
             }}
+            data-tile="true"
+            data-x={tile.x}
+            data-y={tile.y}
             onClick={() => onClick(tile)}
+            onPointerDown={() => onPointerDown(tile)}
+            onPointerEnter={() => onPointerEnter(tile)}
+            onPointerUp={onPointerUp}
         >
             <div className="w-full h-full relative flex items-center justify-center">
                 {/* Volumetric Glow */}
