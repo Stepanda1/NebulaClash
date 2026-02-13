@@ -111,6 +111,19 @@ body::after {
   }
 }
 
+body.low-performance::before,
+body.low-performance::after {
+  animation: none !important;
+  filter: none !important;
+  transform: none !important;
+  opacity: 0.15;
+}
+
+body.low-performance * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+}
+
 @keyframes nebulaDrift {
   from {
     transform: scale(1) translate(0, 0);

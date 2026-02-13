@@ -12,11 +12,12 @@ interface GameBoardProps {
     showTutorial: boolean;
     tutorialStep: number;
     isProcessing: boolean;
+    lowPerfMode: boolean;
     onTileClick: (tile: Tile) => void;
     onTileSwipe: (from: Tile, to: Tile) => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, showTutorial, tutorialStep, isProcessing, onTileClick, onTileSwipe }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, showTutorial, tutorialStep, isProcessing, lowPerfMode, onTileClick, onTileSwipe }) => {
     const [itemSize, setItemSize] = useState(52);
     const [isMobile, setIsMobile] = useState(false);
     const GRID_GAP = 4;
@@ -84,7 +85,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
 
     return (
         <div
-            className="relative bg-black/60 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
+            className={`relative bg-black/60 ${lowPerfMode ? '' : 'backdrop-blur-xl'} rounded-2xl border border-white/10 ${lowPerfMode ? 'shadow-lg' : 'shadow-2xl'} overflow-hidden`}
             style={{
                 width: BOARD_WIDTH,
                 height: BOARD_HEIGHT,
@@ -119,7 +120,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     backgroundSize: `${ITEM_SIZE}px ${ITEM_SIZE}px`
                 }}
             />
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode={lowPerfMode ? "sync" : "popLayout"}>
                 {tiles.filter(t => t.type).map(tile => (
                     <TileComponent
                         key={tile.id}
@@ -128,6 +129,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         isExploding={explodingIds.has(tile.id)}
                         isMobile={isMobile}
                         isLevelTransition={isLevelTransition}
+                        lowPerfMode={lowPerfMode}
                         onClick={() => onTileClick(tile)}
                         onPointerDown={(t) => {
                             draggingRef.current = true;
@@ -163,8 +165,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
-                        animate={{ scale: [1, 1.08, 1] }}
-                        transition={{ duration: 1.2, repeat: Infinity }}
+                        animate={lowPerfMode ? { opacity: 0.95 } : { scale: [1, 1.08, 1] }}
+                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
                     />
                     <motion.div
                         className="absolute rounded-2xl border-2 border-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.8)]"
@@ -174,8 +176,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
-                        animate={{ scale: [1, 1.08, 1] }}
-                        transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
+                        animate={lowPerfMode ? { opacity: 0.95 } : { scale: [1, 1.08, 1] }}
+                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity, delay: 0.2 }}
                     />
                     <motion.div
                         className="absolute z-50 text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
@@ -183,8 +185,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                             left: Math.max(6, Math.min(BOARD_WIDTH - 60, (hint.from.x + hint.to.x) * ITEM_SIZE * 0.5 - 30)),
                             top: Math.max(6, Math.min(BOARD_HEIGHT - 22, Math.min(hint.from.y, hint.to.y) * ITEM_SIZE - 18)),
                         }}
-                        animate={{ opacity: [0.6, 1, 0.6] }}
-                        transition={{ duration: 1.2, repeat: Infinity }}
+                        animate={lowPerfMode ? { opacity: 0.95 } : { opacity: [0.6, 1, 0.6] }}
+                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
                     >
                         Swipe
                     </motion.div>
@@ -200,8 +202,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
-                        animate={{ scale: [1, 1.08, 1] }}
-                        transition={{ duration: 1.2, repeat: Infinity }}
+                        animate={lowPerfMode ? { opacity: 0.95 } : { scale: [1, 1.08, 1] }}
+                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
                     />
                     <motion.div
                         className="absolute z-50 text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
@@ -209,8 +211,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                             left: Math.max(6, Math.min(BOARD_WIDTH - 80, bombHint.x * ITEM_SIZE - 10)),
                             top: Math.max(6, Math.min(BOARD_HEIGHT - 22, bombHint.y * ITEM_SIZE - 20)),
                         }}
-                        animate={{ opacity: [0.6, 1, 0.6] }}
-                        transition={{ duration: 1.2, repeat: Infinity }}
+                        animate={lowPerfMode ? { opacity: 0.95 } : { opacity: [0.6, 1, 0.6] }}
+                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
                     >
                         Double tap
                     </motion.div>

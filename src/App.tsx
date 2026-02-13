@@ -42,6 +42,7 @@ function App() {
   const [pulseActive, setPulseActive] = useState(false);
   const [comboPos, setComboPos] = useState<{ x: number; y: number }>({ x: 50, y: 18 });
   const [comboStyle, setComboStyle] = useState<{ color: string; size: string }>({ color: 'text-amber-300', size: 'text-lg sm:text-2xl' });
+  const [lowPerfMode, setLowPerfMode] = useState(false);
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
@@ -122,8 +123,23 @@ function App() {
   }, [pendingSpawn, isProcessing, spawnSpecial, tutorialActive]);
 
   useEffect(() => {
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const lowMemory = (nav.deviceMemory ?? 8) <= 4;
+    const lowCpu = (nav.hardwareConcurrency ?? 8) <= 4;
+    setLowPerfMode(prefersReduced || lowMemory || lowCpu);
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle('low-performance', lowPerfMode);
+    return () => {
+      document.body.classList.remove('low-performance');
+    };
+  }, [lowPerfMode]);
+
+  useEffect(() => {
     const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) return;
+    if (prefersReduced || lowPerfMode) return;
     parallaxEnabledRef.current = true;
     const onMove = (e: PointerEvent) => {
       if (!parallaxEnabledRef.current) return;
@@ -136,7 +152,7 @@ function App() {
     return () => {
       window.removeEventListener('pointermove', onMove);
     };
-  }, []);
+  }, [lowPerfMode]);
 
   const getAudioCtx = () => {
     if (!audioCtxRef.current) {
@@ -192,6 +208,7 @@ function App() {
   }, [matchTick]);
 
   useEffect(() => {
+    if (lowPerfMode) return;
     if (comboId <= 0) return;
     setComboText(`Combo x${comboLevel}`);
     setComboPos({
@@ -213,9 +230,10 @@ function App() {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [comboId, comboLevel]);
+  }, [comboId, comboLevel, lowPerfMode]);
 
   useEffect(() => {
+    if (lowPerfMode) return;
     if (bigBlastId <= 0) return;
     setShakeActive(true);
     setPulseActive(true);
@@ -225,10 +243,10 @@ function App() {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [bigBlastId]);
+  }, [bigBlastId, lowPerfMode]);
 
   return (
-    <div className={`flex flex-col items-center justify-between h-full w-full max-w-none max-h-none sm:max-w-lg sm:max-h-[900px] mx-auto p-1 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-none sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)] ${shakeActive ? 'shake-soft' : ''}`}>
+    <div className={`flex flex-col items-center justify-between h-full w-full max-w-none max-h-none sm:max-w-lg sm:max-h-[900px] mx-auto p-1 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-none ${lowPerfMode ? 'sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-lg' : 'sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]'} ${shakeActive ? 'shake-soft' : ''}`}>
 
       {/* Pause Overlay */}
       <AnimatePresence>
@@ -315,9 +333,9 @@ function App() {
         <div className="flex justify-center items-center h-8 sm:h-14 w-full z-10 shrink-0 -mt-1 sm:-mt-2 relative">
           <motion.span
             key={score}
-            initial={{ scale: 1.5 }}
+            initial={lowPerfMode ? false : { scale: 1.5 }}
             animate={{ scale: 1 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: lowPerfMode ? 0.1 : 0.2 }}
             className="text-2xl sm:text-3xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] stroke-black"
             style={{ WebkitTextStroke: '2px #000' }}
           >
@@ -326,11 +344,11 @@ function App() {
         </div>
 
         {/* Board Frame */}
-        <div className={`relative p-2 sm:p-3 mb-1 sm:mb-3 bg-white/15 sm:bg-white/20 backdrop-blur-none sm:backdrop-blur-xl rounded-3xl border-4 border-white/40 shadow-2xl [transform:translateZ(0)] ${pulseActive ? 'frame-pulse' : ''}`}>
-          {comboFlash && (
+        <div className={`relative p-2 sm:p-3 mb-1 sm:mb-3 bg-white/15 sm:bg-white/20 backdrop-blur-none ${lowPerfMode ? '' : 'sm:backdrop-blur-xl'} rounded-3xl border-4 border-white/40 ${lowPerfMode ? 'shadow-lg' : 'shadow-2xl'} [transform:translateZ(0)] ${pulseActive ? 'frame-pulse' : ''}`}>
+          {!lowPerfMode && comboFlash && (
             <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle,rgba(255,255,255,0.45)_0%,rgba(59,130,246,0.15)_40%,rgba(0,0,0,0)_70%)] animate-[comboFlash_0.4s_ease-out]" />
           )}
-          {comboText && (
+          {!lowPerfMode && comboText && (
             <motion.div
               className={`pointer-events-none absolute z-50 font-black drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] ${comboStyle.color} ${comboStyle.size}`}
               style={{ left: `${comboPos.x}%`, top: `${comboPos.y}%`, transform: 'translate(-50%, -50%)' }}
@@ -349,6 +367,7 @@ function App() {
             showTutorial={tutorialActive}
             tutorialStep={tutorialStep}
             isProcessing={isProcessing}
+            lowPerfMode={lowPerfMode}
             onTileClick={(tile) => !isPaused && handleTileClick(tile)}
             onTileSwipe={(from, to) => !isPaused && handleTileSwipe(from, to)}
           />

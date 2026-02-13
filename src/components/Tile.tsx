@@ -9,6 +9,7 @@ interface TileProps {
     isExploding: boolean;
     isMobile: boolean;
     isLevelTransition: boolean;
+    lowPerfMode: boolean;
     onClick: (tile: TileType) => void;
     onPointerDown: (tile: TileType) => void;
     onPointerEnter: (tile: TileType) => void;
@@ -107,7 +108,7 @@ const getGemConfig = (type: TType) => {
     }
 };
 
-export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMobile, isLevelTransition, onClick, onPointerDown, onPointerEnter, onPointerUp, size }) => {
+export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMobile, isLevelTransition, lowPerfMode, onClick, onPointerDown, onPointerEnter, onPointerUp, size }) => {
     // For special pieces, use gemType for visual rendering, type for special effect
     const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross') 
         ? tile.gemType 
@@ -119,11 +120,11 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
 
     if (!config) return null;
 
-    const lowFX = isMobile || isLevelTransition;
+    const lowFX = isMobile || isLevelTransition || lowPerfMode;
 
     return (
         <motion.div
-            layoutId={isLevelTransition ? undefined : tile.id}
+            layoutId={lowFX ? undefined : tile.id}
             initial={lowFX ? { opacity: 0, scale: 0.9 } : { y: -500, opacity: 0, scale: 0 }}
             animate={{
                 x: tile.x * size,
@@ -133,7 +134,9 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                 zIndex: isSelected ? 50 : 10
             }}
             transition={{
-                layout: { type: "spring", stiffness: 450, damping: 35 },
+                layout: lowFX
+                    ? { type: "tween", duration: 0.08 }
+                    : { type: "spring", stiffness: 450, damping: 35 },
                 y: { type: "tween", ease: "easeOut", duration: lowFX ? 0.12 : 0.25 }
             }}
             exit={{ scale: 0, opacity: 0, transition: { duration: 0.2 } }}
@@ -283,23 +286,27 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                 {tile.type === 'bomb' && (
                     <motion.div
                         className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                        animate={lowFX ? { opacity: 0.95 } : { rotate: 360 }}
+                        transition={lowFX ? undefined : { duration: 6, repeat: Infinity, ease: "linear" }}
                     >
                         <div className="relative w-9 h-9">
                             <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,#fff6b8,40%,#fbbf24_60%,#b45309_100%)] shadow-[0_0_18px_rgba(251,191,36,0.8)]" />
                             <div className="absolute inset-1 rounded-full border border-yellow-200/60" />
                             <div className="absolute inset-[-6px] rounded-full border-2 border-yellow-300/50 blur-[1px]" />
+                            {!lowFX && (
                             <motion.div
                                 className="absolute inset-0 rounded-full"
                                 animate={{ boxShadow: ["0 0 8px rgba(251,191,36,0.4)", "0 0 20px rgba(251,191,36,0.9)", "0 0 8px rgba(251,191,36,0.4)"] }}
                                 transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
                             />
+                            )}
+                            {!lowFX && (
                             <motion.div
                                 className="absolute -top-1 left-1/2 h-2 w-4 -translate-x-1/2 rounded-full bg-gradient-to-r from-orange-200 via-yellow-200 to-orange-200 blur-[1px]"
                                 animate={{ scaleX: [0.9, 1.1, 0.9], opacity: [0.6, 1, 0.6] }}
                                 transition={{ duration: 1.2, repeat: Infinity }}
                             />
+                            )}
                         </div>
                     </motion.div>
                 )}
@@ -307,8 +314,8 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                 {tile.type === 'lightning' && (
                     <motion.div
                         className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
-                        animate={{ opacity: [1, 0.6, 1] }}
-                        transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                        animate={lowFX ? { opacity: 0.95 } : { opacity: [1, 0.6, 1] }}
+                        transition={lowFX ? undefined : { duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
                     >
                         <div className="relative w-8 h-8">
                             <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.65),rgba(14,116,144,0.0))]" />
@@ -322,6 +329,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                 </defs>
                                 <path d="M52 5 L32 52 L54 52 L28 95 L72 36 L48 36 Z" fill={`url(#bolt-${tile.id})`} />
                             </svg>
+                            {!lowFX && (
                             <motion.div
                                 className="absolute inset-0"
                                 animate={{ rotate: [0, -6, 0] }}
@@ -331,6 +339,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                     <path d="M58 12 L40 46 L56 46 L36 86 L70 38 L52 38 Z" fill="#a5f3fc" />
                                 </svg>
                             </motion.div>
+                            )}
                         </div>
                     </motion.div>
                 )}
@@ -338,8 +347,8 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                 {tile.type === 'cross' && (
                     <motion.div
                         className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
+                        animate={lowFX ? { opacity: 0.95 } : { scale: [1, 1.2, 1] }}
+                        transition={lowFX ? undefined : { duration: 1.5, repeat: Infinity }}
                     >
                         <svg viewBox="0 0 100 100" className="w-7 h-7 drop-shadow-lg">
                             <line x1="30" y1="30" x2="70" y2="70" stroke="magenta" strokeWidth="4" strokeLinecap="round"/>
