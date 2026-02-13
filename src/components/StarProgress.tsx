@@ -1,21 +1,25 @@
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import { clsx } from 'clsx';
+import type { Language } from '../i18n';
+import { COPY } from '../i18n';
 
 interface StarProgressProps {
     score: number;
     target: number;
     level: number;
+    language: Language;
 }
 
-export const StarProgress: React.FC<StarProgressProps> = ({ score, target, level }) => {
+export const StarProgress: React.FC<StarProgressProps> = ({ score, target, level, language }) => {
+    const t = COPY[language];
     const progress = Math.min(100, (score / target) * 100);
 
     return (
         <div className="w-full max-w-xs flex flex-col items-center gap-1 relative z-20">
             {/* Level Badge */}
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-1 rounded-full border-2 border-white/20 shadow-lg mb-1">
-                <span className="text-white font-black text-sm uppercase tracking-widest drop-shadow-sm">Level {level}</span>
+                <span className="text-white font-black text-sm uppercase tracking-widest drop-shadow-sm">{t.level(level)}</span>
             </div>
 
             {/* Progress Bar Container - Overflow visible to show stars on top, OR hidden to clip? 

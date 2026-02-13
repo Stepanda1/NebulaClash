@@ -10,6 +10,8 @@ import { Coffee, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
 import type { GemType } from './types';
+import type { Language } from './i18n';
+import { COPY } from './i18n';
 
 const GOAL_GEM_STYLE: Record<GemType, string> = {
   red: 'from-rose-300 via-rose-500 to-red-900',
@@ -43,12 +45,14 @@ function App() {
   const [comboPos, setComboPos] = useState<{ x: number; y: number }>({ x: 50, y: 18 });
   const [comboStyle, setComboStyle] = useState<{ color: string; size: string }>({ color: 'text-amber-300', size: 'text-lg sm:text-2xl' });
   const [lowPerfMode, setLowPerfMode] = useState(false);
+  const [language, setLanguage] = useState<Language>('ru');
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
+  const t = COPY[language];
 
   // Game Over only when limit reached AND animations are done
   const isGameOver = (
@@ -74,6 +78,18 @@ function App() {
     setTutorialStep(0);
     setPendingSpawn(null);
   };
+
+  const onLanguageChange = (nextLanguage: Language) => {
+    setLanguage(nextLanguage);
+    localStorage.setItem('match3_language', nextLanguage);
+  };
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('match3_language');
+    if (savedLanguage === 'ru' || savedLanguage === 'en') {
+      setLanguage(savedLanguage);
+    }
+  }, []);
 
   useEffect(() => {
     if (level === 1) {
@@ -210,7 +226,7 @@ function App() {
   useEffect(() => {
     if (lowPerfMode) return;
     if (comboId <= 0) return;
-    setComboText(`Combo x${comboLevel}`);
+    setComboText(t.combo(comboLevel));
     setComboPos({
       x: 22 + Math.random() * 56,
       y: 18 + Math.random() * 52,
@@ -230,7 +246,7 @@ function App() {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [comboId, comboLevel, lowPerfMode]);
+  }, [comboId, comboLevel, lowPerfMode, t]);
 
   useEffect(() => {
     if (lowPerfMode) return;
@@ -261,19 +277,21 @@ function App() {
               setVolume(v);
               if (v > 0 && isMuted) setIsMuted(false);
             }}
+            language={language}
+            onLanguageChange={onLanguageChange}
           />
         )}
         {isGameOver && (
-          <GameOverMenu score={score} onRestart={onRestart} />
+          <GameOverMenu score={score} onRestart={onRestart} language={language} />
         )}
         {isLevelUp && (
-          <LevelUpModal level={level} score={score} onNextLevel={handleNextLevel} />
+          <LevelUpModal level={level} score={score} onNextLevel={handleNextLevel} language={language} />
         )}
       </AnimatePresence>
 
       <AudioPlayer isMuted={isMuted} volume={volume} />
       {tutorialActive && (
-        <TutorialHint step={tutorialStep} onSkip={onSkipTutorial} />
+        <TutorialHint step={tutorialStep} onSkip={onSkipTutorial} language={language} />
       )}
 
       {/* Top Bar: Progress & Settings */}
@@ -295,11 +313,12 @@ function App() {
                 : (levelConfig.goal.color ? collected[levelConfig.goal.color] : 0)}
               target={levelConfig.goal.value}
               level={level}
+              language={language}
             />
             <div className="mt-2 w-full max-w-xs sm:max-w-sm px-4 py-2 rounded-2xl bg-sky-200 border border-white/80 shadow-[0_8px_20px_rgba(14,165,233,0.4)] text-slate-900 text-center">
-              <div className="text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase">Goal</div>
+              <div className="text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase">{t.goal}</div>
               <div className="text-xl sm:text-2xl font-extrabold leading-tight">
-                {levelConfig.goal.type === 'score' && `${levelConfig.goal.value} points`}
+                {levelConfig.goal.type === 'score' && `${levelConfig.goal.value} ${t.points}`}
                 {levelConfig.goal.type === 'collect' && (
                   <span className="inline-flex items-center gap-2">
                     {levelConfig.goal.color && <GoalGemIcon color={levelConfig.goal.color} />}
@@ -322,7 +341,7 @@ function App() {
             aria-label="Поддержать разработчика"
           >
             <Coffee className="w-4 h-4" />
-            <span className="text-[9px] sm:text-[10px]">Donate</span>
+            <span className="text-[9px] sm:text-[10px]">{t.donate}</span>
           </a>
         </div>
       </div>
@@ -368,6 +387,7 @@ function App() {
             tutorialStep={tutorialStep}
             isProcessing={isProcessing}
             lowPerfMode={lowPerfMode}
+            language={language}
             onTileClick={(tile) => !isPaused && handleTileClick(tile)}
             onTileSwipe={(from, to) => !isPaused && handleTileSwipe(from, to)}
           />
@@ -380,7 +400,7 @@ function App() {
           {/* Moves Counter (Bottom Left) */}
           <div className="flex flex-col items-center justify-center bg-blue-600 w-14 h-14 sm:w-20 sm:h-20 rounded-2xl border-2 sm:border-4 border-white shadow-xl relative z-20">
             <span className="text-white/80 text-[8px] sm:text-[10px] font-bold uppercase mt-1">
-              {levelConfig.mode === 'time' ? 'Time' : 'Moves'}
+              {levelConfig.mode === 'time' ? t.time : t.moves}
             </span>
             <span className="text-xl sm:text-3xl font-black text-white leading-none drop-shadow-md">
               {levelConfig.mode === 'time' ? `${Math.max(0, timeLeft)}s` : moves}

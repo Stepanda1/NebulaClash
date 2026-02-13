@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Tile as TileComponent } from './Tile';
 import type { Grid, Tile } from '../types';
 import { COLS, ROWS, findHintMove, findLightningSwap } from '../logic/boardUtils';
+import type { Language } from '../i18n';
+import { COPY } from '../i18n';
 
 interface GameBoardProps {
     grid: Grid;
@@ -13,11 +15,13 @@ interface GameBoardProps {
     tutorialStep: number;
     isProcessing: boolean;
     lowPerfMode: boolean;
+    language: Language;
     onTileClick: (tile: Tile) => void;
     onTileSwipe: (from: Tile, to: Tile) => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, showTutorial, tutorialStep, isProcessing, lowPerfMode, onTileClick, onTileSwipe }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explodingIds, isLevelTransition, showTutorial, tutorialStep, isProcessing, lowPerfMode, language, onTileClick, onTileSwipe }) => {
+    const t = COPY[language];
     const [itemSize, setItemSize] = useState(52);
     const [isMobile, setIsMobile] = useState(false);
     const GRID_GAP = 4;
@@ -188,7 +192,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         animate={lowPerfMode ? { opacity: 0.95 } : { opacity: [0.6, 1, 0.6] }}
                         transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
                     >
-                        Swipe
+                        {t.swipe}
                     </motion.div>
                 </div>
             )}
@@ -214,7 +218,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         animate={lowPerfMode ? { opacity: 0.95 } : { opacity: [0.6, 1, 0.6] }}
                         transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
                     >
-                        Double tap
+                        {t.doubleTap}
                     </motion.div>
                 </div>
             )}

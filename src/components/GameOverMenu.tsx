@@ -1,12 +1,17 @@
 import { motion } from 'framer-motion';
 import { RotateCcw } from 'lucide-react';
+import type { Language } from '../i18n';
+import { COPY } from '../i18n';
 
 interface GameOverMenuProps {
     score: number;
     onRestart: () => void;
+    language: Language;
 }
 
-export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, onRestart }) => {
+export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, onRestart, language }) => {
+    const t = COPY[language];
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -23,12 +28,12 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, onRestart }) 
                 <div className="absolute top-0 inset-x-0 h-32 bg-blue-500/20 blur-3xl rounded-full -translate-y-1/2 pointer-events-none"></div>
 
                 <div className="space-y-1 relative z-10">
-                    <h2 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-lg">Out of Moves!</h2>
-                    <p className="text-slate-400 font-medium">Time to shuffle things up?</p>
+                    <h2 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-lg">{t.outOfMoves}</h2>
+                    <p className="text-slate-400 font-medium">{t.shufflePrompt}</p>
                 </div>
 
                 <div className="flex flex-col items-center gap-2 py-4 relative z-10">
-                    <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Final Score</span>
+                    <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.finalScore}</span>
                     <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 to-amber-600 drop-shadow-sm filter">
                         {score.toLocaleString()}
                     </div>
@@ -40,7 +45,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, onRestart }) 
                 >
                     <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-2xl"></div>
                     <RotateCcw size={24} className="text-white relative z-10 group-hover:-rotate-180 transition-transform duration-500" />
-                    <span className="text-xl font-bold text-white uppercase tracking-wider relative z-10">Try Again</span>
+                    <span className="text-xl font-bold text-white uppercase tracking-wider relative z-10">{t.tryAgain}</span>
                 </button>
             </motion.div>
         </motion.div>
