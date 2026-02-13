@@ -9,6 +9,25 @@ import { AudioPlayer } from './components/AudioPlayer';
 import { Coffee, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
+import type { GemType } from './types';
+
+const GOAL_GEM_STYLE: Record<GemType, string> = {
+  red: 'from-rose-300 via-rose-500 to-red-900',
+  blue: 'from-sky-300 via-blue-500 to-blue-900',
+  green: 'from-emerald-300 via-emerald-500 to-emerald-900',
+  yellow: 'from-yellow-200 via-amber-400 to-amber-800',
+  purple: 'from-fuchsia-300 via-violet-500 to-violet-900',
+  orange: 'from-orange-200 via-orange-500 to-orange-900',
+};
+
+function GoalGemIcon({ color }: { color: GemType }) {
+  return (
+    <span
+      className={`inline-block h-5 w-5 rotate-45 rounded-[0.3rem] bg-gradient-to-br ${GOAL_GEM_STYLE[color]} align-middle shadow-[0_2px_6px_rgba(0,0,0,0.35)] sm:h-6 sm:w-6`}
+      aria-hidden="true"
+    />
+  );
+}
 
 function App() {
   const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, handleNextLevel } = useGame();
@@ -256,8 +275,15 @@ function App() {
             <div className="mt-2 w-full max-w-xs sm:max-w-sm px-4 py-2 rounded-2xl bg-sky-200 border border-white/80 shadow-[0_8px_20px_rgba(14,165,233,0.4)] text-slate-900 text-center">
               <div className="text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase">Goal</div>
               <div className="text-xl sm:text-2xl font-extrabold leading-tight">
-                {levelConfig.goal.type === 'score' && `${levelConfig.goal.value} pts`}
-                {levelConfig.goal.type === 'collect' && `${levelConfig.goal.value} ${levelConfig.goal.color?.toUpperCase()} (${levelConfig.goal.color ? collected[levelConfig.goal.color] : 0}/${levelConfig.goal.value})`}
+                {levelConfig.goal.type === 'score' && `${levelConfig.goal.value} points`}
+                {levelConfig.goal.type === 'collect' && (
+                  <span className="inline-flex items-center gap-2">
+                    {levelConfig.goal.color && <GoalGemIcon color={levelConfig.goal.color} />}
+                    <span>
+                      {levelConfig.goal.value} ({levelConfig.goal.color ? collected[levelConfig.goal.color] : 0}/{levelConfig.goal.value})
+                    </span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
