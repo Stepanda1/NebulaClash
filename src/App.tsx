@@ -68,6 +68,12 @@ function App() {
     // setIsPaused(false) is handled in handleRestart hook
   };
 
+  const onSkipTutorial = () => {
+    setShowTutorial(false);
+    setTutorialStep(0);
+    setPendingSpawn(null);
+  };
+
   useEffect(() => {
     if (level === 1) {
       setShowTutorial(true);
@@ -249,7 +255,7 @@ function App() {
 
       <AudioPlayer isMuted={isMuted} volume={volume} />
       {tutorialActive && (
-        <TutorialHint step={tutorialStep} />
+        <TutorialHint step={tutorialStep} onSkip={onSkipTutorial} />
       )}
 
       {/* Top Bar: Progress & Settings */}
