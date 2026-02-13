@@ -19,6 +19,9 @@ const LEVEL_CONFIGS: LevelConfig[] = [
     { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'blue' } },
     { mode: 'time', limit: 65, goal: { type: 'score', value: 1700 } },
     { mode: 'moves', limit: 22, goal: { type: 'collect', value: 22, color: 'green' } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'yellow' } },
+    { mode: 'time', limit: 60, goal: { type: 'collect', value: 18, color: 'purple' } },
+    { mode: 'moves', limit: 23, goal: { type: 'collect', value: 20, color: 'orange' } },
 ];
 
 export const useGame = () => {
