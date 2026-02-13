@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Grid, Tile, GemType } from '../types';
-import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, expandSpecialChain, ROWS, COLS } from '../logic/boardUtils';
+import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, expandSpecialChain, hasPossibleMoves, reshuffleBoard, ROWS, COLS } from '../logic/boardUtils';
 
 type Goal =
     | { type: 'score'; value: number }
@@ -78,6 +78,11 @@ export const useGame = () => {
         });
         setValidMoves(0);
     };
+
+    const ensurePlayableGrid = useCallback((candidate: Grid): Grid => {
+        if (hasPossibleMoves(candidate)) return candidate;
+        return reshuffleBoard(candidate);
+    }, []);
 
     const spawnSpecial = useCallback((type: 'bomb' | 'lightning') => {
         setGrid(prev => {
@@ -228,8 +233,13 @@ export const useGame = () => {
             setComboLevel(comboCount);
             setComboId(id => id + 1);
         }
+        const playableGrid = ensurePlayableGrid(activeGrid);
+        if (playableGrid !== activeGrid) {
+            activeGrid = playableGrid;
+            setGrid(activeGrid);
+        }
         setIsProcessing(false);
-    }, [countCollected]);
+    }, [countCollected, ensurePlayableGrid]);
 
     // Level Up Check
     useEffect(() => {
@@ -478,10 +488,15 @@ export const useGame = () => {
             setComboLevel(comboCount);
             setComboId(id => id + 1);
         }
+        const playableGrid = ensurePlayableGrid(activeGrid);
+        if (playableGrid !== activeGrid) {
+            activeGrid = playableGrid;
+            setGrid(activeGrid);
+        }
         if (finalizeProcessing) {
             setIsProcessing(false);
         }
-    }, [countCollected]);
+    }, [countCollected, ensurePlayableGrid]);
 
     const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
         let activeGrid = copyGrid(currentGrid);
@@ -582,8 +597,13 @@ export const useGame = () => {
             setComboLevel(comboCount);
             setComboId(id => id + 1);
         }
+        const playableGrid = ensurePlayableGrid(activeGrid);
+        if (playableGrid !== activeGrid) {
+            activeGrid = playableGrid;
+            setGrid(activeGrid);
+        }
         setIsProcessing(false);
-    }, [countCollected]);
+    }, [countCollected, ensurePlayableGrid]);
 
     const findTileById = (g: Grid, id: string): Tile | null => {
         for (let y = 0; y < ROWS; y++) {

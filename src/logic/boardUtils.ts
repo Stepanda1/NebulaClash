@@ -8,7 +8,7 @@ export const generateRandomTileType = (): GemType => {
     return GEM_TYPES[Math.floor(Math.random() * GEM_TYPES.length)];
 };
 
-export const createBoard = (): Grid => {
+const createBoardWithoutMatches = (): Grid => {
     const grid: Grid = [];
     for (let y = 0; y < ROWS; y++) {
         const row: Tile[] = [];
@@ -33,6 +33,19 @@ export const createBoard = (): Grid => {
         grid.push(row);
     }
     return grid;
+};
+
+export const createBoard = (): Grid => {
+    // Keep re-rolling until the start board has at least one legal move.
+    for (let i = 0; i < 120; i++) {
+        const candidate = createBoardWithoutMatches();
+        if (hasPossibleMoves(candidate)) {
+            return candidate;
+        }
+    }
+    const fallback = createBoardWithoutMatches();
+    if (hasPossibleMoves(fallback)) return fallback;
+    return reshuffleBoard(fallback);
 };
 
 export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightning' | 'cross'> => {
@@ -552,6 +565,102 @@ export const findLightningSwap = (grid: Grid): { from: { x: number; y: number };
     return null;
 };
 
-export const hasPossibleMoves = (_grid: Grid): boolean => {
-    return true;
+export const hasPossibleMoves = (grid: Grid): boolean => {
+    const trySwap = (g: Grid, x1: number, y1: number, x2: number, y2: number): Grid => {
+        const newGrid = copyGrid(g);
+        const t1 = newGrid[y1][x1];
+        const t2 = newGrid[y2][x2];
+        newGrid[y1][x1] = { ...t2, x: x1, y: y1 };
+        newGrid[y2][x2] = { ...t1, x: x2, y: y2 };
+        return newGrid;
+    };
+
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            const tile = grid[y][x];
+            if ((tile as any).type == null) return false;
+        }
+    }
+
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            const current = grid[y][x];
+            if (x + 1 < COLS) {
+                const right = grid[y][x + 1];
+                if (
+                    current.type === 'bomb' || current.type === 'lightning' || current.type === 'cross' ||
+                    right.type === 'bomb' || right.type === 'lightning' || right.type === 'cross'
+                ) {
+                    return true;
+                }
+                if (findMatches(trySwap(grid, x, y, x + 1, y)).size > 0) {
+                    return true;
+                }
+            }
+            if (y + 1 < ROWS) {
+                const down = grid[y + 1][x];
+                if (
+                    current.type === 'bomb' || current.type === 'lightning' || current.type === 'cross' ||
+                    down.type === 'bomb' || down.type === 'lightning' || down.type === 'cross'
+                ) {
+                    return true;
+                }
+                if (findMatches(trySwap(grid, x, y, x, y + 1)).size > 0) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+};
+
+export const reshuffleBoard = (grid: Grid, maxAttempts: number = 120): Grid => {
+    const pieces = [];
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            const tile = grid[y][x];
+            if ((tile as any).type == null) {
+                return createBoard();
+            }
+            pieces.push({
+                type: tile.type,
+                gemType: tile.gemType,
+            });
+        }
+    }
+
+    const shuffle = <T,>(arr: T[]): T[] => {
+        const out = [...arr];
+        for (let i = out.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [out[i], out[j]] = [out[j], out[i]];
+        }
+        return out;
+    };
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const shuffled = shuffle(pieces);
+        let idx = 0;
+        const candidate: Grid = [];
+        for (let y = 0; y < ROWS; y++) {
+            const row: Tile[] = [];
+            for (let x = 0; x < COLS; x++) {
+                const next = shuffled[idx++];
+                row.push({
+                    id: `${x}-${y}-${Date.now()}-${Math.random()}`,
+                    type: next.type as any,
+                    gemType: next.gemType,
+                    x,
+                    y,
+                });
+            }
+            candidate.push(row);
+        }
+        if (findMatches(candidate).size === 0 && hasPossibleMoves(candidate)) {
+            return candidate;
+        }
+    }
+
+    return createBoard();
 };
