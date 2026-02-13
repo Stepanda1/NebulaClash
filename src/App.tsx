@@ -28,6 +28,7 @@ function App() {
   const lightningRef = useRef(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
+  const tutorialActive = showTutorial && level === 1;
 
   // Game Over only when limit reached AND animations are done
   const isGameOver = (
@@ -42,46 +43,48 @@ function App() {
 
   useEffect(() => {
     const done = localStorage.getItem('match3_tutorial_done');
-    if (!done) {
+    if (level === 1 && !done) {
       setShowTutorial(true);
       setTutorialStep(0);
+      return;
     }
-    return () => {};
-  }, []);
+    setShowTutorial(false);
+    setPendingSpawn(null);
+  }, [level]);
 
   useEffect(() => {
-    if (!showTutorial) return;
+    if (!tutorialActive) return;
     if (tutorialStep === 0 && match3Moves > match3Ref.current) {
       match3Ref.current = match3Moves;
       setTutorialStep(1);
       setPendingSpawn('bomb');
     }
-  }, [match3Moves, showTutorial, tutorialStep]);
+  }, [match3Moves, tutorialActive, tutorialStep]);
 
   useEffect(() => {
-    if (!showTutorial) return;
+    if (!tutorialActive) return;
     if (tutorialStep === 1 && bombDoubleActivations > bombRef.current) {
       bombRef.current = bombDoubleActivations;
       setTutorialStep(2);
       setPendingSpawn('lightning');
     }
-  }, [bombDoubleActivations, showTutorial, tutorialStep]);
+  }, [bombDoubleActivations, tutorialActive, tutorialStep]);
 
   useEffect(() => {
-    if (!showTutorial) return;
+    if (!tutorialActive) return;
     if (tutorialStep === 2 && lightningSwaps > lightningRef.current) {
       lightningRef.current = lightningSwaps;
       localStorage.setItem('match3_tutorial_done', '1');
       setShowTutorial(false);
     }
-  }, [lightningSwaps, showTutorial, tutorialStep]);
+  }, [lightningSwaps, tutorialActive, tutorialStep]);
 
   useEffect(() => {
-    if (!pendingSpawn) return;
+    if (!pendingSpawn || !tutorialActive) return;
     if (isProcessing) return;
     spawnSpecial(pendingSpawn);
     setPendingSpawn(null);
-  }, [pendingSpawn, isProcessing, spawnSpecial]);
+  }, [pendingSpawn, isProcessing, spawnSpecial, tutorialActive]);
 
   useEffect(() => {
     const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -216,7 +219,7 @@ function App() {
       </AnimatePresence>
 
       <AudioPlayer isMuted={isMuted} volume={volume} />
-      {showTutorial && (
+      {tutorialActive && (
         <TutorialHint step={tutorialStep} />
       )}
 
@@ -301,7 +304,7 @@ function App() {
             selectedTile={selectedTile}
             explodingIds={explodingIds}
             isLevelTransition={isLevelTransition}
-            showTutorial={showTutorial}
+            showTutorial={tutorialActive}
             tutorialStep={tutorialStep}
             isProcessing={isProcessing}
             onTileClick={(tile) => !isPaused && handleTileClick(tile)}
