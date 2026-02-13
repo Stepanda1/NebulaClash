@@ -38,14 +38,25 @@ function App() {
 
   const onRestart = () => {
     handleRestart();
+    if (level === 1) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+      setPendingSpawn(null);
+      match3Ref.current = match3Moves;
+      bombRef.current = bombDoubleActivations;
+      lightningRef.current = lightningSwaps;
+    }
     // setIsPaused(false) is handled in handleRestart hook
   };
 
   useEffect(() => {
-    const done = localStorage.getItem('match3_tutorial_done');
-    if (level === 1 && !done) {
+    if (level === 1) {
       setShowTutorial(true);
       setTutorialStep(0);
+      setPendingSpawn(null);
+      match3Ref.current = match3Moves;
+      bombRef.current = bombDoubleActivations;
+      lightningRef.current = lightningSwaps;
       return;
     }
     setShowTutorial(false);
@@ -74,7 +85,6 @@ function App() {
     if (!tutorialActive) return;
     if (tutorialStep === 2 && lightningSwaps > lightningRef.current) {
       lightningRef.current = lightningSwaps;
-      localStorage.setItem('match3_tutorial_done', '1');
       setShowTutorial(false);
     }
   }, [lightningSwaps, tutorialActive, tutorialStep]);
