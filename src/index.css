@@ -51,10 +51,18 @@ body {
   align-items: center;
 }
 
+.safe-area-inset {
+  padding-top: max(env(safe-area-inset-top), 0px);
+  padding-right: max(env(safe-area-inset-right), 0px);
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  padding-left: max(env(safe-area-inset-left), 0px);
+}
+
 @supports not (height: 100dvh) {
   body {
     height: 100vh;
   }
+
   #root {
     height: 100vh;
   }
@@ -184,3 +192,4 @@ body.low-performance * {
 ::-webkit-scrollbar {
   display: none;
 }
+
