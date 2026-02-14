@@ -4,6 +4,7 @@ type Copy = {
     paused: string;
     resume: string;
     restart: string;
+    exitGame: string;
     sound: string;
     mute: string;
     unmute: string;
@@ -34,6 +35,7 @@ export const COPY: Record<Language, Copy> = {
         paused: 'PAUSED',
         resume: 'RESUME',
         restart: 'RESTART',
+        exitGame: 'EXIT GAME',
         sound: 'SOUND',
         mute: 'Mute',
         unmute: 'Unmute',
@@ -66,6 +68,7 @@ export const COPY: Record<Language, Copy> = {
         paused: 'ПАУЗА',
         resume: 'ПРОДОЛЖИТЬ',
         restart: 'ПЕРЕЗАПУСК',
+        exitGame: 'ВЫЙТИ ИЗ ИГРЫ',
         sound: 'ЗВУК',
         mute: 'Выключить звук',
         unmute: 'Включить звук',
@@ -95,3 +98,4 @@ export const COPY: Record<Language, Copy> = {
         combo: (value) => `Комбо x${value}`,
     },
 };
+

@@ -73,6 +73,17 @@ function App() {
     // setIsPaused(false) is handled in handleRestart hook
   };
 
+  const onExitGame = () => {
+    window.close();
+
+    window.setTimeout(() => {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.replace('about:blank');
+      }
+    }, 120);
+  };
   const onSkipTutorial = () => {
     setShowTutorial(false);
     setTutorialStep(0);
@@ -270,6 +281,7 @@ function App() {
           <PauseMenu
             onResume={() => setIsPaused(false)}
             onRestart={onRestart}
+            onExitGame={onExitGame}
             isMuted={isMuted}
             onToggleMute={() => setIsMuted(m => !m)}
             volume={volume}
@@ -423,3 +435,4 @@ function App() {
 }
 
 export default App;
+

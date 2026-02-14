@@ -1,12 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { LogOut, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
 interface PauseMenuProps {
     onResume: () => void;
     onRestart: () => void;
+    onExitGame: () => void;
     isMuted: boolean;
     onToggleMute: () => void;
     volume: number; // 0..1
@@ -15,7 +16,7 @@ interface PauseMenuProps {
     onLanguageChange: (language: Language) => void;
 }
 
-export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
+export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onExitGame, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
     const t = COPY[language];
 
     return (
@@ -46,6 +47,14 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, isMut
                 >
                     <RotateCcw size={24} />
                     {t.restart}
+                </button>
+
+                <button
+                    onClick={onExitGame}
+                    className="flex items-center justify-center gap-3 w-full py-3 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white rounded-xl font-bold text-lg shadow-lg border border-white/20 active:scale-95 transition-all"
+                >
+                    <LogOut size={24} />
+                    {t.exitGame}
                 </button>
 
                 <div className="w-full mt-2 p-3 rounded-xl bg-white/10 border border-white/20 shadow-inner">
@@ -94,3 +103,6 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, isMut
         </motion.div>
     );
 };
+
+
+
