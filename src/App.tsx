@@ -31,6 +31,21 @@ function GoalGemIcon({ color }: { color: GemType }) {
   );
 }
 
+function getDefaultLanguage(): Language {
+  if (typeof window !== 'undefined') {
+    const savedLanguage = window.localStorage.getItem('match3_language');
+    if (savedLanguage === 'ru' || savedLanguage === 'en') {
+      return savedLanguage;
+    }
+  }
+
+  if (typeof navigator !== 'undefined') {
+    return navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en';
+  }
+
+  return 'en';
+}
+
 function App() {
   const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, handleNextLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
@@ -45,7 +60,7 @@ function App() {
   const [comboPos, setComboPos] = useState<{ x: number; y: number }>({ x: 50, y: 18 });
   const [comboStyle, setComboStyle] = useState<{ color: string; size: string }>({ color: 'text-amber-300', size: 'text-lg sm:text-2xl' });
   const [lowPerfMode, setLowPerfMode] = useState(false);
-  const [language, setLanguage] = useState<Language>('ru');
+  const [language, setLanguage] = useState<Language>(getDefaultLanguage);
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
@@ -95,12 +110,6 @@ function App() {
     localStorage.setItem('match3_language', nextLanguage);
   };
 
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('match3_language');
-    if (savedLanguage === 'ru' || savedLanguage === 'en') {
-      setLanguage(savedLanguage);
-    }
-  }, []);
 
   useEffect(() => {
     if (level === 1) {
