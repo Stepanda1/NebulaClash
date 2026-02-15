@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { trackEvent } from './analytics';
 
-const SENTRY_DSN = (import.meta.env.VITE_SENTRY_DSN as string | undefined) ?? 'https://2f0043d598a306cd64047d0d2158012bo4510891889131520.ingest.de.sentry.io/4510891894702160';
+const SENTRY_DSN = (import.meta.env.VITE_SENTRY_DSN as string | undefined) ?? 'https://2f0043d598a306cd64047d0d2158012b04510891889131520.ingest.de.sentry.io/4510891894702160';
 const SENTRY_ENVIRONMENT =
   (import.meta.env.VITE_SENTRY_ENVIRONMENT as string | undefined) ??
   (import.meta.env.MODE as string | undefined) ??
@@ -22,6 +22,7 @@ function initSentry() {
     tracesSampleRate: Number.isFinite(SENTRY_TRACES_SAMPLE_RATE)
       ? SENTRY_TRACES_SAMPLE_RATE
       : 0.2,
+    sendDefaultPii: true,
   });
 }
 
@@ -68,4 +69,6 @@ export function initMonitoring() {
 
   monitoringInitialized = true;
 }
+
+
 
