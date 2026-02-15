@@ -13,8 +13,8 @@ declare global {
   }
 }
 
-const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
-const YM_COUNTER_ID_RAW = import.meta.env.VITE_YM_COUNTER_ID as string | undefined;
+const GA_MEASUREMENT_ID = (import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined) ?? 'G-L74L8SK4VN';
+const YM_COUNTER_ID_RAW = (import.meta.env.VITE_YM_COUNTER_ID as string | undefined) ?? '106841765';
 const YM_COUNTER_ID = YM_COUNTER_ID_RAW ? Number(YM_COUNTER_ID_RAW) : NaN;
 
 let initialized = false;
@@ -126,3 +126,5 @@ export function trackEvent(eventName: string, payload: AnalyticsPayload = {}) {
     window.ym(YM_COUNTER_ID, 'reachGoal', eventName, withSession);
   }
 }
+
+
