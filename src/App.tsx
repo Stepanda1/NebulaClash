@@ -12,6 +12,7 @@ import { TutorialHint } from './components/TutorialHint';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import { COPY } from './i18n';
+import { initAnalytics, trackEvent } from './analytics';
 
 const GOAL_GEM_STYLE: Record<GemType, string> = {
   red: 'from-rose-300 via-rose-500 to-red-900',
@@ -47,7 +48,7 @@ function getDefaultLanguage(): Language {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, handleNextLevel } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, handleNextLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -64,6 +65,14 @@ function App() {
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
+  const analyticsInitRef = useRef(false);
+  const prevPausedRef = useRef(false);
+  const prevGameOverRef = useRef(false);
+  const prevLevelUpRef = useRef(false);
+  const prevLevelRef = useRef(level);
+  const analyticsMovesRef = useRef(0);
+  const analyticsBombCountRef = useRef(0);
+  const analyticsLightningCountRef = useRef(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
@@ -76,6 +85,7 @@ function App() {
   ) && !isProcessing;
 
   const onRestart = () => {
+    trackEvent('restart_click', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
     handleRestart();
     if (level === 1) {
       setShowTutorial(true);
@@ -89,6 +99,7 @@ function App() {
   };
 
   const onExitGame = () => {
+    trackEvent('exit_click', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
     window.close();
 
     window.setTimeout(() => {
@@ -108,7 +119,104 @@ function App() {
   const onLanguageChange = (nextLanguage: Language) => {
     setLanguage(nextLanguage);
     localStorage.setItem('match3_language', nextLanguage);
+    trackEvent('language_change', { language: nextLanguage });
   };
+
+  const onToggleMute = () => {
+    setIsMuted((prev) => {
+      const next = !prev;
+      trackEvent('sound_toggle', { muted: next, level });
+      return next;
+    });
+  };
+
+  const onNextLevel = () => {
+    trackEvent('next_level_click', { level, score, mode: levelConfig.mode });
+    handleNextLevel();
+  };
+
+  useEffect(() => {
+    if (analyticsInitRef.current) return;
+    initAnalytics();
+    analyticsInitRef.current = true;
+    trackEvent('session_start', { level, mode: levelConfig.mode, language });
+  }, [language, level, levelConfig.mode]);
+
+  useEffect(() => {
+    if (!analyticsInitRef.current) return;
+    if (prevLevelRef.current === level) return;
+
+    prevLevelRef.current = level;
+    analyticsMovesRef.current = 0;
+    prevGameOverRef.current = false;
+    prevLevelUpRef.current = false;
+
+    trackEvent('level_start', {
+      level,
+      mode: levelConfig.mode,
+      goal_type: levelConfig.goal.type,
+      goal_value: levelConfig.goal.value,
+    });
+  }, [level, levelConfig.mode, levelConfig.goal.type, levelConfig.goal.value]);
+
+  useEffect(() => {
+    if (!analyticsInitRef.current) return;
+
+    if (isPaused && !prevPausedRef.current) {
+      trackEvent('pause_open', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
+    }
+
+    if (!isPaused && prevPausedRef.current) {
+      trackEvent('pause_close', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
+    }
+
+    prevPausedRef.current = isPaused;
+  }, [isPaused, level, score, moves, timeLeft, levelConfig.mode]);
+
+  useEffect(() => {
+    if (!analyticsInitRef.current) return;
+    if (isLevelUp && !prevLevelUpRef.current) {
+      trackEvent('level_complete', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
+    }
+
+    prevLevelUpRef.current = isLevelUp;
+  }, [isLevelUp, level, score, moves, timeLeft, levelConfig.mode]);
+
+  useEffect(() => {
+    if (!analyticsInitRef.current) return;
+    if (isGameOver && !prevGameOverRef.current) {
+      trackEvent('game_over', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
+    }
+
+    prevGameOverRef.current = isGameOver;
+  }, [isGameOver, level, score, moves, timeLeft, levelConfig.mode]);
+
+  useEffect(() => {
+    if (!analyticsInitRef.current) return;
+    if (validMoves <= analyticsMovesRef.current) return;
+
+    analyticsMovesRef.current = validMoves;
+
+    if (validMoves === 1 || validMoves % 10 === 0) {
+      trackEvent('moves_checkpoint', { level, moves_done: validMoves, score, mode: levelConfig.mode });
+    }
+  }, [validMoves, level, score, levelConfig.mode]);
+
+  useEffect(() => {
+    if (!analyticsInitRef.current) return;
+    if (bombDoubleActivations <= analyticsBombCountRef.current) return;
+
+    analyticsBombCountRef.current = bombDoubleActivations;
+    trackEvent('bomb_activation', { level, count: bombDoubleActivations });
+  }, [bombDoubleActivations, level]);
+
+  useEffect(() => {
+    if (!analyticsInitRef.current) return;
+    if (lightningSwaps <= analyticsLightningCountRef.current) return;
+
+    analyticsLightningCountRef.current = lightningSwaps;
+    trackEvent('lightning_swap', { level, count: lightningSwaps });
+  }, [lightningSwaps, level]);
 
 
   useEffect(() => {
@@ -292,7 +400,7 @@ function App() {
             onRestart={onRestart}
             onExitGame={onExitGame}
             isMuted={isMuted}
-            onToggleMute={() => setIsMuted(m => !m)}
+            onToggleMute={onToggleMute}
             volume={volume}
             onVolumeChange={(v) => {
               setVolume(v);
@@ -306,7 +414,7 @@ function App() {
           <GameOverMenu score={score} onRestart={onRestart} language={language} />
         )}
         {isLevelUp && (
-          <LevelUpModal level={level} score={score} onNextLevel={handleNextLevel} language={language} />
+          <LevelUpModal level={level} score={score} onNextLevel={onNextLevel} language={language} />
         )}
       </AnimatePresence>
 

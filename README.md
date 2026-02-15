@@ -71,3 +71,28 @@ export default defineConfig([
   },
 ])
 ```
+
+## Analytics
+
+The game now supports analytics providers via Vite env vars:
+
+- `VITE_GA_MEASUREMENT_ID` - Google Analytics 4 measurement ID (for example `G-XXXXXXXXXX`)
+- `VITE_YM_COUNTER_ID` - Yandex Metrica counter ID
+
+If one or both variables are set, the app automatically initializes the provider(s) and sends gameplay events such as:
+
+- `session_start`
+- `level_start`
+- `pause_open` / `pause_close`
+- `restart_click`
+- `exit_click`
+- `level_complete`
+- `game_over`
+- `moves_checkpoint`
+- `bomb_activation`
+- `lightning_swap`
+- `language_change`
+- `sound_toggle`
+- `next_level_click`
+
+Session-level correlation is sent via `session_id` (stored in `sessionStorage`).
