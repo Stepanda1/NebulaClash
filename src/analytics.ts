@@ -1,3 +1,5 @@
+import posthog from 'posthog-js';
+
 export type AnalyticsPayload = Record<string, string | number | boolean | null | undefined>;
 
 type YmFunction = ((counterId: number, action: string, ...args: unknown[]) => void) & {
@@ -16,8 +18,11 @@ declare global {
 const GA_MEASUREMENT_ID = (import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined) ?? 'G-L74L8SK4VN';
 const YM_COUNTER_ID_RAW = (import.meta.env.VITE_YM_COUNTER_ID as string | undefined) ?? '106841765';
 const YM_COUNTER_ID = YM_COUNTER_ID_RAW ? Number(YM_COUNTER_ID_RAW) : NaN;
+const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
+const POSTHOG_HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://us.i.posthog.com';
 
 let initialized = false;
+let posthogInitialized = false;
 let sessionId: string | null = null;
 
 const isBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -74,6 +79,23 @@ function initYandexMetrica() {
   });
 }
 
+function initPostHog() {
+  if (!isBrowser() || !POSTHOG_KEY || posthogInitialized) return;
+
+  posthog.init(POSTHOG_KEY, {
+    api_host: POSTHOG_HOST,
+    capture_pageview: true,
+    capture_pageleave: true,
+    autocapture: true,
+  });
+
+  posthog.register({
+    session_id: getSessionId(),
+  });
+
+  posthogInitialized = true;
+}
+
 function createSessionId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -107,6 +129,7 @@ export function initAnalytics() {
 
   initGA4();
   initYandexMetrica();
+  initPostHog();
   initialized = true;
 }
 
@@ -125,6 +148,8 @@ export function trackEvent(eventName: string, payload: AnalyticsPayload = {}) {
   if (Number.isFinite(YM_COUNTER_ID) && typeof window.ym === 'function') {
     window.ym(YM_COUNTER_ID, 'reachGoal', eventName, withSession);
   }
+
+  if (posthogInitialized) {
+    posthog.capture(eventName, withSession);
+  }
 }
-
-

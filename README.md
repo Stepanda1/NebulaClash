@@ -96,3 +96,30 @@ If one or both variables are set, the app automatically initializes the provider
 - `next_level_click`
 
 Session-level correlation is sent via `session_id` (stored in `sessionStorage`).
+
+### PostHog
+
+Set these env vars to enable PostHog product analytics:
+
+- `VITE_POSTHOG_KEY` - project API key
+- `VITE_POSTHOG_HOST` - optional, defaults to `https://us.i.posthog.com`
+
+When enabled, game events are sent to PostHog via `posthog.capture(...)`.
+
+### Sentry
+
+Set these env vars to enable Sentry error/performance monitoring:
+
+- `VITE_SENTRY_DSN` - your Sentry DSN
+- `VITE_SENTRY_ENVIRONMENT` - optional environment name
+- `VITE_SENTRY_TRACES_SAMPLE_RATE` - optional, defaults to `0.2`
+
+Long tasks (UI lag spikes) are monitored with `PerformanceObserver` and reported as:
+
+- analytics event: `long_task_detected`
+- Sentry warning message: `long_task_detected`
+
+Optional tuning:
+
+- `VITE_LONG_TASK_THRESHOLD_MS` (default `200`)
+- `VITE_LONG_TASK_MAX_PER_SESSION` (default `30`)
