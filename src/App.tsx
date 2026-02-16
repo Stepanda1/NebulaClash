@@ -10,6 +10,7 @@ import { Coffee, Map, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
 import { SpaceRoadmap } from './components/SpaceRoadmap';
+import { LevelStartModal } from './components/LevelStartModal';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import { COPY } from './i18n';
@@ -49,7 +50,7 @@ function getDefaultLanguage(): Language {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, handleNextLevel, startAtLevel } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, startAtLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -63,8 +64,9 @@ function App() {
   const [comboStyle, setComboStyle] = useState<{ color: string; size: string }>({ color: 'text-amber-300', size: 'text-lg sm:text-2xl' });
   const [lowPerfMode, setLowPerfMode] = useState(false);
   const [language, setLanguage] = useState<Language>(getDefaultLanguage);
-  const [isMapOpen, setIsMapOpen] = useState(true);
+  const [isMapOpen, setIsMapOpen] = useState(false);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
+  const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
@@ -134,9 +136,12 @@ function App() {
   };
 
   const onNextLevel = () => {
-    trackEvent('next_level_click', { level, score, mode: levelConfig.mode });
-    setUnlockedLevel((prev) => Math.max(prev, level + 1));
-    handleNextLevel();
+    const nextUnlockedLevel = level + 1;
+    trackEvent('next_level_click', { level, score, mode: levelConfig.mode, next_level: nextUnlockedLevel });
+    setUnlockedLevel((prev) => Math.max(prev, nextUnlockedLevel));
+    setIsPaused(false);
+    setLevelToLaunch(null);
+    setIsMapOpen(true);
   };
 
   const onOpenMap = () => {
@@ -147,9 +152,22 @@ function App() {
 
   const onStartFromMap = (targetLevel: number) => {
     if (targetLevel > unlockedLevel) return;
-    startAtLevel(targetLevel);
+    setLevelToLaunch(targetLevel);
     setIsMapOpen(false);
-    trackEvent('map_level_start', { level: targetLevel });
+    trackEvent('map_level_selected', { level: targetLevel });
+  };
+
+  const onPlaySelectedLevel = () => {
+    if (levelToLaunch == null) return;
+    startAtLevel(levelToLaunch);
+    trackEvent('map_level_start', { level: levelToLaunch });
+    setLevelToLaunch(null);
+    setIsMapOpen(false);
+  };
+
+  const onCloseLevelStart = () => {
+    setLevelToLaunch(null);
+    setIsMapOpen(true);
   };
 
   useEffect(() => {
@@ -437,6 +455,7 @@ function App() {
           <PauseMenu
             onResume={() => setIsPaused(false)}
             onRestart={onRestart}
+            onClose={() => setIsPaused(false)}
             onExitGame={onExitGame}
             isMuted={isMuted}
             onToggleMute={onToggleMute}
@@ -454,6 +473,14 @@ function App() {
         )}
         {isLevelUp && (
           <LevelUpModal level={level} score={score} onNextLevel={onNextLevel} language={language} />
+        )}
+        {levelToLaunch !== null && (
+          <LevelStartModal
+            level={levelToLaunch}
+            language={language}
+            onPlay={onPlaySelectedLevel}
+            onClose={onCloseLevelStart}
+          />
         )}
       </AnimatePresence>
 

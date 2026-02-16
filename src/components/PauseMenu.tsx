@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LogOut, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { LogOut, Play, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
@@ -8,15 +8,16 @@ interface PauseMenuProps {
     onResume: () => void;
     onRestart: () => void;
     onExitGame: () => void;
+    onClose: () => void;
     isMuted: boolean;
     onToggleMute: () => void;
-    volume: number; // 0..1
+    volume: number;
     onVolumeChange: (volume: number) => void;
     language: Language;
     onLanguageChange: (language: Language) => void;
 }
 
-export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onExitGame, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
+export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onExitGame, onClose, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
     const t = COPY[language];
 
     return (
@@ -29,8 +30,17 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onExi
             <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="w-full max-w-xs rounded-[2rem] border-2 border-white/50 bg-white/20 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] p-8 flex flex-col gap-4 text-center"
+                className="relative w-full max-w-xs rounded-[2rem] border-2 border-white/50 bg-white/20 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] p-8 flex flex-col gap-4 text-center"
             >
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="absolute right-3 top-3 w-8 h-8 rounded-full border border-white/30 bg-black/20 text-white/90 hover:bg-black/35 active:scale-95 transition-all flex items-center justify-center"
+                    aria-label={language === 'ru' ? 'Закрыть настройки' : 'Close settings'}
+                >
+                    <X size={16} />
+                </button>
+
                 <h2 className="text-3xl font-black text-white drop-shadow-lg mb-2 tracking-wide">{t.paused}</h2>
 
                 <button
@@ -86,16 +96,14 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onExi
                             className={`flex items-center justify-center gap-2 rounded-xl py-2 border transition-all active:scale-95 ${language === 'ru' ? 'bg-white/30 border-white/60 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/20'}`}
                             aria-label="Russian language"
                         >
-                            <span aria-hidden="true">🇷🇺</span>
-                            <span className="text-sm font-bold">RU</span>
+                            <span aria-hidden="true">RU</span>
                         </button>
                         <button
                             onClick={() => onLanguageChange('en')}
                             className={`flex items-center justify-center gap-2 rounded-xl py-2 border transition-all active:scale-95 ${language === 'en' ? 'bg-white/30 border-white/60 text-white' : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/20'}`}
                             aria-label="English language"
                         >
-                            <span aria-hidden="true">🇺🇸</span>
-                            <span className="text-sm font-bold">EN</span>
+                            <span aria-hidden="true">EN</span>
                         </button>
                     </div>
                 </div>
@@ -103,6 +111,3 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onExi
         </motion.div>
     );
 };
-
-
-

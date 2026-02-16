@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Lock, Rocket } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
@@ -21,20 +21,36 @@ const NODE_SIZE = 42;
 const TOP_PADDING = 96;
 const STEP_Y = 118;
 
+const DECORATIONS = [
+  { left: 24, top: 180, size: 62, color: 'from-rose-300/35 to-fuchsia-500/20' },
+  { left: 250, top: 320, size: 84, color: 'from-cyan-300/35 to-blue-500/25' },
+  { left: 18, top: 740, size: 48, color: 'from-emerald-300/30 to-cyan-500/20' },
+  { left: 262, top: 990, size: 58, color: 'from-amber-300/35 to-orange-500/20' },
+  { left: 42, top: 1380, size: 96, color: 'from-violet-300/30 to-indigo-500/20' },
+  { left: 252, top: 1850, size: 54, color: 'from-sky-300/35 to-indigo-500/20' },
+  { left: 58, top: 2430, size: 78, color: 'from-pink-300/30 to-rose-500/20' },
+  { left: 254, top: 2920, size: 64, color: 'from-lime-300/30 to-emerald-500/20' },
+];
+
 export function SpaceRoadmap({ unlockedLevel, language, onStartLevel }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
   const t = COPY[language];
 
   const points = useMemo<Point[]>(() => {
     return Array.from({ length: TOTAL_LEVELS }, (_, i) => {
       const level = i + 1;
-      const y = TOP_PADDING + i * STEP_Y;
+      const y = TOP_PADDING + (TOTAL_LEVELS - 1 - i) * STEP_Y;
       const x = MAP_WIDTH / 2 + Math.sin(i * 0.72) * 92 + Math.cos(i * 0.24) * 12;
       return { level, x, y };
     });
   }, []);
 
-  const mapHeight = points[points.length - 1].y + 180;
+  useEffect(() => {
+    setSelectedLevel((prev) => (prev > unlockedLevel ? unlockedLevel : prev));
+  }, [unlockedLevel]);
+
+  const mapHeight = points[0].y + 180;
 
   const pathD = useMemo(() => {
     if (points.length === 0) return '';
@@ -48,15 +64,27 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel }: SpaceRoa
     return d;
   }, [points]);
 
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const selectedPoint = points.find((point) => point.level === selectedLevel);
+    if (!selectedPoint) return;
+
+    const target = Math.max(0, selectedPoint.y - scroller.clientHeight * 0.62);
+    scroller.scrollTo({ top: target, behavior: 'smooth' });
+  }, [selectedLevel, points]);
+
   const selectedUnlocked = selectedLevel <= unlockedLevel;
-  const levelLabel = language === 'ru' ? `Карта уровней` : 'Level Map';
+  const levelLabel = language === 'ru' ? 'Карта уровней' : 'Level Map';
   const startLabel = language === 'ru' ? 'Старт' : 'Start';
   const lockedLabel = language === 'ru' ? 'Закрыт' : 'Locked';
   const currentLabel = language === 'ru' ? 'Текущий прогресс' : 'Current Progress';
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[radial-gradient(circle_at_20%_20%,#1f3d7a_0%,#120b2e_40%,#06030f_100%)] text-white">
-      <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_25%_18%,rgba(255,255,255,0.55)_1px,transparent_1px),radial-gradient(circle_at_68%_64%,rgba(125,211,252,0.5)_1px,transparent_1px),radial-gradient(circle_at_83%_26%,rgba(196,181,253,0.45)_1px,transparent_1px)] [background-size:180px_180px,220px_220px,260px_260px]" />
+      <div className="pointer-events-none absolute inset-0 opacity-55 [background-image:radial-gradient(circle_at_25%_18%,rgba(255,255,255,0.55)_1px,transparent_1px),radial-gradient(circle_at_68%_64%,rgba(125,211,252,0.5)_1px,transparent_1px),radial-gradient(circle_at_83%_26%,rgba(196,181,253,0.45)_1px,transparent_1px)] [background-size:180px_180px,220px_220px,260px_260px]" />
+      <div className="pointer-events-none absolute -left-20 top-28 h-56 w-56 rounded-full bg-fuchsia-500/18 blur-3xl" />
+      <div className="pointer-events-none absolute -right-16 bottom-24 h-64 w-64 rounded-full bg-cyan-400/14 blur-3xl" />
 
       <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-24 pt-5">
         <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-black/30 px-4 py-3 backdrop-blur-md">
@@ -69,8 +97,16 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel }: SpaceRoa
           </div>
         </div>
 
-        <div className="relative flex-1 overflow-y-auto rounded-3xl border border-white/15 bg-black/25 shadow-[0_0_80px_rgba(56,189,248,0.12)] backdrop-blur-sm">
+        <div ref={scrollerRef} className="relative flex-1 overflow-y-auto rounded-3xl border border-white/15 bg-black/25 shadow-[0_0_80px_rgba(56,189,248,0.12)] backdrop-blur-sm">
           <div className="relative mx-auto w-[340px]" style={{ height: mapHeight }}>
+            {DECORATIONS.map((item, idx) => (
+              <div
+                key={idx}
+                className={`pointer-events-none absolute rounded-full bg-gradient-to-br ${item.color} blur-[1px] border border-white/10`}
+                style={{ left: item.left, top: item.top, width: item.size, height: item.size }}
+              />
+            ))}
+
             <svg className="pointer-events-none absolute inset-0" width={MAP_WIDTH} height={mapHeight} viewBox={`0 0 ${MAP_WIDTH} ${mapHeight}`} fill="none" aria-hidden="true">
               <path d={pathD} stroke="rgba(148,163,184,0.35)" strokeWidth="14" strokeLinecap="round" />
               <path d={pathD} stroke="url(#roadGlow)" strokeWidth="8" strokeLinecap="round" />
