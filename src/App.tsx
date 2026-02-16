@@ -571,7 +571,7 @@ function App() {
           <GameOverMenu score={score} onRestart={onRestart} language={language} />
         )}
         {isLevelUp && (
-          <LevelUpModal level={level} score={score} onNextLevel={onNextLevel} language={language} />
+          <LevelUpModal level={level} score={score} starsEarned={getStarsFromScore(score)} onNextLevel={onNextLevel} language={language} />
         )}
       </AnimatePresence>
 
@@ -697,6 +697,7 @@ function App() {
 }
 
 export default App;
+
 
 
 

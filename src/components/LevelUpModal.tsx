@@ -6,11 +6,12 @@ import { COPY } from '../i18n';
 interface LevelUpModalProps {
     level: number;
     score: number;
+    starsEarned: number;
     onNextLevel: () => void;
     language: Language;
 }
 
-export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, score, onNextLevel, language }) => {
+export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, score, starsEarned, onNextLevel, language }) => {
     const t = COPY[language];
 
     return (
@@ -23,13 +24,11 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, score, onNext
             <motion.div
                 initial={{ scale: 0.5, y: 50, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 className="w-full max-w-sm rounded-[2rem] border-2 border-white/50 bg-white/20 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] p-8 flex flex-col gap-6 items-center text-center relative overflow-hidden"
             >
-                {/* Decorative Elements */}
                 <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
 
-                {/* Header Icon */}
                 <motion.div
                     initial={{ y: -20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -49,17 +48,19 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, score, onNext
                     <p className="text-white font-bold text-lg tracking-wide drop-shadow-md opacity-90">{t.stageComplete(level)}</p>
                 </div>
 
-                {/* Stars / Score Box */}
                 <div className="flex flex-col items-center gap-2 p-4 w-full bg-black/20 rounded-xl border border-white/10 shadow-inner">
                     <div className="flex gap-2 mb-1">
-                        {[1, 2, 3].map((_, i) => (
+                        {[1, 2, 3].map((n, i) => (
                             <motion.div
-                                key={i}
+                                key={n}
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                transition={{ delay: 0.3 + i * 0.1, type: "spring" }}
+                                transition={{ delay: 0.3 + i * 0.1, type: 'spring' }}
                             >
-                                <Star size={24} className="fill-yellow-400 text-yellow-500 drop-shadow-md" />
+                                <Star
+                                    size={24}
+                                    className={n <= starsEarned ? 'fill-yellow-400 text-yellow-500 drop-shadow-md' : 'fill-slate-700/40 text-slate-500'}
+                                />
                             </motion.div>
                         ))}
                     </div>

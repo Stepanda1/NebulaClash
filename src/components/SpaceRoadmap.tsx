@@ -59,6 +59,20 @@ const COMETS = Array.from({ length: 12 }, (_, i) => ({
   rotate: -18 + (i % 5) * 7,
 }));
 
+const ASTEROID_FIELDS = Array.from({ length: 20 }, (_, i) => ({
+  left: 14 + ((i * 37) % 312),
+  top: 130 + i * 164,
+  size: 4 + (i % 4) * 2,
+  rotate: (i * 23) % 360,
+}));
+
+const ORBIT_STATIONS = [
+  { left: 268, top: 420, scale: 1 },
+  { left: 38, top: 1120, scale: 0.85 },
+  { left: 260, top: 1980, scale: 1.1 },
+  { left: 48, top: 2780, scale: 0.92 },
+];
+
 export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame, levelStars }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -191,9 +205,12 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
       scroller.removeEventListener('touchmove', onTouchMove);
     };
   }, [getMaxScrollTop]);
+
   const levelLabel = language === 'ru' ? 'Карта уровней' : 'Level Map';
   const currentLabel = language === 'ru' ? 'Текущий прогресс' : 'Current Progress';
   const settingsLabel = language === 'ru' ? 'Настройки карты' : 'Map Settings';
+  const comingSoonLabel = language === 'ru' ? 'Скоро' : 'Coming Soon';
+  const endPoint = points[points.length - 1];
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[radial-gradient(120%_130%_at_18%_12%,#3b1f7a_0%,#18103b_36%,#09041d_72%,#05020f_100%)] text-white">
@@ -209,9 +226,7 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
             <div className="text-lg font-black">{t.level(unlockedLevel)}</div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="rounded-xl bg-cyan-300/20 px-3 py-2 text-xs font-bold text-cyan-100">
-              {levelLabel}
-            </div>
+            <div className="rounded-xl bg-cyan-300/20 px-3 py-2 text-xs font-bold text-cyan-100">{levelLabel}</div>
             <button
               type="button"
               onClick={() => setIsSettingsOpen(true)}
@@ -227,23 +242,45 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
         <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-white/15 bg-black/30 shadow-[0_0_80px_rgba(56,189,248,0.16)] backdrop-blur-md">
           <div className="relative mx-auto w-[340px]" style={{ height: mapHeight }}>
             {PLANETS.map((item, idx) => (
-              <div
-                key={idx}
-                className={`pointer-events-none absolute rounded-full bg-gradient-to-br ${item.color} border border-white/10`}
-                style={{ left: item.left, top: item.top, width: item.size, height: item.size }}
-              />
+              <div key={idx} className="pointer-events-none absolute" style={{ left: item.left, top: item.top, width: item.size, height: item.size }}>
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${item.color} border border-white/20 shadow-[inset_-10px_-8px_20px_rgba(15,23,42,0.35)]`} />
+                <div className="absolute inset-[18%] rounded-full border border-white/20" />
+                <div className="absolute top-[20%] left-[24%] h-[14%] w-[14%] rounded-full bg-white/25" />
+                <div className="absolute top-[45%] right-[18%] h-[10%] w-[10%] rounded-full bg-black/20" />
+                {idx % 2 === 0 && (
+                  <div className="absolute left-[-12%] top-1/2 h-[24%] w-[124%] -translate-y-1/2 rounded-full border border-white/25 bg-white/5" />
+                )}
+              </div>
+            ))}
+
+            {ORBIT_STATIONS.map((station, idx) => (
+              <div key={`station-${idx}`} className="pointer-events-none absolute" style={{ left: station.left, top: station.top, transform: `scale(${station.scale})` }}>
+                <div className="relative h-10 w-10 rounded-full border border-cyan-200/50 bg-slate-900/55 shadow-[0_0_14px_rgba(34,211,238,0.35)]">
+                  <div className="absolute inset-[22%] rounded-full border border-cyan-100/60" />
+                  <div className="absolute left-1/2 top-1/2 h-[2px] w-14 -translate-x-1/2 -translate-y-1/2 bg-cyan-200/70" />
+                  <div className="absolute left-1/2 top-1/2 h-14 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-cyan-200/40" />
+                </div>
+              </div>
             ))}
 
             {STARS.map((star, idx) => (
               <div
                 key={`star-${idx}`}
                 className="pointer-events-none absolute rounded-full bg-white"
+                style={{ left: star.left, top: star.top, width: star.size, height: star.size, opacity: star.opacity }}
+              />
+            ))}
+
+            {ASTEROID_FIELDS.map((asteroid, idx) => (
+              <div
+                key={`asteroid-${idx}`}
+                className="pointer-events-none absolute rounded-full border border-slate-200/20 bg-slate-400/35"
                 style={{
-                  left: star.left,
-                  top: star.top,
-                  width: star.size,
-                  height: star.size,
-                  opacity: star.opacity,
+                  left: asteroid.left,
+                  top: asteroid.top,
+                  width: asteroid.size,
+                  height: asteroid.size,
+                  transform: `rotate(${asteroid.rotate}deg)`,
                 }}
               />
             ))}
@@ -269,6 +306,13 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
               </defs>
             </svg>
 
+            <div
+              className="pointer-events-none absolute left-1/2 z-[5] -translate-x-1/2 rounded-full border border-cyan-200/45 bg-slate-950/65 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.3)]"
+              style={{ top: Math.max(24, endPoint.y - 78) }}
+            >
+              {comingSoonLabel}
+            </div>
+
             {points.map((point) => {
               const isCompleted = point.level < unlockedLevel;
               const isCurrent = point.level === unlockedLevel;
@@ -277,11 +321,7 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
               const stars = Math.max(0, Math.min(3, levelStars[point.level] ?? 0));
 
               return (
-                <div
-                  key={point.level}
-                  className="absolute"
-                  style={{ left: point.x - NODE_SIZE / 2, top: point.y - NODE_SIZE / 2, width: NODE_SIZE }}
-                >
+                <div key={point.level} className="absolute" style={{ left: point.x - NODE_SIZE / 2, top: point.y - NODE_SIZE / 2, width: NODE_SIZE }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -304,11 +344,7 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
                   {isCompleted && (
                     <div className="mt-1 flex items-center justify-center gap-0.5 rounded-full border border-white/20 bg-black/45 px-1.5 py-0.5 text-[9px] font-black text-yellow-300">
                       {[1, 2, 3].map((i) => (
-                        <Star
-                          key={i}
-                          className={`h-2.5 w-2.5 ${i <= stars ? 'fill-yellow-300 text-yellow-300' : 'text-slate-500'}`}
-                          strokeWidth={2.2}
-                        />
+                        <Star key={i} className={`h-2.5 w-2.5 ${i <= stars ? 'fill-yellow-300 text-yellow-300' : 'text-slate-500'}`} strokeWidth={2.2} />
                       ))}
                     </div>
                   )}
@@ -359,12 +395,3 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
