@@ -67,6 +67,7 @@ function App() {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
+  const [isLaunchingLevel, setIsLaunchingLevel] = useState(false);
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
@@ -153,19 +154,24 @@ function App() {
   const onStartFromMap = (targetLevel: number) => {
     if (targetLevel > unlockedLevel) return;
     setLevelToLaunch(targetLevel);
-    setIsMapOpen(false);
     trackEvent('map_level_selected', { level: targetLevel });
   };
 
   const onPlaySelectedLevel = () => {
     if (levelToLaunch == null) return;
-    startAtLevel(levelToLaunch);
-    trackEvent('map_level_start', { level: levelToLaunch });
-    setLevelToLaunch(null);
-    setIsMapOpen(false);
+    setIsLaunchingLevel(true);
+
+    window.setTimeout(() => {
+      startAtLevel(levelToLaunch);
+      trackEvent('map_level_start', { level: levelToLaunch });
+      setLevelToLaunch(null);
+      setIsMapOpen(false);
+      setIsLaunchingLevel(false);
+    }, 180);
   };
 
   const onCloseLevelStart = () => {
+    if (isLaunchingLevel) return;
     setLevelToLaunch(null);
     setIsMapOpen(true);
   };
@@ -438,11 +444,31 @@ function App() {
 
   if (isMapOpen) {
     return (
-      <SpaceRoadmap
-        unlockedLevel={unlockedLevel}
-        language={language}
-        onStartLevel={onStartFromMap}
-      />
+      <div className="relative h-full w-full">
+        <SpaceRoadmap
+          unlockedLevel={unlockedLevel}
+          language={language}
+          onStartLevel={onStartFromMap}
+        />
+        <AnimatePresence>
+          {levelToLaunch !== null && (
+            <LevelStartModal
+              level={levelToLaunch}
+              language={language}
+              onPlay={onPlaySelectedLevel}
+              onClose={onCloseLevelStart}
+            />
+          )}
+        </AnimatePresence>
+        {isLaunchingLevel && (
+          <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/75 backdrop-blur-sm">
+            <div className="rounded-2xl border border-cyan-200/35 bg-slate-950/70 px-6 py-4 text-center shadow-[0_0_28px_rgba(34,211,238,0.28)]">
+              <div className="text-xs uppercase tracking-[0.25em] text-cyan-200/80">{language === 'ru' ? 'Запуск' : 'Launching'}</div>
+              <div className="mt-2 text-lg font-black text-white">{levelToLaunch !== null ? t.level(levelToLaunch) : ''}</div>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -473,14 +499,6 @@ function App() {
         )}
         {isLevelUp && (
           <LevelUpModal level={level} score={score} onNextLevel={onNextLevel} language={language} />
-        )}
-        {levelToLaunch !== null && (
-          <LevelStartModal
-            level={levelToLaunch}
-            language={language}
-            onPlay={onPlaySelectedLevel}
-            onClose={onCloseLevelStart}
-          />
         )}
       </AnimatePresence>
 
@@ -627,6 +645,7 @@ function App() {
 }
 
 export default App;
+
 
 
 

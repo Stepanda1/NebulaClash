@@ -12,6 +12,12 @@ type LevelConfig = {
     goal: Goal;
 };
 
+type LevelStateSnapshot = {
+    grid: Grid;
+    moves: number;
+    timeLeft: number;
+};
+
 const LEVEL_CONFIGS: LevelConfig[] = [
     { mode: 'moves', limit: 28, goal: { type: 'score', value: 1100 } },
     { mode: 'moves', limit: 26, goal: { type: 'collect', value: 18, color: 'red' } },
@@ -66,11 +72,34 @@ export const useGame = () => {
     // Update ref when state changes
     useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
 
-    const resetLevelState = (config = levelConfig) => {
-        setGrid(createBoard());
+    const preparedLevelRef = useRef<{ level: number; snapshot: LevelStateSnapshot } | null>(null);
+
+    const getLevelConfig = useCallback((targetLevel: number): LevelConfig => {
+        return LEVEL_CONFIGS[(targetLevel - 1) % LEVEL_CONFIGS.length];
+    }, []);
+
+    const createLevelSnapshot = useCallback((config: LevelConfig): LevelStateSnapshot => {
+        return {
+            grid: createBoard(),
+            moves: config.mode === 'moves' ? config.limit : 30,
+            timeLeft: config.mode === 'time' ? config.limit : 60,
+        };
+    }, []);
+
+    const prepareLevel = useCallback((targetLevel: number) => {
+        const sanitizedLevel = Math.max(1, Math.floor(targetLevel));
+        preparedLevelRef.current = {
+            level: sanitizedLevel,
+            snapshot: createLevelSnapshot(getLevelConfig(sanitizedLevel)),
+        };
+    }, [createLevelSnapshot, getLevelConfig]);
+
+    const resetLevelState = (config = levelConfig, snapshot?: LevelStateSnapshot) => {
+        const source = snapshot ?? createLevelSnapshot(config);
+        setGrid(source.grid);
         setScore(0);
-        setMoves(config.mode === 'moves' ? config.limit : 30);
-        setTimeLeft(config.mode === 'time' ? config.limit : 60);
+        setMoves(source.moves);
+        setTimeLeft(source.timeLeft);
         setCollected({
             red: 0,
             blue: 0,
@@ -81,6 +110,10 @@ export const useGame = () => {
         });
         setValidMoves(0);
     };
+
+    useEffect(() => {
+        prepareLevel(level + 1);
+    }, [level, prepareLevel]);
 
     const ensurePlayableGrid = useCallback((candidate: Grid): Grid => {
         if (hasPossibleMoves(candidate)) return candidate;
@@ -303,11 +336,16 @@ export const useGame = () => {
             clearTimeout(levelTransitionRef.current);
         }
         const nextLevel = level + 1;
-        const nextConfig = LEVEL_CONFIGS[(nextLevel - 1) % LEVEL_CONFIGS.length];
+        const nextConfig = getLevelConfig(nextLevel);
+        const prepared = preparedLevelRef.current;
+        const snapshot = prepared && prepared.level === nextLevel ? prepared.snapshot : undefined;
+
         setLevel(nextLevel);
-        resetLevelState(nextConfig);
+        resetLevelState(nextConfig, snapshot);
         setIsLevelUp(false);
         setIsProcessing(false);
+        prepareLevel(nextLevel + 1);
+
         levelTransitionRef.current = window.setTimeout(() => {
             setIsLevelTransition(false);
             levelTransitionRef.current = null;
@@ -675,21 +713,25 @@ export const useGame = () => {
 
     const startAtLevel = (nextLevel: number) => {
         const sanitizedLevel = Math.max(1, Math.floor(nextLevel));
-        const targetConfig = LEVEL_CONFIGS[(sanitizedLevel - 1) % LEVEL_CONFIGS.length];
+        const targetConfig = getLevelConfig(sanitizedLevel);
 
         if (levelTransitionRef.current !== null) {
             clearTimeout(levelTransitionRef.current);
             levelTransitionRef.current = null;
         }
 
+        const prepared = preparedLevelRef.current;
+        const snapshot = prepared && prepared.level === sanitizedLevel ? prepared.snapshot : undefined;
+
         setLevel(sanitizedLevel);
-        resetLevelState(targetConfig);
+        resetLevelState(targetConfig, snapshot);
         setIsLevelUp(false);
         setIsPaused(false);
         setIsProcessing(false);
         setSelectedTile(null);
         setIsLevelTransition(false);
         setExplodingIds(new Set());
+        prepareLevel(sanitizedLevel + 1);
     };
 
     return {
