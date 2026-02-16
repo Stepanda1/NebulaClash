@@ -34,10 +34,10 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute right-3 top-3 w-8 h-8 rounded-full border border-red-300/70 bg-red-500/75 text-white hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center"
+                    className="absolute right-3 top-3 h-9 w-9 rounded-full border-2 border-red-300/80 bg-red-500/80 text-white hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center"
                     aria-label={language === 'ru' ? 'Закрыть настройки' : 'Close settings'}
                 >
-                    <X size={16} />
+                    <X size={17} strokeWidth={3.2} />
                 </button>
 
                 <h2 className="text-3xl font-black text-white drop-shadow-lg mb-2 tracking-wide">{t.paused}</h2>
@@ -102,3 +102,4 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
         </motion.div>
     );
 };
+
