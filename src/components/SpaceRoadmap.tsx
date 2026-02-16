@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Lock, LogOut, Navigation, Settings, Sparkles, X } from 'lucide-react';
+import { ArrowUp, Check, Lock, LogOut, Settings, Sparkles, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
@@ -31,7 +31,9 @@ const STEP_Y = 118;
 
 const PLANETS: Decoration[] = [
   { left: 18, top: 140, size: 70, color: 'from-fuchsia-300/35 to-violet-600/25' },
+  { left: 112, top: 210, size: 38, color: 'from-blue-300/30 to-indigo-500/22' },
   { left: 250, top: 300, size: 90, color: 'from-cyan-300/35 to-blue-500/25' },
+  { left: 198, top: 470, size: 44, color: 'from-pink-300/28 to-fuchsia-500/18' },
   { left: 22, top: 620, size: 56, color: 'from-amber-300/30 to-orange-500/20' },
   { left: 258, top: 910, size: 62, color: 'from-emerald-300/30 to-cyan-500/20' },
   { left: 38, top: 1220, size: 84, color: 'from-rose-300/30 to-pink-500/20' },
@@ -43,11 +45,17 @@ const PLANETS: Decoration[] = [
   { left: 40, top: 3120, size: 88, color: 'from-rose-300/30 to-violet-500/20' },
 ];
 
-const STARS = Array.from({ length: 42 }, (_, i) => ({
+const STARS = Array.from({ length: 70 }, (_, i) => ({
   left: 12 + ((i * 61) % 316),
   top: 90 + i * 78,
   size: 1 + (i % 3),
   opacity: 0.28 + (i % 5) * 0.12,
+}));
+
+const COMETS = Array.from({ length: 12 }, (_, i) => ({
+  left: 20 + ((i * 47) % 300),
+  top: 180 + i * 290,
+  rotate: -18 + (i % 5) * 7,
 }));
 
 export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame }: SpaceRoadmapProps) {
@@ -178,6 +186,14 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
               />
             ))}
 
+            {COMETS.map((comet, idx) => (
+              <div
+                key={`comet-${idx}`}
+                className="pointer-events-none absolute h-[2px] w-16 rounded-full bg-gradient-to-r from-white/0 via-cyan-200/70 to-white/0"
+                style={{ left: comet.left, top: comet.top, transform: `rotate(${comet.rotate}deg)` }}
+              />
+            ))}
+
             <svg className="pointer-events-none absolute inset-0" width={MAP_WIDTH} height={mapHeight} viewBox={`0 0 ${MAP_WIDTH} ${mapHeight}`} fill="none" aria-hidden="true">
               <path d={pathD} stroke="rgba(148,163,184,0.34)" strokeWidth="14" strokeLinecap="round" />
               <path d={pathD} stroke="url(#roadGlow)" strokeWidth="8" strokeLinecap="round" />
@@ -232,9 +248,9 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
         <button
           type="button"
           onClick={() => scrollToLevel(unlockedLevel)}
-          className="absolute bottom-6 right-6 z-30 inline-flex items-center gap-2 rounded-full border border-cyan-200/60 bg-cyan-400/85 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-900 shadow-[0_0_24px_rgba(34,211,238,0.45)] hover:scale-105 active:scale-95 transition-all"
+          className="absolute bottom-6 left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border-2 border-white/85 bg-cyan-400/90 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-900 shadow-[0_0_24px_rgba(34,211,238,0.45)] hover:scale-105 active:scale-95 transition-all"
         >
-          <Navigation size={14} />
+          <ArrowUp size={14} strokeWidth={3} />
           {jumpLabel}
         </button>
       )}
@@ -245,10 +261,10 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
             <button
               type="button"
               onClick={() => setIsSettingsOpen(false)}
-              className="absolute right-3 top-3 h-9 w-9 rounded-full border-2 border-red-300/80 bg-red-500/80 text-white hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center"
+              className="absolute right-3 top-3 h-10 w-10 rounded-full border-4 border-white bg-red-500/90 text-white hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center"
               aria-label={language === 'ru' ? 'Закрыть' : 'Close'}
             >
-              <X size={17} strokeWidth={3.2} />
+              <X size={18} strokeWidth={4} />
             </button>
 
             <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-cyan-200/80"><Sparkles size={13} />{settingsLabel}</div>
