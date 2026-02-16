@@ -673,6 +673,25 @@ export const useGame = () => {
         setSelectedTile(null);
     };
 
+    const startAtLevel = (nextLevel: number) => {
+        const sanitizedLevel = Math.max(1, Math.floor(nextLevel));
+        const targetConfig = LEVEL_CONFIGS[(sanitizedLevel - 1) % LEVEL_CONFIGS.length];
+
+        if (levelTransitionRef.current !== null) {
+            clearTimeout(levelTransitionRef.current);
+            levelTransitionRef.current = null;
+        }
+
+        setLevel(sanitizedLevel);
+        resetLevelState(targetConfig);
+        setIsLevelUp(false);
+        setIsPaused(false);
+        setIsProcessing(false);
+        setSelectedTile(null);
+        setIsLevelTransition(false);
+        setExplodingIds(new Set());
+    };
+
     return {
         grid,
         score,
@@ -700,7 +719,8 @@ export const useGame = () => {
         comboId,
         bigBlastId,
         handleRestart,
-        handleNextLevel
+        handleNextLevel,
+        startAtLevel
     };
 };
 

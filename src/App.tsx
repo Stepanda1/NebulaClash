@@ -6,9 +6,10 @@ import { GameOverMenu } from './components/GameOverMenu';
 import { LevelUpModal } from './components/LevelUpModal';
 import { StarProgress } from './components/StarProgress';
 import { AudioPlayer } from './components/AudioPlayer';
-import { Coffee, Settings } from 'lucide-react';
+import { Coffee, Map, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
+import { SpaceRoadmap } from './components/SpaceRoadmap';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import { COPY } from './i18n';
@@ -48,7 +49,7 @@ function getDefaultLanguage(): Language {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, handleNextLevel } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, handleNextLevel, startAtLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -62,6 +63,8 @@ function App() {
   const [comboStyle, setComboStyle] = useState<{ color: string; size: string }>({ color: 'text-amber-300', size: 'text-lg sm:text-2xl' });
   const [lowPerfMode, setLowPerfMode] = useState(false);
   const [language, setLanguage] = useState<Language>(getDefaultLanguage);
+  const [isMapOpen, setIsMapOpen] = useState(true);
+  const [unlockedLevel, setUnlockedLevel] = useState(1);
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
@@ -132,8 +135,34 @@ function App() {
 
   const onNextLevel = () => {
     trackEvent('next_level_click', { level, score, mode: levelConfig.mode });
+    setUnlockedLevel((prev) => Math.max(prev, level + 1));
     handleNextLevel();
   };
+
+  const onOpenMap = () => {
+    setIsPaused(false);
+    setIsMapOpen(true);
+    trackEvent('map_open', { level, unlocked_level: unlockedLevel });
+  };
+
+  const onStartFromMap = (targetLevel: number) => {
+    if (targetLevel > unlockedLevel) return;
+    startAtLevel(targetLevel);
+    setIsMapOpen(false);
+    trackEvent('map_level_start', { level: targetLevel });
+  };
+
+  useEffect(() => {
+    const savedUnlocked = localStorage.getItem('match3_unlocked_level');
+    const parsed = Number(savedUnlocked);
+    if (Number.isFinite(parsed) && parsed >= 1) {
+      setUnlockedLevel(Math.floor(parsed));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('match3_unlocked_level', String(unlockedLevel));
+  }, [unlockedLevel]);
 
   useEffect(() => {
     if (analyticsInitRef.current) return;
@@ -389,6 +418,16 @@ function App() {
     };
   }, [bigBlastId, lowPerfMode]);
 
+  if (isMapOpen) {
+    return (
+      <SpaceRoadmap
+        unlockedLevel={unlockedLevel}
+        language={language}
+        onStartLevel={onStartFromMap}
+      />
+    );
+  }
+
   return (
     <div className={`flex flex-col items-center justify-between h-full w-full max-w-none max-h-none sm:max-w-lg sm:max-h-[900px] mx-auto p-1 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-none ${lowPerfMode ? 'sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-lg' : 'sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]'} ${shakeActive ? 'shake-soft' : ''}`}>
 
@@ -426,13 +465,22 @@ function App() {
       {/* Top Bar: Progress & Settings */}
       <div className="w-full flex flex-col gap-1 sm:gap-2 z-10">
         <div className="flex justify-between items-start">
-          <button
-            onClick={() => setIsPaused(true)}
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-2 sm:border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0 mt-1 sm:mt-2"
-          >
-            {/* Pause Icon / Settings */}
-            <Settings className="text-white w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
+          <div className="flex items-center gap-2 mt-1 sm:mt-2">
+            <button
+              onClick={() => setIsPaused(true)}
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-2 sm:border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0"
+            >
+              <Settings className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+            <button
+              onClick={onOpenMap}
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-cyan-500 border-2 sm:border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0"
+              aria-label={language === 'ru' ? 'Открыть карту уровней' : 'Open level map'}
+              title={language === 'ru' ? 'Карта уровней' : 'Level map'}
+            >
+              <Map className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          </div>
 
           {/* Star Progress Bar */}
           <div className="flex-1 flex flex-col items-center -mt-0.5 sm:-mt-1">
@@ -552,4 +600,6 @@ function App() {
 }
 
 export default App;
+
+
 
