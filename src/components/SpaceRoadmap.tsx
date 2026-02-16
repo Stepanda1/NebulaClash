@@ -145,6 +145,52 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     };
   }, [clampScrollBottom, currentPoint]);
 
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    let lastTouchY: number | null = null;
+
+    const getBlocked = (delta: number) => {
+      const maxTop = getMaxScrollTop(scroller);
+      return delta > 0 && scroller.scrollTop >= maxTop - 0.5;
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      if (!getBlocked(event.deltaY)) return;
+      event.preventDefault();
+      scroller.scrollTop = getMaxScrollTop(scroller);
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length === 0) return;
+      lastTouchY = event.touches[0].clientY;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length === 0 || lastTouchY == null) return;
+      const currentY = event.touches[0].clientY;
+      const delta = lastTouchY - currentY;
+
+      if (getBlocked(delta)) {
+        event.preventDefault();
+        scroller.scrollTop = getMaxScrollTop(scroller);
+        return;
+      }
+
+      lastTouchY = currentY;
+    };
+
+    scroller.addEventListener('wheel', onWheel, { passive: false });
+    scroller.addEventListener('touchstart', onTouchStart, { passive: true });
+    scroller.addEventListener('touchmove', onTouchMove, { passive: false });
+
+    return () => {
+      scroller.removeEventListener('wheel', onWheel);
+      scroller.removeEventListener('touchstart', onTouchStart);
+      scroller.removeEventListener('touchmove', onTouchMove);
+    };
+  }, [getMaxScrollTop]);
   const levelLabel = language === 'ru' ? 'Карта уровней' : 'Level Map';
   const currentLabel = language === 'ru' ? 'Текущий прогресс' : 'Current Progress';
   const settingsLabel = language === 'ru' ? 'Настройки карты' : 'Map Settings';
@@ -313,6 +359,7 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     </div>
   );
 }
+
 
 
 
