@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUp, Check, Lock, LogOut, Settings, Sparkles, X } from 'lucide-react';
+import { ArrowDown, Lock, LogOut, Settings, Sparkles, Star, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
@@ -8,6 +8,7 @@ type SpaceRoadmapProps = {
   language: Language;
   onStartLevel: (level: number) => void;
   onExitGame: () => void;
+  levelStars: Record<number, number>;
 };
 
 type Point = {
@@ -45,9 +46,9 @@ const PLANETS: Decoration[] = [
   { left: 40, top: 3120, size: 88, color: 'from-rose-300/30 to-violet-500/20' },
 ];
 
-const STARS = Array.from({ length: 70 }, (_, i) => ({
+const STARS = Array.from({ length: 74 }, (_, i) => ({
   left: 12 + ((i * 61) % 316),
-  top: 90 + i * 78,
+  top: 90 + i * 74,
   size: 1 + (i % 3),
   opacity: 0.28 + (i % 5) * 0.12,
 }));
@@ -58,7 +59,7 @@ const COMETS = Array.from({ length: 12 }, (_, i) => ({
   rotate: -18 + (i % 5) * 7,
 }));
 
-export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame }: SpaceRoadmapProps) {
+export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame, levelStars }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showJumpToCurrent, setShowJumpToCurrent] = useState(false);
@@ -80,7 +81,7 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     setSelectedLevel((prev) => (prev > unlockedLevel ? unlockedLevel : prev));
   }, [unlockedLevel]);
 
-  const mapHeight = points[0].y + 220;
+  const mapHeight = points[0].y + 64;
 
   const pathD = useMemo(() => {
     if (points.length === 0) return '';
@@ -131,7 +132,6 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
   const levelLabel = language === 'ru' ? 'Карта уровней' : 'Level Map';
   const currentLabel = language === 'ru' ? 'Текущий прогресс' : 'Current Progress';
   const settingsLabel = language === 'ru' ? 'Настройки карты' : 'Map Settings';
-  const jumpLabel = language === 'ru' ? 'К текущему уровню' : 'Go to current level';
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[radial-gradient(120%_130%_at_18%_12%,#3b1f7a_0%,#18103b_36%,#09041d_72%,#05020f_100%)] text-white">
@@ -162,7 +162,7 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
           </div>
         </div>
 
-        <div ref={scrollerRef} className="relative flex-1 overflow-y-auto rounded-3xl border border-white/15 bg-black/30 shadow-[0_0_80px_rgba(56,189,248,0.16)] backdrop-blur-md">
+        <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-white/15 bg-black/30 shadow-[0_0_80px_rgba(56,189,248,0.16)] backdrop-blur-md">
           <div className="relative mx-auto w-[340px]" style={{ height: mapHeight }}>
             {PLANETS.map((item, idx) => (
               <div
@@ -212,32 +212,45 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
               const isCurrent = point.level === unlockedLevel;
               const isLocked = point.level > unlockedLevel;
               const isSelected = point.level === selectedLevel;
+              const stars = Math.max(0, Math.min(3, levelStars[point.level] ?? 0));
 
               return (
-                <button
+                <div
                   key={point.level}
-                  type="button"
-                  onClick={() => {
-                    setSelectedLevel(point.level);
-                    if (!isLocked) onStartLevel(point.level);
-                  }}
-                  className={`absolute flex items-center justify-center rounded-full border-2 text-sm font-black transition-all ${
-                    isLocked
-                      ? 'border-slate-500/50 bg-slate-700/60 text-slate-300'
-                      : isCurrent
-                        ? 'border-yellow-200 bg-gradient-to-br from-amber-300 to-orange-500 text-slate-900 shadow-[0_0_28px_rgba(251,191,36,0.65)]'
-                        : 'border-cyan-100/80 bg-gradient-to-br from-cyan-300 to-sky-500 text-slate-900'
-                  } ${isSelected ? 'scale-110 ring-2 ring-white/80 ring-offset-2 ring-offset-transparent' : 'scale-100'} ${isLocked ? '' : 'hover:scale-110 active:scale-95'}`}
-                  style={{
-                    left: point.x - NODE_SIZE / 2,
-                    top: point.y - NODE_SIZE / 2,
-                    width: NODE_SIZE,
-                    height: NODE_SIZE,
-                  }}
-                  aria-label={t.level(point.level)}
+                  className="absolute"
+                  style={{ left: point.x - NODE_SIZE / 2, top: point.y - NODE_SIZE / 2, width: NODE_SIZE }}
                 >
-                  {isLocked ? <Lock className="h-4 w-4" /> : isCompleted ? <Check className="h-5 w-5" /> : point.level}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedLevel(point.level);
+                      if (!isLocked) onStartLevel(point.level);
+                    }}
+                    className={`flex items-center justify-center rounded-full border-2 text-sm font-black transition-all ${
+                      isLocked
+                        ? 'border-slate-500/50 bg-slate-700/60 text-slate-300'
+                        : isCurrent
+                          ? 'border-yellow-200 bg-gradient-to-br from-amber-300 to-orange-500 text-slate-900 shadow-[0_0_28px_rgba(251,191,36,0.65)]'
+                          : 'border-cyan-100/90 bg-gradient-to-br from-sky-300 to-blue-600 text-white shadow-[0_0_20px_rgba(56,189,248,0.45)]'
+                    } ${isSelected ? 'scale-110 ring-2 ring-white/80 ring-offset-2 ring-offset-transparent' : 'scale-100'} ${isLocked ? '' : 'hover:scale-110 active:scale-95'}`}
+                    style={{ width: NODE_SIZE, height: NODE_SIZE }}
+                    aria-label={t.level(point.level)}
+                  >
+                    {isLocked ? <Lock className="h-4 w-4" /> : point.level}
+                  </button>
+
+                  {isCompleted && (
+                    <div className="mt-1 flex items-center justify-center gap-0.5 rounded-full border border-white/20 bg-black/45 px-1.5 py-0.5 text-[9px] font-black text-yellow-300">
+                      {[1, 2, 3].map((i) => (
+                        <Star
+                          key={i}
+                          className={`h-2.5 w-2.5 ${i <= stars ? 'fill-yellow-300 text-yellow-300' : 'text-slate-500'}`}
+                          strokeWidth={2.2}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -248,10 +261,10 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
         <button
           type="button"
           onClick={() => scrollToLevel(unlockedLevel)}
-          className="absolute bottom-6 left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border-2 border-white/85 bg-cyan-400/90 px-4 py-2 text-xs font-black uppercase tracking-wide text-slate-900 shadow-[0_0_24px_rgba(34,211,238,0.45)] hover:scale-105 active:scale-95 transition-all"
+          className="absolute bottom-6 left-1/2 z-30 inline-flex -translate-x-1/2 items-center justify-center rounded-full border-2 border-white/85 bg-cyan-400/90 p-3 text-slate-900 shadow-[0_0_24px_rgba(34,211,238,0.45)] hover:scale-105 active:scale-95 transition-all"
+          aria-label={language === 'ru' ? 'К текущему уровню' : 'Go to current level'}
         >
-          <ArrowUp size={14} strokeWidth={3} />
-          {jumpLabel}
+          <ArrowDown size={18} strokeWidth={3.4} />
         </button>
       )}
 
@@ -284,3 +297,4 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     </div>
   );
 }
+

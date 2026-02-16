@@ -34,6 +34,15 @@ function GoalGemIcon({ color }: { color: GemType }) {
   );
 }
 
+
+type LevelStarsMap = Record<number, number>;
+
+function getStarsFromScore(score: number): number {
+  if (score >= 2200) return 3;
+  if (score >= 1400) return 2;
+  if (score >= 700) return 1;
+  return 0;
+}
 function getDefaultLanguage(): Language {
   if (typeof window !== 'undefined') {
     const savedLanguage = window.localStorage.getItem('match3_language');
@@ -66,6 +75,7 @@ function App() {
   const [language, setLanguage] = useState<Language>(getDefaultLanguage);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
+  const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
   const [isLaunchingLevel, setIsLaunchingLevel] = useState(false);
   const match3Ref = useRef(0);
@@ -138,8 +148,13 @@ function App() {
 
   const onNextLevel = () => {
     const nextUnlockedLevel = level + 1;
-    trackEvent('next_level_click', { level, score, mode: levelConfig.mode, next_level: nextUnlockedLevel });
+    const earnedStars = getStarsFromScore(score);
+    trackEvent('next_level_click', { level, score, mode: levelConfig.mode, next_level: nextUnlockedLevel, stars: earnedStars });
     setUnlockedLevel((prev) => Math.max(prev, nextUnlockedLevel));
+    setLevelStars((prev) => ({
+      ...prev,
+      [level]: Math.max(prev[level] ?? 0, earnedStars),
+    }));
     setIsPaused(false);
     setLevelToLaunch(null);
     setIsMapOpen(true);
@@ -170,6 +185,25 @@ function App() {
     setIsMapOpen(true);
   };
 
+
+  useEffect(() => {
+    const raw = localStorage.getItem('match3_level_stars');
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as Record<string, number>;
+      const normalized: LevelStarsMap = {};
+      Object.entries(parsed).forEach(([key, value]) => {
+        const levelNum = Number(key);
+        if (!Number.isFinite(levelNum)) return;
+        const stars = Math.max(0, Math.min(3, Math.floor(Number(value) || 0)));
+        normalized[levelNum] = stars;
+      });
+      setLevelStars(normalized);
+    } catch {
+      setLevelStars({});
+    }
+  }, []);
+
   useEffect(() => {
     const savedUnlocked = localStorage.getItem('match3_unlocked_level');
     const parsed = Number(savedUnlocked);
@@ -181,6 +215,9 @@ function App() {
   useEffect(() => {
     localStorage.setItem('match3_unlocked_level', String(unlockedLevel));
   }, [unlockedLevel]);
+  useEffect(() => {
+    localStorage.setItem('match3_level_stars', JSON.stringify(levelStars));
+  }, [levelStars]);
 
   useEffect(() => {
     if (analyticsInitRef.current) return;
@@ -444,6 +481,7 @@ function App() {
           language={language}
           onStartLevel={onStartFromMap}
           onExitGame={onExitGame}
+          levelStars={levelStars}
         />
         <AnimatePresence>
           {levelToLaunch !== null && (
@@ -631,6 +669,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
