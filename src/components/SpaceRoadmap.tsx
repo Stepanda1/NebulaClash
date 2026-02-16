@@ -78,11 +78,25 @@ const BOTTOM_NEBULAE = [
   { left: 30, top: 3400, w: 280, h: 170, color: 'from-amber-300/14 via-orange-500/10 to-transparent' },
 ];
 
-const BOTTOM_RELICS = [
-  { left: 34, top: 3330, scale: 1 },
-  { left: 250, top: 3440, scale: 0.9 },
-  { left: 188, top: 3512, scale: 0.75 },
+const BOTTOM_PLANETS: Decoration[] = [
+  { left: 20, top: 3336, size: 78, color: 'from-cyan-300/34 to-blue-500/22' },
+  { left: 228, top: 3428, size: 64, color: 'from-fuchsia-300/30 to-violet-500/20' },
+  { left: 136, top: 3498, size: 46, color: 'from-amber-300/28 to-orange-500/18' },
 ];
+
+const BOTTOM_COMETS = [
+  { left: 30, top: 3310, rotate: 12 },
+  { left: 210, top: 3378, rotate: -16 },
+  { left: 88, top: 3468, rotate: 20 },
+  { left: 246, top: 3524, rotate: -12 },
+];
+
+const BOTTOM_STARS = Array.from({ length: 28 }, (_, i) => ({
+  left: 8 + ((i * 41) % 324),
+  top: 3240 + i * 14,
+  size: 1 + (i % 3),
+  opacity: 0.24 + (i % 6) * 0.1,
+}));
 
 export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame, levelStars }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
@@ -312,21 +326,29 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
               />
             ))}
 
-            {BOTTOM_RELICS.map((relic, idx) => (
-              <div
-                key={`bottom-relic-${idx}`}
-                className="pointer-events-none absolute"
-                style={{ left: relic.left, top: relic.top, transform: `scale(${relic.scale})` }}
-              >
-                <div className="relative h-14 w-14 rounded-2xl border border-cyan-100/30 bg-slate-900/55 shadow-[0_0_16px_rgba(59,130,246,0.25)]">
-                  <div className="absolute inset-[22%] rounded-md border border-cyan-100/45" />
-                  <div className="absolute left-1/2 top-1/2 h-[2px] w-10 -translate-x-1/2 -translate-y-1/2 bg-cyan-200/55" />
-                  <div className="absolute left-1/2 top-1/2 h-10 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-cyan-200/45" />
-                  <div className="absolute right-1 top-1 h-2 w-2 rounded-full bg-emerald-300/70" />
-                </div>
+                        {BOTTOM_PLANETS.map((item, idx) => (
+              <div key={`bottom-planet-${idx}`} className="pointer-events-none absolute" style={{ left: item.left, top: item.top, width: item.size, height: item.size }}>
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${item.color} border border-white/18 shadow-[inset_-8px_-6px_14px_rgba(15,23,42,0.35)]`} />
+                <div className="absolute inset-[20%] rounded-full border border-white/20" />
+                {idx === 1 && <div className="absolute left-[-16%] top-1/2 h-[22%] w-[132%] -translate-y-1/2 rounded-full border border-white/25 bg-white/5" />}
               </div>
             ))}
-            <svg className="pointer-events-none absolute inset-0" width={MAP_WIDTH} height={mapHeight} viewBox={`0 0 ${MAP_WIDTH} ${mapHeight}`} fill="none" aria-hidden="true">
+
+            {BOTTOM_COMETS.map((comet, idx) => (
+              <div
+                key={`bottom-comet-${idx}`}
+                className="pointer-events-none absolute h-[2px] w-20 rounded-full bg-gradient-to-r from-white/0 via-cyan-200/75 to-white/0"
+                style={{ left: comet.left, top: comet.top, transform: `rotate(${comet.rotate}deg)` }}
+              />
+            ))}
+
+            {BOTTOM_STARS.map((star, idx) => (
+              <div
+                key={`bottom-star-${idx}`}
+                className="pointer-events-none absolute rounded-full bg-white"
+                style={{ left: star.left, top: star.top, width: star.size, height: star.size, opacity: star.opacity }}
+              />
+            ))}            <svg className="pointer-events-none absolute inset-0" width={MAP_WIDTH} height={mapHeight} viewBox={`0 0 ${MAP_WIDTH} ${mapHeight}`} fill="none" aria-hidden="true">
               <path d={pathD} stroke="rgba(148,163,184,0.34)" strokeWidth="14" strokeLinecap="round" />
               <path d={pathD} stroke="url(#roadGlow)" strokeWidth="8" strokeLinecap="round" />
               <defs>
@@ -428,6 +450,8 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     </div>
   );
 }
+
+
 
 
 
