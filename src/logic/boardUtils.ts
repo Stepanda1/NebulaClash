@@ -53,14 +53,18 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
     const processed = new Set<string>();
 
     const getTileBaseType = (tile: Tile): GemType | null => {
+        if (tile.hasTrash) return null;
+        if (tile.type == null) return null;
         if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross') {
             return tile.gemType || null;
         }
-        return (tile.type as any).length > 0 ? (tile.type as GemType) : null;
+        return tile.type as GemType;
     };
 
     const isSameType = (t1: Tile, t2: Tile): boolean => {
-        return getTileBaseType(t1) === getTileBaseType(t2);
+        const b1 = getTileBaseType(t1);
+        const b2 = getTileBaseType(t2);
+        return b1 !== null && b1 === b2;
     };
 
     const addGroup = (tileIds: string[], type: 'match' | 'bomb' | 'lightning') => {
@@ -460,29 +464,40 @@ export const applyGravity = (grid: Grid): { grid: Grid; newTiles: Tile[] } => {
     const newTiles: Tile[] = [];
 
     for (let x = 0; x < COLS; x++) {
-        let writeY = ROWS - 1;
-        // Move existing tiles down
-        for (let y = ROWS - 1; y >= 0; y--) {
-            if (newGrid[y][x].type as any !== null) { // Check if not null
-                if (y !== writeY) {
-                    newGrid[writeY][x] = { ...newGrid[y][x], x, y: writeY };
-                    newGrid[y][x].type = null as any;
+        let segmentBottom = ROWS - 1;
+
+        for (let y = ROWS - 1; y >= -1; y--) {
+            const isBarrier = y >= 0 && newGrid[y][x].hasTrash;
+            if (!isBarrier && y !== -1) continue;
+
+            const segmentTop = y + 1;
+            let writeY = segmentBottom;
+
+            for (let readY = segmentBottom; readY >= segmentTop; readY--) {
+                const tile = newGrid[readY][x];
+                if (tile.type == null || tile.hasTrash) continue;
+                if (readY !== writeY) {
+                    newGrid[writeY][x] = { ...tile, x, y: writeY };
+                    newGrid[readY][x] = { ...newGrid[readY][x], type: null as any };
                 }
                 writeY--;
             }
-        }
-        // Fill top with new tiles
-        for (let y = writeY; y >= 0; y--) {
-            const newTile: Tile = {
-                id: `${x}-${y}-${Date.now()}-${Math.random()}`,
-                type: generateRandomTileType(),
-                x,
-                y,
-            };
-            newGrid[y][x] = newTile;
-            newTiles.push(newTile);
+
+            for (let fillY = writeY; fillY >= segmentTop; fillY--) {
+                const newTile: Tile = {
+                    id: `${x}-${fillY}-${Date.now()}-${Math.random()}`,
+                    type: generateRandomTileType(),
+                    x,
+                    y: fillY,
+                };
+                newGrid[fillY][x] = newTile;
+                newTiles.push(newTile);
+            }
+
+            segmentBottom = y - 1;
         }
     }
+
     return { grid: newGrid, newTiles };
 };
 
@@ -493,7 +508,7 @@ export const copyGrid = (grid: Grid): Grid => {
 export const findHintMove = (grid: Grid, requiredType: 'match' | 'bomb' | 'lightning' = 'match'): { from: { x: number; y: number }; to: { x: number; y: number } } | null => {
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
-            if ((grid[y][x] as any).type == null) {
+            if ((grid[y][x] as any).type == null || grid[y][x].hasTrash) {
                 return null;
             }
         }
@@ -503,6 +518,7 @@ export const findHintMove = (grid: Grid, requiredType: 'match' | 'bomb' | 'light
         const newGrid = copyGrid(g);
         const t1 = newGrid[y1][x1];
         const t2 = newGrid[y2][x2];
+        if (t1.hasTrash || t2.hasTrash) return newGrid;
         newGrid[y1][x1] = { ...t2, x: x1, y: y1 };
         newGrid[y2][x2] = { ...t1, x: x2, y: y2 };
         return newGrid;
@@ -510,30 +526,26 @@ export const findHintMove = (grid: Grid, requiredType: 'match' | 'bomb' | 'light
 
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
-            if (x + 1 < COLS) {
+            if (x + 1 < COLS && !grid[y][x].hasTrash && !grid[y][x + 1].hasTrash) {
                 const swapped = trySwap(grid, x, y, x + 1, y);
                 const matches = findMatches(swapped);
                 let hasRequired = false;
                 matches.forEach((type) => {
                     if (type === requiredType) hasRequired = true;
                 });
-                if (hasRequired) {
-                    if (y > 0) {
-                        return { from: { x, y }, to: { x: x + 1, y } };
-                    }
+                if (hasRequired && y > 0) {
+                    return { from: { x, y }, to: { x: x + 1, y } };
                 }
             }
-            if (y + 1 < ROWS) {
+            if (y + 1 < ROWS && !grid[y][x].hasTrash && !grid[y + 1][x].hasTrash) {
                 const swapped = trySwap(grid, x, y, x, y + 1);
                 const matches = findMatches(swapped);
                 let hasRequired = false;
                 matches.forEach((type) => {
                     if (type === requiredType) hasRequired = true;
                 });
-                if (hasRequired) {
-                    if (y > 0) {
-                        return { from: { x, y }, to: { x, y: y + 1 } };
-                    }
+                if (hasRequired && y > 0) {
+                    return { from: { x, y }, to: { x, y: y + 1 } };
                 }
             }
         }
@@ -545,7 +557,7 @@ export const findLightningSwap = (grid: Grid): { from: { x: number; y: number };
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
             const tile = grid[y][x];
-            if (tile.type !== 'lightning') continue;
+            if (tile.type !== 'lightning' || tile.hasTrash) continue;
             const candidates = [
                 { x: x + 1, y },
                 { x: x - 1, y },
@@ -556,7 +568,7 @@ export const findLightningSwap = (grid: Grid): { from: { x: number; y: number };
                 if (c.x < 0 || c.x >= COLS || c.y < 0 || c.y >= ROWS) continue;
                 if (c.y === 0) continue;
                 const target = grid[c.y][c.x];
-                if ((target as any).type == null) continue;
+                if ((target as any).type == null || target.hasTrash) continue;
                 if (y === 0) continue;
                 return { from: { x, y }, to: { x: c.x, y: c.y } };
             }
@@ -570,6 +582,7 @@ export const hasPossibleMoves = (grid: Grid): boolean => {
         const newGrid = copyGrid(g);
         const t1 = newGrid[y1][x1];
         const t2 = newGrid[y2][x2];
+        if (t1.hasTrash || t2.hasTrash) return newGrid;
         newGrid[y1][x1] = { ...t2, x: x1, y: y1 };
         newGrid[y2][x2] = { ...t1, x: x2, y: y2 };
         return newGrid;
@@ -587,25 +600,25 @@ export const hasPossibleMoves = (grid: Grid): boolean => {
             const current = grid[y][x];
             if (x + 1 < COLS) {
                 const right = grid[y][x + 1];
-                if (
+                if (!current.hasTrash && !right.hasTrash && (
                     current.type === 'bomb' || current.type === 'lightning' || current.type === 'cross' ||
                     right.type === 'bomb' || right.type === 'lightning' || right.type === 'cross'
-                ) {
+                )) {
                     return true;
                 }
-                if (findMatches(trySwap(grid, x, y, x + 1, y)).size > 0) {
+                if (!current.hasTrash && !right.hasTrash && findMatches(trySwap(grid, x, y, x + 1, y)).size > 0) {
                     return true;
                 }
             }
             if (y + 1 < ROWS) {
                 const down = grid[y + 1][x];
-                if (
+                if (!current.hasTrash && !down.hasTrash && (
                     current.type === 'bomb' || current.type === 'lightning' || current.type === 'cross' ||
                     down.type === 'bomb' || down.type === 'lightning' || down.type === 'cross'
-                ) {
+                )) {
                     return true;
                 }
-                if (findMatches(trySwap(grid, x, y, x, y + 1)).size > 0) {
+                if (!current.hasTrash && !down.hasTrash && findMatches(trySwap(grid, x, y, x, y + 1)).size > 0) {
                     return true;
                 }
             }
@@ -616,18 +629,26 @@ export const hasPossibleMoves = (grid: Grid): boolean => {
 };
 
 export const reshuffleBoard = (grid: Grid, maxAttempts: number = 120): Grid => {
-    const pieces = [];
+    const movablePieces: Array<{ type: Tile['type']; gemType?: GemType }> = [];
+    const locked: boolean[][] = [];
+
     for (let y = 0; y < ROWS; y++) {
+        const rowLocks: boolean[] = [];
         for (let x = 0; x < COLS; x++) {
             const tile = grid[y][x];
             if ((tile as any).type == null) {
                 return createBoard();
             }
-            pieces.push({
-                type: tile.type,
-                gemType: tile.gemType,
-            });
+            const isLocked = !!tile.hasTrash;
+            rowLocks.push(isLocked);
+            if (!isLocked) {
+                movablePieces.push({
+                    type: tile.type as any,
+                    gemType: tile.gemType,
+                });
+            }
         }
+        locked.push(rowLocks);
     }
 
     const shuffle = <T,>(arr: T[]): T[] => {
@@ -640,23 +661,35 @@ export const reshuffleBoard = (grid: Grid, maxAttempts: number = 120): Grid => {
     };
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const shuffled = shuffle(pieces);
+        const shuffled = shuffle(movablePieces);
         let idx = 0;
         const candidate: Grid = [];
+
         for (let y = 0; y < ROWS; y++) {
             const row: Tile[] = [];
             for (let x = 0; x < COLS; x++) {
-                const next = shuffled[idx++];
-                row.push({
-                    id: `${x}-${y}-${Date.now()}-${Math.random()}`,
-                    type: next.type as any,
-                    gemType: next.gemType,
-                    x,
-                    y,
-                });
+                const source = grid[y][x];
+                if (locked[y][x]) {
+                    row.push({
+                        ...source,
+                        id: `${x}-${y}-${Date.now()}-${Math.random()}` ,
+                        x,
+                        y,
+                    });
+                } else {
+                    const next = shuffled[idx++];
+                    row.push({
+                        id: `${x}-${y}-${Date.now()}-${Math.random()}` ,
+                        type: next.type as any,
+                        gemType: next.gemType,
+                        x,
+                        y,
+                    });
+                }
             }
             candidate.push(row);
         }
+
         if (findMatches(candidate).size === 0 && hasPossibleMoves(candidate)) {
             return candidate;
         }
@@ -664,3 +697,5 @@ export const reshuffleBoard = (grid: Grid, maxAttempts: number = 120): Grid => {
 
     return createBoard();
 };
+
+

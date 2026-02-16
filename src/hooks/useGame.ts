@@ -190,7 +190,7 @@ export const useGame = () => {
             for (let y = 1; y < ROWS; y++) {
                 for (let x = 0; x < COLS; x++) {
                     const tile = newGrid[y][x];
-                    if ((tile as { type?: unknown }).type == null) continue;
+                    if ((tile as { type?: unknown }).type == null || tile.hasTrash) continue;
                     candidates.push(tile);
                 }
             }
@@ -221,7 +221,7 @@ export const useGame = () => {
         for (let y = 0; y < ROWS; y++) {
             for (let x = 0; x < COLS; x++) {
                 const tile = g[y][x];
-                if (!ids.has(tile.id)) continue;
+                if (!ids.has(tile.id) || tile.hasTrash) continue;
                 if ((tile as { type?: unknown }).type == null) continue;
 
                 const base = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross')
@@ -245,20 +245,61 @@ export const useGame = () => {
         });
     }, [goal]);
 
-    const countTrashDestroyed = useCallback((g: Grid, ids: Set<string>) => {
-        let destroyed = 0;
+        const collectAdjacentTrash = useCallback((g: Grid, sourceIds: Set<string>): Set<string> => {
+        const hits = new Set<string>();
+
+        const markTrash = (x: number, y: number) => {
+            if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
+            const tile = g[y][x];
+            if (tile.hasTrash) {
+                hits.add(tile.id);
+            }
+        };
+
         for (let y = 0; y < ROWS; y++) {
             for (let x = 0; x < COLS; x++) {
                 const tile = g[y][x];
-                if (!ids.has(tile.id) || !tile.hasTrash) continue;
-                destroyed += 1;
+                if (!sourceIds.has(tile.id)) continue;
+                markTrash(x + 1, y);
+                markTrash(x - 1, y);
+                markTrash(x, y + 1);
+                markTrash(x, y - 1);
+            }
+        }
+
+        return hits;
+    }, []);
+
+    const clearTrashByImpact = useCallback((g: Grid, directHitIds: Set<string>, adjacentMatchIds?: Set<string>) => {
+        const trashToClear = new Set<string>();
+
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = g[y][x];
+                if (!tile.hasTrash) continue;
+                if (directHitIds.has(tile.id)) {
+                    trashToClear.add(tile.id);
+                }
+            }
+        }
+
+        if (adjacentMatchIds && adjacentMatchIds.size > 0) {
+            const adjacentHits = collectAdjacentTrash(g, adjacentMatchIds);
+            adjacentHits.forEach((id) => trashToClear.add(id));
+        }
+
+        if (trashToClear.size === 0) return;
+
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = g[y][x];
+                if (!trashToClear.has(tile.id)) continue;
                 g[y][x] = { ...tile, hasTrash: false };
             }
         }
-        if (destroyed > 0) {
-            setTrashDestroyed(prev => prev + destroyed);
-        }
-    }, []);
+
+        setTrashDestroyed(prev => prev + trashToClear.size);
+    }, [collectAdjacentTrash]);
 
     const countSpecialGoalActivations = useCallback((g: Grid, ids: Set<string>) => {
         let bombs = 0;
@@ -266,7 +307,7 @@ export const useGame = () => {
         for (let y = 0; y < ROWS; y++) {
             for (let x = 0; x < COLS; x++) {
                 const tile = g[y][x];
-                if (!ids.has(tile.id)) continue;
+                if (!ids.has(tile.id) || tile.hasTrash) continue;
                 if (tile.type === 'bomb') bombs += 1;
                 if (tile.type === 'lightning') lightnings += 1;
             }
@@ -349,7 +390,7 @@ export const useGame = () => {
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
-            countTrashDestroyed(activeGrid, removeSet);
+            clearTrashByImpact(activeGrid, removeSet, regularMatches);
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
@@ -377,7 +418,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [countCollected, countSpecialGoalActivations, countTrashDestroyed, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
 
     useEffect(() => {
         const goalReached = (() => {
@@ -482,7 +523,7 @@ export const useGame = () => {
 
         await new Promise(r => setTimeout(r, 100));
 
-        countTrashDestroyed(activeGrid, toRemove);
+        clearTrashByImpact(activeGrid, toRemove);
         activeGrid = removeMatches(activeGrid, toRemove);
         setGrid(activeGrid);
 
@@ -535,7 +576,7 @@ export const useGame = () => {
             });
 
             const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
-            countTrashDestroyed(activeGrid, removeSet);
+            clearTrashByImpact(activeGrid, removeSet, allRegularMatches);
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
@@ -563,7 +604,7 @@ export const useGame = () => {
         if (finalizeProcessing) {
             setIsProcessing(false);
         }
-    }, [countCollected, countSpecialGoalActivations, countTrashDestroyed, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
 
     const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
         let activeGrid = copyGrid(currentGrid);
@@ -601,7 +642,7 @@ export const useGame = () => {
 
         await new Promise(r => setTimeout(r, 100));
 
-        countTrashDestroyed(activeGrid, toRemove);
+        clearTrashByImpact(activeGrid, toRemove);
         activeGrid = removeMatches(activeGrid, toRemove);
         setGrid(activeGrid);
 
@@ -654,7 +695,7 @@ export const useGame = () => {
             });
 
             const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
-            countTrashDestroyed(activeGrid, removeSet);
+            clearTrashByImpact(activeGrid, removeSet, allRegularMatches);
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
@@ -680,7 +721,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [countCollected, countSpecialGoalActivations, countTrashDestroyed, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
 
     const attemptSwap = async (firstTile: Tile, secondTile: Tile) => {
         if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
@@ -688,6 +729,7 @@ export const useGame = () => {
         const dy = Math.abs(secondTile.y - firstTile.y);
         const isAdjacent = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
         if (!isAdjacent) return;
+        if (firstTile.hasTrash || secondTile.hasTrash) return;
 
         const selectedWasSpecial = firstTile.type === 'bomb' || firstTile.type === 'lightning';
         const clickedWasSpecial = secondTile.type === 'bomb' || secondTile.type === 'lightning';
@@ -840,3 +882,14 @@ export const useGame = () => {
         startAtLevel,
     };
 };
+
+
+
+
+
+
+
+
+
+
+
