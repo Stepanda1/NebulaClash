@@ -6,7 +6,7 @@ import { GameOverMenu } from './components/GameOverMenu';
 import { LevelUpModal } from './components/LevelUpModal';
 import { StarProgress } from './components/StarProgress';
 import { AudioPlayer } from './components/AudioPlayer';
-import { Coffee, Map, Settings } from 'lucide-react';
+import { Coffee, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
 import { SpaceRoadmap } from './components/SpaceRoadmap';
@@ -143,12 +143,6 @@ function App() {
     setIsPaused(false);
     setLevelToLaunch(null);
     setIsMapOpen(true);
-  };
-
-  const onOpenMap = () => {
-    setIsPaused(false);
-    setIsMapOpen(true);
-    trackEvent('map_open', { level, unlocked_level: unlockedLevel });
   };
 
   const onStartFromMap = (targetLevel: number) => {
@@ -449,6 +443,7 @@ function App() {
           unlockedLevel={unlockedLevel}
           language={language}
           onStartLevel={onStartFromMap}
+          onExitGame={onExitGame}
         />
         <AnimatePresence>
           {levelToLaunch !== null && (
@@ -482,7 +477,6 @@ function App() {
             onResume={() => setIsPaused(false)}
             onRestart={onRestart}
             onClose={() => setIsPaused(false)}
-            onExitGame={onExitGame}
             isMuted={isMuted}
             onToggleMute={onToggleMute}
             volume={volume}
@@ -510,20 +504,12 @@ function App() {
       {/* Top Bar: Progress & Settings */}
       <div className="w-full flex flex-col gap-1 sm:gap-2 z-10">
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2 mt-1 sm:mt-2">
+          <div className="flex items-center mt-1 sm:mt-2">
             <button
               onClick={() => setIsPaused(true)}
               className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-2 sm:border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0"
             >
               <Settings className="text-white w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-            <button
-              onClick={onOpenMap}
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-cyan-500 border-2 sm:border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0"
-              aria-label={language === 'ru' ? 'Открыть карту уровней' : 'Open level map'}
-              title={language === 'ru' ? 'Карта уровней' : 'Level map'}
-            >
-              <Map className="text-white w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
 
@@ -645,6 +631,7 @@ function App() {
 }
 
 export default App;
+
 
 
 

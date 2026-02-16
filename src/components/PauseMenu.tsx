@@ -1,13 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LogOut, Play, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
+import { Play, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
 interface PauseMenuProps {
     onResume: () => void;
     onRestart: () => void;
-    onExitGame: () => void;
     onClose: () => void;
     isMuted: boolean;
     onToggleMute: () => void;
@@ -17,7 +16,7 @@ interface PauseMenuProps {
     onLanguageChange: (language: Language) => void;
 }
 
-export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onExitGame, onClose, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
+export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClose, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
     const t = COPY[language];
 
     return (
@@ -35,7 +34,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onExi
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute right-3 top-3 w-8 h-8 rounded-full border border-white/30 bg-black/20 text-white/90 hover:bg-black/35 active:scale-95 transition-all flex items-center justify-center"
+                    className="absolute right-3 top-3 w-8 h-8 rounded-full border border-red-300/70 bg-red-500/75 text-white hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center"
                     aria-label={language === 'ru' ? 'Закрыть настройки' : 'Close settings'}
                 >
                     <X size={16} />
@@ -57,14 +56,6 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onExi
                 >
                     <RotateCcw size={24} />
                     {t.restart}
-                </button>
-
-                <button
-                    onClick={onExitGame}
-                    className="flex items-center justify-center gap-3 w-full py-3 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white rounded-xl font-bold text-lg shadow-lg border border-white/20 active:scale-95 transition-all"
-                >
-                    <LogOut size={24} />
-                    {t.exitGame}
                 </button>
 
                 <div className="w-full mt-2 p-3 rounded-xl bg-white/10 border border-white/20 shadow-inner">

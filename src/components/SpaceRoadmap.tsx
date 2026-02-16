@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Lock, Rocket } from 'lucide-react';
+import { Check, Lock, LogOut, Settings, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
@@ -7,6 +7,7 @@ type SpaceRoadmapProps = {
   unlockedLevel: number;
   language: Language;
   onStartLevel: (level: number) => void;
+  onExitGame: () => void;
 };
 
 type Point = {
@@ -32,8 +33,9 @@ const DECORATIONS = [
   { left: 254, top: 2920, size: 64, color: 'from-lime-300/30 to-emerald-500/20' },
 ];
 
-export function SpaceRoadmap({ unlockedLevel, language, onStartLevel }: SpaceRoadmapProps) {
+export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const t = COPY[language];
 
@@ -74,11 +76,9 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel }: SpaceRoa
     scroller.scrollTo({ top: target, behavior: 'smooth' });
   }, [selectedLevel, points]);
 
-  const selectedUnlocked = selectedLevel <= unlockedLevel;
   const levelLabel = language === 'ru' ? 'Карта уровней' : 'Level Map';
-  const startLabel = language === 'ru' ? 'Старт' : 'Start';
-  const lockedLabel = language === 'ru' ? 'Закрыт' : 'Locked';
   const currentLabel = language === 'ru' ? 'Текущий прогресс' : 'Current Progress';
+  const settingsLabel = language === 'ru' ? 'Настройки карты' : 'Map Settings';
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[radial-gradient(circle_at_20%_20%,#1f3d7a_0%,#120b2e_40%,#06030f_100%)] text-white">
@@ -86,14 +86,25 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel }: SpaceRoa
       <div className="pointer-events-none absolute -left-20 top-28 h-56 w-56 rounded-full bg-fuchsia-500/18 blur-3xl" />
       <div className="pointer-events-none absolute -right-16 bottom-24 h-64 w-64 rounded-full bg-cyan-400/14 blur-3xl" />
 
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-24 pt-5">
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-5">
         <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-black/30 px-4 py-3 backdrop-blur-md">
           <div>
             <div className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">{currentLabel}</div>
             <div className="text-lg font-black">{t.level(unlockedLevel)}</div>
           </div>
-          <div className="rounded-xl bg-cyan-300/20 px-3 py-2 text-xs font-bold text-cyan-100">
-            {levelLabel}
+          <div className="flex items-center gap-2">
+            <div className="rounded-xl bg-cyan-300/20 px-3 py-2 text-xs font-bold text-cyan-100">
+              {levelLabel}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="w-10 h-10 rounded-full bg-blue-500 border-2 border-white/70 shadow-lg text-white active:scale-95 transition-transform flex items-center justify-center"
+              aria-label={settingsLabel}
+              title={settingsLabel}
+            >
+              <Settings className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
@@ -129,7 +140,12 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel }: SpaceRoa
                 <button
                   key={point.level}
                   type="button"
-                  onClick={() => setSelectedLevel(point.level)}
+                  onClick={() => {
+                    setSelectedLevel(point.level);
+                    if (!isLocked) {
+                      onStartLevel(point.level);
+                    }
+                  }}
                   className={`absolute flex items-center justify-center rounded-full border-2 text-sm font-black transition-all ${
                     isLocked
                       ? 'border-slate-500/50 bg-slate-700/60 text-slate-300'
@@ -153,27 +169,32 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel }: SpaceRoa
         </div>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 z-20 border-t border-white/10 bg-black/45 p-4 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-md items-center justify-between gap-4 rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">{selectedUnlocked ? t.level(selectedLevel) : `${t.level(selectedLevel)} • ${lockedLabel}`}</div>
-            <div className="text-sm font-bold text-white/85">{selectedUnlocked ? levelLabel : lockedLabel}</div>
+      {isSettingsOpen && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-xs rounded-3xl border border-white/25 bg-slate-950/80 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(false)}
+              className="absolute right-3 top-3 w-8 h-8 rounded-full border border-red-300/70 bg-red-500/75 text-white hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center"
+              aria-label={language === 'ru' ? 'Закрыть' : 'Close'}
+            >
+              <X size={16} />
+            </button>
+
+            <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/80">{settingsLabel}</div>
+            <h3 className="mt-2 text-xl font-black text-white">{levelLabel}</h3>
+
+            <button
+              type="button"
+              onClick={onExitGame}
+              className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide text-white bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 active:scale-95 transition-all"
+            >
+              <LogOut size={18} />
+              {t.exitGame}
+            </button>
           </div>
-          <button
-            type="button"
-            disabled={!selectedUnlocked}
-            onClick={() => onStartLevel(selectedLevel)}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-black uppercase tracking-wide transition-all ${
-              selectedUnlocked
-                ? 'bg-gradient-to-r from-cyan-300 to-sky-500 text-slate-900 shadow-[0_0_24px_rgba(56,189,248,0.45)] hover:scale-105 active:scale-95'
-                : 'cursor-not-allowed bg-slate-600/70 text-slate-300'
-            }`}
-          >
-            <Rocket className="h-4 w-4" />
-            {selectedUnlocked ? startLabel : lockedLabel}
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

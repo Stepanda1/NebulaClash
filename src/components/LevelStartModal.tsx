@@ -32,7 +32,7 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, languag
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 w-8 h-8 rounded-full border border-white/30 bg-white/10 text-white hover:bg-white/20 active:scale-95 transition-all flex items-center justify-center"
+          className="absolute right-3 top-3 w-8 h-8 rounded-full border border-red-300/70 bg-red-500/75 text-white hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center"
           aria-label={language === 'ru' ? 'Закрыть' : 'Close'}
         >
           <X size={16} />
@@ -63,3 +63,4 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, languag
     </motion.div>
   );
 };
+
