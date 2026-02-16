@@ -256,6 +256,16 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                     </motion.div>
                 )}
 
+                {tile.hasTrash && (
+                    <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
+                        <div className="absolute inset-[18%] rounded-xl border-2 border-cyan-200/75 bg-slate-900/30" />
+                        <svg viewBox="0 0 100 100" className="w-7 h-7 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)]">
+                            <path d="M18 62 L40 28 L58 42 L82 18 L90 34 L66 56 L76 82 L54 76 L34 90 L22 72 Z" fill="#67e8f9" fillOpacity="0.8" />
+                            <path d="M30 66 L44 48 L56 58 L48 76 Z" fill="#022c22" fillOpacity="0.65" />
+                        </svg>
+                    </div>
+                )}
+
                 {/* Selection FX: Pulse & Glow */}
                 {isSelected && (
                     <motion.div
@@ -360,3 +370,4 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
         </motion.div>
     );
 };
+

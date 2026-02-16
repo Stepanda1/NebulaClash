@@ -3,13 +3,17 @@ import type { Grid, Tile, GemType } from '../types';
 import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, expandSpecialChain, hasPossibleMoves, reshuffleBoard, ROWS, COLS } from '../logic/boardUtils';
 
 type Goal =
-    | { type: 'score'; value: number }
-    | { type: 'collect'; value: number; color: GemType };
+    | { type: 'collect'; value: number; color: GemType }
+    | { type: 'collect_multi'; targets: Partial<Record<GemType, number>> }
+    | { type: 'bombs'; value: number }
+    | { type: 'lightning'; value: number }
+    | { type: 'trash'; value: number };
 
 type LevelConfig = {
     mode: 'moves' | 'time';
     limit: number;
     goal: Goal;
+    trashCount?: number;
 };
 
 type LevelStateSnapshot = {
@@ -19,15 +23,15 @@ type LevelStateSnapshot = {
 };
 
 const LEVEL_CONFIGS: LevelConfig[] = [
-    { mode: 'moves', limit: 28, goal: { type: 'score', value: 1100 } },
-    { mode: 'moves', limit: 26, goal: { type: 'collect', value: 18, color: 'red' } },
-    { mode: 'time', limit: 55, goal: { type: 'score', value: 1300 } },
-    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'blue' } },
-    { mode: 'time', limit: 65, goal: { type: 'score', value: 1700 } },
-    { mode: 'moves', limit: 22, goal: { type: 'collect', value: 22, color: 'green' } },
-    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'yellow' } },
-    { mode: 'time', limit: 60, goal: { type: 'collect', value: 18, color: 'purple' } },
-    { mode: 'moves', limit: 23, goal: { type: 'collect', value: 20, color: 'orange' } },
+    { mode: 'moves', limit: 28, goal: { type: 'collect', value: 18, color: 'red' } },
+    { mode: 'moves', limit: 26, goal: { type: 'bombs', value: 4 } },
+    { mode: 'time', limit: 55, goal: { type: 'collect_multi', targets: { red: 10, green: 10 } } },
+    { mode: 'moves', limit: 24, goal: { type: 'lightning', value: 4 } },
+    { mode: 'moves', limit: 26, goal: { type: 'trash', value: 10 }, trashCount: 10 },
+    { mode: 'time', limit: 60, goal: { type: 'collect', value: 18, color: 'blue' } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect_multi', targets: { yellow: 12, purple: 12 } } },
+    { mode: 'moves', limit: 22, goal: { type: 'trash', value: 12 }, trashCount: 12 },
+    { mode: 'moves', limit: 24, goal: { type: 'bombs', value: 5 } },
 ];
 
 export const useGame = () => {
@@ -58,6 +62,10 @@ export const useGame = () => {
     const [match3Moves, setMatch3Moves] = useState(0);
     const [bombDoubleActivations, setBombDoubleActivations] = useState(0);
     const [lightningSwaps, setLightningSwaps] = useState(0);
+    const [levelBombActivations, setLevelBombActivations] = useState(0);
+    const [levelLightningActivations, setLevelLightningActivations] = useState(0);
+    const [trashDestroyed, setTrashDestroyed] = useState(0);
+    const [trashTotal, setTrashTotal] = useState(0);
     const [matchTick, setMatchTick] = useState(0);
     const [comboLevel, setComboLevel] = useState(0);
     const [comboId, setComboId] = useState(0);
@@ -69,8 +77,9 @@ export const useGame = () => {
     const isTimeMode = levelConfig.mode === 'time';
     const goal = levelConfig.goal;
 
-    // Update ref when state changes
-    useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+    useEffect(() => {
+        isPausedRef.current = isPaused;
+    }, [isPaused]);
 
     const preparedLevelRef = useRef<{ level: number; snapshot: LevelStateSnapshot } | null>(null);
 
@@ -78,13 +87,41 @@ export const useGame = () => {
         return LEVEL_CONFIGS[(targetLevel - 1) % LEVEL_CONFIGS.length];
     }, []);
 
+    const addTrashToGrid = useCallback((baseGrid: Grid, count: number): Grid => {
+        const capped = Math.max(0, Math.min(count, ROWS * COLS));
+        if (capped === 0) return baseGrid;
+
+        const next = copyGrid(baseGrid);
+        const positions: Array<{ x: number; y: number }> = [];
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                positions.push({ x, y });
+            }
+        }
+
+        for (let i = positions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [positions[i], positions[j]] = [positions[j], positions[i]];
+        }
+
+        for (let i = 0; i < capped; i++) {
+            const p = positions[i];
+            next[p.y][p.x] = { ...next[p.y][p.x], hasTrash: true };
+        }
+
+        return next;
+    }, []);
+
     const createLevelSnapshot = useCallback((config: LevelConfig): LevelStateSnapshot => {
+        const fresh = createBoard();
+        const withTrash = addTrashToGrid(fresh, config.trashCount ?? 0);
+
         return {
-            grid: createBoard(),
+            grid: withTrash,
             moves: config.mode === 'moves' ? config.limit : 30,
             timeLeft: config.mode === 'time' ? config.limit : 60,
         };
-    }, []);
+    }, [addTrashToGrid]);
 
     const prepareLevel = useCallback((targetLevel: number) => {
         const sanitizedLevel = Math.max(1, Math.floor(targetLevel));
@@ -108,6 +145,10 @@ export const useGame = () => {
             purple: 0,
             orange: 0,
         });
+        setLevelBombActivations(0);
+        setLevelLightningActivations(0);
+        setTrashDestroyed(0);
+        setTrashTotal(config.trashCount ?? (config.goal.type === 'trash' ? config.goal.value : 0));
         setValidMoves(0);
     };
 
@@ -149,7 +190,7 @@ export const useGame = () => {
             for (let y = 1; y < ROWS; y++) {
                 for (let x = 0; x < COLS; x++) {
                     const tile = newGrid[y][x];
-                    if ((tile as any).type == null) continue;
+                    if ((tile as { type?: unknown }).type == null) continue;
                     candidates.push(tile);
                 }
             }
@@ -161,41 +202,88 @@ export const useGame = () => {
             newGrid[pick.y][pick.x] = {
                 ...pick,
                 type,
-                gemType: base
+                gemType: base,
             };
             return newGrid;
         });
     }, []);
 
     const countCollected = useCallback((g: Grid, ids: Set<string>) => {
-        if (goal.type !== 'collect') return;
-        const color = goal.color;
-        let add = 0;
+        if (goal.type !== 'collect' && goal.type !== 'collect_multi') return;
+
+        const targets: Partial<Record<GemType, number>> =
+            goal.type === 'collect'
+                ? { [goal.color]: goal.value }
+                : goal.targets;
+
+        const addByColor: Partial<Record<GemType, number>> = {};
+
         for (let y = 0; y < ROWS; y++) {
             for (let x = 0; x < COLS; x++) {
                 const tile = g[y][x];
-                if (ids.has(tile.id)) {
-                    if ((tile.type as any) == null) continue;
-                    const base = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross')
-                        ? tile.gemType
-                        : (tile.type as GemType);
-                    if (base === color) add++;
-                }
+                if (!ids.has(tile.id)) continue;
+                if ((tile as { type?: unknown }).type == null) continue;
+
+                const base = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross')
+                    ? tile.gemType
+                    : (tile.type as GemType);
+
+                if (!base || targets[base] == null) continue;
+                addByColor[base] = (addByColor[base] ?? 0) + 1;
             }
         }
-        if (add > 0) {
-            setCollected(prev => ({ ...prev, [color]: prev[color] + add }));
-        }
+
+        if (Object.keys(addByColor).length === 0) return;
+
+        setCollected(prev => {
+            const next = { ...prev };
+            Object.entries(addByColor).forEach(([color, value]) => {
+                const key = color as GemType;
+                next[key] = prev[key] + (value ?? 0);
+            });
+            return next;
+        });
     }, [goal]);
 
-    // Helper to safely swap two tiles in the grid
+    const countTrashDestroyed = useCallback((g: Grid, ids: Set<string>) => {
+        let destroyed = 0;
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = g[y][x];
+                if (!ids.has(tile.id) || !tile.hasTrash) continue;
+                destroyed += 1;
+                g[y][x] = { ...tile, hasTrash: false };
+            }
+        }
+        if (destroyed > 0) {
+            setTrashDestroyed(prev => prev + destroyed);
+        }
+    }, []);
+
+    const countSpecialGoalActivations = useCallback((g: Grid, ids: Set<string>) => {
+        let bombs = 0;
+        let lightnings = 0;
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = g[y][x];
+                if (!ids.has(tile.id)) continue;
+                if (tile.type === 'bomb') bombs += 1;
+                if (tile.type === 'lightning') lightnings += 1;
+            }
+        }
+        if (bombs > 0) {
+            setLevelBombActivations(prev => prev + bombs);
+        }
+        if (lightnings > 0) {
+            setLevelLightningActivations(prev => prev + lightnings);
+        }
+    }, []);
+
     const swapTiles = (g: Grid, t1: Tile, t2: Tile): Grid => {
         const newGrid = copyGrid(g);
         const tile1 = newGrid[t1.y][t1.x];
         const tile2 = newGrid[t2.y][t2.x];
 
-        // Swap types and IDs but keep x/y (or swap x/y?)
-        // Actually, in the grid array, we swap the objects at the positions.
         newGrid[t1.y][t1.x] = { ...tile2, x: t1.x, y: t1.y };
         newGrid[t2.y][t2.x] = { ...tile1, x: t2.x, y: t2.y };
 
@@ -209,17 +297,13 @@ export const useGame = () => {
         let iteration = 0;
         let comboCount = 0;
 
-        while (matchMap.size > 0 && iteration < 10) { // Safety break
-            // Separate regular matches from special pieces
-            const specialPieceMap = new Map<string, string>();
+        while (matchMap.size > 0 && iteration < 10) {
             const regularMatches = new Set<string>();
             const allMatched = new Set<string>();
-            
+
             matchMap.forEach((type, tileId) => {
                 allMatched.add(tileId);
-                if (type !== 'match') {
-                    specialPieceMap.set(tileId, type);
-                } else {
+                if (type === 'match') {
                     regularMatches.add(tileId);
                 }
             });
@@ -237,17 +321,16 @@ export const useGame = () => {
             }
 
             countCollected(activeGrid, totalRemoved);
+            countSpecialGoalActivations(activeGrid, totalRemoved);
             comboCount += 1;
             setMatchTick(t => t + 1);
             if (totalRemoved.size >= 12) {
                 setBigBlastId(id => id + 1);
             }
 
-            // 1. Convert matched 4+ to special pieces and remove only regular 3-matches
             activeGrid = convertToSpecialPieces(activeGrid, matchMap);
             setGrid(activeGrid);
-            
-            // Calculate score
+
             let scoreGain = 0;
             matchMap.forEach((type) => {
                 scoreGain += 10;
@@ -261,35 +344,25 @@ export const useGame = () => {
             }
             setScore(prev => prev + scoreGain);
 
-            // Wait if paused
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
-
-            // Wait for "match" animation
             await new Promise(r => setTimeout(r, 200));
-
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
-            // 2. Remove only regular matches, keep special pieces
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
+            countTrashDestroyed(activeGrid, removeSet);
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
-            // Wait for "disappear" animation
             await new Promise(r => setTimeout(r, 200));
-
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
-            // 3. Apply gravity
             const { grid: gravityGrid } = applyGravity(activeGrid);
             activeGrid = gravityGrid;
             setGrid(activeGrid);
 
-            // Wait for "fall" animation
             await new Promise(r => setTimeout(r, 300));
-
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
-            // 4. Check for new matches
             matchMap = findMatches(activeGrid);
             iteration++;
         }
@@ -304,21 +377,33 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [countCollected, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [countCollected, countSpecialGoalActivations, countTrashDestroyed, ensurePlayableGrid, getTriggeredSpecialRemoval]);
 
-    // Level Up Check
     useEffect(() => {
-        const goalReached =
-            (goal.type === 'score' && score >= goal.value) ||
-            (goal.type === 'collect' && goal.color && collected[goal.color] >= goal.value);
+        const goalReached = (() => {
+            if (goal.type === 'collect') {
+                return collected[goal.color] >= goal.value;
+            }
+            if (goal.type === 'collect_multi') {
+                return Object.entries(goal.targets).every(([color, target]) => {
+                    if (!target) return true;
+                    return collected[color as GemType] >= target;
+                });
+            }
+            if (goal.type === 'bombs') {
+                return levelBombActivations >= goal.value;
+            }
+            if (goal.type === 'lightning') {
+                return levelLightningActivations >= goal.value;
+            }
+            return trashDestroyed >= goal.value;
+        })();
 
         if (goalReached && !isLevelUp) {
-            // Level Up Trigger
             setIsProcessing(true);
             setIsLevelUp(true);
-            // We wait for user to click "Next Level"
         }
-    }, [score, isLevelUp, goal, collected]);
+    }, [collected, goal, isLevelUp, levelBombActivations, levelLightningActivations, trashDestroyed]);
 
     useEffect(() => {
         if (!isTimeMode || isPaused || isProcessing || isLevelUp) return;
@@ -351,6 +436,251 @@ export const useGame = () => {
             levelTransitionRef.current = null;
         }, 500);
     };
+
+    const findTileById = (g: Grid, id: string): Tile | null => {
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (g[y][x].id === id) return g[y][x];
+            }
+        }
+        return null;
+    };
+
+    const activateSpecialPiece = useCallback(async (currentGrid: Grid, tile: Tile, finalizeProcessing: boolean = true) => {
+        let activeGrid = copyGrid(currentGrid);
+        const x = tile.x;
+        const y = tile.y;
+        let toRemove = new Set<string>();
+        let comboCount = 0;
+
+        if (tile.type === 'bomb') {
+            toRemove = getBombAffectedTiles(activeGrid, x, y);
+        } else if (tile.type === 'lightning') {
+            toRemove = getLightningAffectedTiles(activeGrid, x, y);
+        } else if (tile.type === 'cross') {
+            toRemove = getCrossAffectedTiles(activeGrid, x, y);
+        }
+
+        toRemove = expandSpecialChain(activeGrid, toRemove);
+
+        if (explodeTimeoutRef.current !== null) {
+            clearTimeout(explodeTimeoutRef.current);
+        }
+        setExplodingIds(new Set(toRemove));
+        explodeTimeoutRef.current = window.setTimeout(() => {
+            setExplodingIds(new Set());
+            explodeTimeoutRef.current = null;
+        }, 250);
+
+        if (toRemove.size >= 10) {
+            setBigBlastId(id => id + 1);
+        }
+        countCollected(activeGrid, toRemove);
+        countSpecialGoalActivations(activeGrid, toRemove);
+
+        setScore(prev => prev + toRemove.size * 10);
+
+        await new Promise(r => setTimeout(r, 100));
+
+        countTrashDestroyed(activeGrid, toRemove);
+        activeGrid = removeMatches(activeGrid, toRemove);
+        setGrid(activeGrid);
+
+        await new Promise(r => setTimeout(r, 200));
+
+        const { grid: gravityGrid } = applyGravity(activeGrid);
+        activeGrid = gravityGrid;
+        setGrid(activeGrid);
+
+        await new Promise(r => setTimeout(r, 300));
+
+        let matchMap = findMatches(activeGrid);
+        let iteration = 0;
+
+        while (matchMap.size > 0 && iteration < 10) {
+            const allMatched = new Set<string>();
+            matchMap.forEach((_type, tileId) => {
+                allMatched.add(tileId);
+            });
+            const triggeredByMatch = getTriggeredSpecialRemoval(activeGrid, allMatched);
+            const totalRemoved = new Set<string>([...allMatched, ...triggeredByMatch]);
+
+            activeGrid = convertToSpecialPieces(activeGrid, matchMap);
+            setGrid(activeGrid);
+            comboCount += 1;
+            setMatchTick(t => t + 1);
+            countCollected(activeGrid, totalRemoved);
+            countSpecialGoalActivations(activeGrid, totalRemoved);
+
+            let scoreGain = 0;
+            matchMap.forEach((type) => {
+                scoreGain += 10;
+                if (type === 'bomb') scoreGain += 40;
+                else if (type === 'lightning') scoreGain += 40;
+                else if (type === 'cross') scoreGain += 50;
+            });
+            const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
+            if (extraTriggeredCount > 0) {
+                scoreGain += extraTriggeredCount * 10;
+            }
+            setScore(prev => prev + scoreGain);
+
+            await new Promise(r => setTimeout(r, 200));
+
+            const allRegularMatches = new Set<string>();
+            matchMap.forEach((type, tileId) => {
+                if (type === 'match') {
+                    allRegularMatches.add(tileId);
+                }
+            });
+
+            const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
+            countTrashDestroyed(activeGrid, removeSet);
+            activeGrid = removeMatches(activeGrid, removeSet);
+            setGrid(activeGrid);
+
+            await new Promise(r => setTimeout(r, 200));
+
+            const { grid: gravityGrid2 } = applyGravity(activeGrid);
+            activeGrid = gravityGrid2;
+            setGrid(activeGrid);
+
+            await new Promise(r => setTimeout(r, 300));
+
+            matchMap = findMatches(activeGrid);
+            iteration++;
+        }
+
+        if (comboCount >= 2) {
+            setComboLevel(comboCount);
+            setComboId(id => id + 1);
+        }
+        const playableGrid = ensurePlayableGrid(activeGrid);
+        if (playableGrid !== activeGrid) {
+            activeGrid = playableGrid;
+            setGrid(activeGrid);
+        }
+        if (finalizeProcessing) {
+            setIsProcessing(false);
+        }
+    }, [countCollected, countSpecialGoalActivations, countTrashDestroyed, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+
+    const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
+        let activeGrid = copyGrid(currentGrid);
+        let toRemove = new Set<string>();
+        let comboCount = 0;
+
+        for (const tile of tiles) {
+            if (tile.type === 'bomb') {
+                getBombAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
+            } else if (tile.type === 'lightning') {
+                getLightningAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
+            } else if (tile.type === 'cross') {
+                getCrossAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
+            }
+        }
+
+        toRemove = expandSpecialChain(activeGrid, toRemove);
+
+        if (explodeTimeoutRef.current !== null) {
+            clearTimeout(explodeTimeoutRef.current);
+        }
+        setExplodingIds(new Set(toRemove));
+        explodeTimeoutRef.current = window.setTimeout(() => {
+            setExplodingIds(new Set());
+            explodeTimeoutRef.current = null;
+        }, 250);
+
+        if (toRemove.size >= 10) {
+            setBigBlastId(id => id + 1);
+        }
+        countCollected(activeGrid, toRemove);
+        countSpecialGoalActivations(activeGrid, toRemove);
+
+        setScore(prev => prev + toRemove.size * 10);
+
+        await new Promise(r => setTimeout(r, 100));
+
+        countTrashDestroyed(activeGrid, toRemove);
+        activeGrid = removeMatches(activeGrid, toRemove);
+        setGrid(activeGrid);
+
+        await new Promise(r => setTimeout(r, 200));
+
+        const { grid: gravityGrid } = applyGravity(activeGrid);
+        activeGrid = gravityGrid;
+        setGrid(activeGrid);
+
+        await new Promise(r => setTimeout(r, 300));
+
+        let matchMap = findMatches(activeGrid);
+        let iteration = 0;
+
+        while (matchMap.size > 0 && iteration < 10) {
+            const allMatched = new Set<string>();
+            matchMap.forEach((_type, tileId) => {
+                allMatched.add(tileId);
+            });
+            const triggeredByMatch = getTriggeredSpecialRemoval(activeGrid, allMatched);
+            const totalRemoved = new Set<string>([...allMatched, ...triggeredByMatch]);
+
+            activeGrid = convertToSpecialPieces(activeGrid, matchMap);
+            setGrid(activeGrid);
+            comboCount += 1;
+            setMatchTick(t => t + 1);
+            countCollected(activeGrid, totalRemoved);
+            countSpecialGoalActivations(activeGrid, totalRemoved);
+
+            let scoreGain = 0;
+            matchMap.forEach((type) => {
+                scoreGain += 10;
+                if (type === 'bomb') scoreGain += 40;
+                else if (type === 'lightning') scoreGain += 40;
+                else if (type === 'cross') scoreGain += 50;
+            });
+            const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
+            if (extraTriggeredCount > 0) {
+                scoreGain += extraTriggeredCount * 10;
+            }
+            setScore(prev => prev + scoreGain);
+
+            await new Promise(r => setTimeout(r, 200));
+
+            const allRegularMatches = new Set<string>();
+            matchMap.forEach((type, tileId) => {
+                if (type === 'match') {
+                    allRegularMatches.add(tileId);
+                }
+            });
+
+            const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
+            countTrashDestroyed(activeGrid, removeSet);
+            activeGrid = removeMatches(activeGrid, removeSet);
+            setGrid(activeGrid);
+
+            await new Promise(r => setTimeout(r, 200));
+
+            const { grid: gravityGrid2 } = applyGravity(activeGrid);
+            activeGrid = gravityGrid2;
+            setGrid(activeGrid);
+
+            await new Promise(r => setTimeout(r, 300));
+
+            matchMap = findMatches(activeGrid);
+            iteration++;
+        }
+
+        if (comboCount >= 2) {
+            setComboLevel(comboCount);
+            setComboId(id => id + 1);
+        }
+        const playableGrid = ensurePlayableGrid(activeGrid);
+        if (playableGrid !== activeGrid) {
+            activeGrid = playableGrid;
+            setGrid(activeGrid);
+        }
+        setIsProcessing(false);
+    }, [countCollected, countSpecialGoalActivations, countTrashDestroyed, ensurePlayableGrid, getTriggeredSpecialRemoval]);
 
     const attemptSwap = async (firstTile: Tile, secondTile: Tile) => {
         if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
@@ -417,11 +747,9 @@ export const useGame = () => {
     const handleTileClick = async (clickedTile: Tile) => {
         if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
 
-        // Check if clicking a special piece twice to activate it
         if (selectedTile && selectedTile.id === clickedTile.id) {
             const tile = grid[clickedTile.y][clickedTile.x];
             if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross') {
-                // Activate special piece
                 setIsProcessing(true);
                 setSelectedTile(null);
                 if (tile.type === 'bomb') {
@@ -435,7 +763,6 @@ export const useGame = () => {
         if (!selectedTile) {
             setSelectedTile(clickedTile);
         } else {
-            // Check if adjacent
             const dx = Math.abs(clickedTile.x - selectedTile.x);
             const dy = Math.abs(clickedTile.y - selectedTile.y);
             const isAdjacent = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
@@ -443,265 +770,9 @@ export const useGame = () => {
             if (isAdjacent) {
                 await attemptSwap(selectedTile, clickedTile);
             } else {
-                // Just select the new one
                 setSelectedTile(clickedTile);
             }
         }
-    };
-
-    const activateSpecialPiece = useCallback(async (currentGrid: Grid, tile: Tile, finalizeProcessing: boolean = true) => {
-        let activeGrid = copyGrid(currentGrid);
-        const x = tile.x;
-        const y = tile.y;
-        let toRemove = new Set<string>();
-        let comboCount = 0;
-
-        if (tile.type === 'bomb') {
-            toRemove = getBombAffectedTiles(activeGrid, x, y);
-        } else if (tile.type === 'lightning') {
-            toRemove = getLightningAffectedTiles(activeGrid, x, y);
-        } else if (tile.type === 'cross') {
-            toRemove = getCrossAffectedTiles(activeGrid, x, y);
-        }
-
-        toRemove = expandSpecialChain(activeGrid, toRemove);
-
-        if (explodeTimeoutRef.current !== null) {
-            clearTimeout(explodeTimeoutRef.current);
-        }
-        setExplodingIds(new Set(toRemove));
-        explodeTimeoutRef.current = window.setTimeout(() => {
-            setExplodingIds(new Set());
-            explodeTimeoutRef.current = null;
-        }, 250);
-
-        if (toRemove.size >= 10) {
-            setBigBlastId(id => id + 1);
-        }
-        countCollected(activeGrid, toRemove);
-
-        // Calculate score
-        setScore(prev => prev + toRemove.size * 10);
-
-        // Wait for animation
-        await new Promise(r => setTimeout(r, 100));
-
-        // Remove tiles
-        activeGrid = removeMatches(activeGrid, toRemove);
-        setGrid(activeGrid);
-
-        // Wait for disappear animation
-        await new Promise(r => setTimeout(r, 200));
-
-        // Apply gravity
-        const { grid: gravityGrid } = applyGravity(activeGrid);
-        activeGrid = gravityGrid;
-        setGrid(activeGrid);
-
-        // Wait for fall animation
-        await new Promise(r => setTimeout(r, 300));
-
-        // Check for new matches
-        let matchMap = findMatches(activeGrid);
-        let iteration = 0;
-
-        while (matchMap.size > 0 && iteration < 10) {
-            // Separate regular matches from special pieces
-            const regularMatches = new Set<string>();
-            const allMatched = new Set<string>();
-            matchMap.forEach((type, tileId) => {
-                allMatched.add(tileId);
-                if (type === 'match') {
-                    regularMatches.add(tileId);
-                }
-            });
-            const triggeredByMatch = getTriggeredSpecialRemoval(activeGrid, allMatched);
-            const totalRemoved = new Set<string>([...allMatched, ...triggeredByMatch]);
-
-            // Convert and remove
-            activeGrid = convertToSpecialPieces(activeGrid, matchMap);
-            setGrid(activeGrid);
-            comboCount += 1;
-            setMatchTick(t => t + 1);
-            countCollected(activeGrid, totalRemoved);
-
-            let scoreGain = 0;
-            matchMap.forEach((type) => {
-                scoreGain += 10;
-                if (type === 'bomb') scoreGain += 40;
-                else if (type === 'lightning') scoreGain += 40;
-                else if (type === 'cross') scoreGain += 50;
-            });
-            const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
-            if (extraTriggeredCount > 0) {
-                scoreGain += extraTriggeredCount * 10;
-            }
-            setScore(prev => prev + scoreGain);
-
-            await new Promise(r => setTimeout(r, 200));
-
-            // Find all regular matches (3-matches)
-            const allRegularMatches = new Set<string>();
-            matchMap.forEach((type, tileId) => {
-                if (type === 'match') {
-                    allRegularMatches.add(tileId);
-                }
-            });
-
-            const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
-            activeGrid = removeMatches(activeGrid, removeSet);
-            setGrid(activeGrid);
-
-            await new Promise(r => setTimeout(r, 200));
-
-            const { grid: gravityGrid } = applyGravity(activeGrid);
-            activeGrid = gravityGrid;
-            setGrid(activeGrid);
-
-            await new Promise(r => setTimeout(r, 300));
-
-            matchMap = findMatches(activeGrid);
-            iteration++;
-        }
-
-        if (comboCount >= 2) {
-            setComboLevel(comboCount);
-            setComboId(id => id + 1);
-        }
-        const playableGrid = ensurePlayableGrid(activeGrid);
-        if (playableGrid !== activeGrid) {
-            activeGrid = playableGrid;
-            setGrid(activeGrid);
-        }
-        if (finalizeProcessing) {
-            setIsProcessing(false);
-        }
-    }, [countCollected, ensurePlayableGrid, getTriggeredSpecialRemoval]);
-
-    const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
-        let activeGrid = copyGrid(currentGrid);
-        let toRemove = new Set<string>();
-        let comboCount = 0;
-
-        for (const tile of tiles) {
-            if (tile.type === 'bomb') {
-                getBombAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
-            } else if (tile.type === 'lightning') {
-                getLightningAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
-            } else if (tile.type === 'cross') {
-                getCrossAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
-            }
-        }
-
-        toRemove = expandSpecialChain(activeGrid, toRemove);
-
-        if (explodeTimeoutRef.current !== null) {
-            clearTimeout(explodeTimeoutRef.current);
-        }
-        setExplodingIds(new Set(toRemove));
-        explodeTimeoutRef.current = window.setTimeout(() => {
-            setExplodingIds(new Set());
-            explodeTimeoutRef.current = null;
-        }, 250);
-
-        if (toRemove.size >= 10) {
-            setBigBlastId(id => id + 1);
-        }
-        countCollected(activeGrid, toRemove);
-
-        setScore(prev => prev + toRemove.size * 10);
-
-        await new Promise(r => setTimeout(r, 100));
-
-        activeGrid = removeMatches(activeGrid, toRemove);
-        setGrid(activeGrid);
-
-        await new Promise(r => setTimeout(r, 200));
-
-        const { grid: gravityGrid } = applyGravity(activeGrid);
-        activeGrid = gravityGrid;
-        setGrid(activeGrid);
-
-        await new Promise(r => setTimeout(r, 300));
-
-        let matchMap = findMatches(activeGrid);
-        let iteration = 0;
-
-        while (matchMap.size > 0 && iteration < 10) {
-            const regularMatches = new Set<string>();
-            const allMatched = new Set<string>();
-            matchMap.forEach((type, tileId) => {
-                allMatched.add(tileId);
-                if (type === 'match') {
-                    regularMatches.add(tileId);
-                }
-            });
-            const triggeredByMatch = getTriggeredSpecialRemoval(activeGrid, allMatched);
-            const totalRemoved = new Set<string>([...allMatched, ...triggeredByMatch]);
-
-            activeGrid = convertToSpecialPieces(activeGrid, matchMap);
-            setGrid(activeGrid);
-            comboCount += 1;
-            setMatchTick(t => t + 1);
-            countCollected(activeGrid, totalRemoved);
-
-            let scoreGain = 0;
-            matchMap.forEach((type) => {
-                scoreGain += 10;
-                if (type === 'bomb') scoreGain += 40;
-                else if (type === 'lightning') scoreGain += 40;
-                else if (type === 'cross') scoreGain += 50;
-            });
-            const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
-            if (extraTriggeredCount > 0) {
-                scoreGain += extraTriggeredCount * 10;
-            }
-            setScore(prev => prev + scoreGain);
-
-            await new Promise(r => setTimeout(r, 200));
-
-            const allRegularMatches = new Set<string>();
-            matchMap.forEach((type, tileId) => {
-                if (type === 'match') {
-                    allRegularMatches.add(tileId);
-                }
-            });
-
-            const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
-            activeGrid = removeMatches(activeGrid, removeSet);
-            setGrid(activeGrid);
-
-            await new Promise(r => setTimeout(r, 200));
-
-            const { grid: gravityGrid2 } = applyGravity(activeGrid);
-            activeGrid = gravityGrid2;
-            setGrid(activeGrid);
-
-            await new Promise(r => setTimeout(r, 300));
-
-            matchMap = findMatches(activeGrid);
-            iteration++;
-        }
-
-        if (comboCount >= 2) {
-            setComboLevel(comboCount);
-            setComboId(id => id + 1);
-        }
-        const playableGrid = ensurePlayableGrid(activeGrid);
-        if (playableGrid !== activeGrid) {
-            activeGrid = playableGrid;
-            setGrid(activeGrid);
-        }
-        setIsProcessing(false);
-    }, [countCollected, ensurePlayableGrid, getTriggeredSpecialRemoval]);
-
-    const findTileById = (g: Grid, id: string): Tile | null => {
-        for (let y = 0; y < ROWS; y++) {
-            for (let x = 0; x < COLS; x++) {
-                if (g[y][x].id === id) return g[y][x];
-            }
-        }
-        return null;
     };
 
     const handleRestart = () => {
@@ -753,6 +824,10 @@ export const useGame = () => {
         match3Moves,
         bombDoubleActivations,
         lightningSwaps,
+        levelBombActivations,
+        levelLightningActivations,
+        trashDestroyed,
+        trashTotal,
         spawnSpecial,
         handleTileSwipe,
         handleTileClick,
@@ -762,8 +837,6 @@ export const useGame = () => {
         bigBlastId,
         handleRestart,
         handleNextLevel,
-        startAtLevel
+        startAtLevel,
     };
 };
-
-

@@ -9,8 +9,10 @@ export interface Tile {
   x: number;
   y: number;
   isMatched?: boolean;
+  hasTrash?: boolean;
 }
 
 export type Grid = Tile[][];
 
 export const GEM_TYPES: GemType[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+

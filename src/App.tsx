@@ -59,7 +59,7 @@ function getDefaultLanguage(): Language {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, startAtLevel } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, startAtLevel } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -93,6 +93,47 @@ function App() {
   const parallaxEnabledRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
   const t = COPY[language];
+  const goalAnalyticsValue = levelConfig.goal.type === 'collect_multi'
+    ? Object.values(levelConfig.goal.targets).reduce((sum, value) => sum + (value ?? 0), 0)
+    : levelConfig.goal.value;
+
+  const renderGoalContent = () => {
+    if (levelConfig.goal.type === 'collect') {
+      return (
+        <span className="inline-flex items-center gap-2">
+          <GoalGemIcon color={levelConfig.goal.color} />
+          <span>{collected[levelConfig.goal.color]}/{levelConfig.goal.value}</span>
+        </span>
+      );
+    }
+
+    if (levelConfig.goal.type === 'collect_multi') {
+      const targets = Object.entries(levelConfig.goal.targets) as Array<[GemType, number | undefined]>;
+      return (
+        <span className="inline-flex flex-wrap justify-center gap-2 text-sm sm:text-base">
+          {targets.map(([color, target]) => {
+            const required = target ?? 0;
+            return (
+              <span key={color} className="inline-flex items-center gap-1 rounded-full bg-slate-900/10 px-2 py-1">
+                <GoalGemIcon color={color} />
+                <span>{collected[color]}/{required}</span>
+              </span>
+            );
+          })}
+        </span>
+      );
+    }
+
+    if (levelConfig.goal.type === 'bombs') {
+      return <span>{language === 'ru' ? 'Бомбы' : 'Bombs'}: {levelBombActivations}/{levelConfig.goal.value}</span>;
+    }
+
+    if (levelConfig.goal.type === 'lightning') {
+      return <span>{language === 'ru' ? 'Молнии' : 'Lightnings'}: {levelLightningActivations}/{levelConfig.goal.value}</span>;
+    }
+
+    return <span>{language === 'ru' ? 'Космический мусор' : 'Space debris'}: {trashDestroyed}/{Math.max(levelConfig.goal.value, trashTotal)}</span>;
+  };
 
   // Game Over only when limit reached AND animations are done
   const isGameOver = (
@@ -239,9 +280,9 @@ function App() {
       level,
       mode: levelConfig.mode,
       goal_type: levelConfig.goal.type,
-      goal_value: levelConfig.goal.value,
+      goal_value: goalAnalyticsValue,
     });
-  }, [level, levelConfig.mode, levelConfig.goal.type, levelConfig.goal.value]);
+  }, [goalAnalyticsValue, level, levelConfig.mode, levelConfig.goal.type]);
 
   useEffect(() => {
     if (!analyticsInitRef.current) return;
@@ -551,29 +592,16 @@ function App() {
             </button>
           </div>
 
-          {/* Star Progress Bar */}
+                    {/* Star Progress Bar */}
           <div className="flex-1 flex flex-col items-center -mt-0.5 sm:-mt-1">
             <StarProgress
-              score={levelConfig.goal.type === 'score'
-                ? score
-                : (levelConfig.goal.color ? collected[levelConfig.goal.color] : 0)}
-              target={levelConfig.goal.value}
+              score={score}
               level={level}
               language={language}
             />
             <div className="mt-2 w-full max-w-xs sm:max-w-sm px-4 py-2 rounded-2xl bg-sky-200 border border-white/80 shadow-[0_8px_20px_rgba(14,165,233,0.4)] text-slate-900 text-center">
               <div className="text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase">{t.goal}</div>
-              <div className="text-xl sm:text-2xl font-extrabold leading-tight">
-                {levelConfig.goal.type === 'score' && `${levelConfig.goal.value} ${t.points}`}
-                {levelConfig.goal.type === 'collect' && (
-                  <span className="inline-flex items-center gap-2">
-                    {levelConfig.goal.color && <GoalGemIcon color={levelConfig.goal.color} />}
-                    <span>
-                      {levelConfig.goal.value} ({levelConfig.goal.color ? collected[levelConfig.goal.color] : 0}/{levelConfig.goal.value})
-                    </span>
-                  </span>
-                )}
-              </div>
+              <div className="text-xl sm:text-2xl font-extrabold leading-tight">{renderGoalContent()}</div>
             </div>
           </div>
 
@@ -669,6 +697,12 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+
 
 
 
