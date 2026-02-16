@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, Lock, LogOut, Settings, Sparkles, Star, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
@@ -95,12 +95,27 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     return d;
   }, [points]);
 
+  const getMaxScrollTop = useCallback((scroller: HTMLDivElement) => {
+    const levelOne = points[0];
+    const maxByContent = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const maxByLevelOne = Math.max(0, levelOne.y - scroller.clientHeight * 0.62);
+    return Math.min(maxByContent, maxByLevelOne);
+  }, [points]);
+
+  const clampScrollBottom = useCallback((scroller: HTMLDivElement) => {
+    const maxTop = getMaxScrollTop(scroller);
+    if (scroller.scrollTop > maxTop) {
+      scroller.scrollTop = maxTop;
+    }
+  }, [getMaxScrollTop]);
+
   const scrollToLevel = (level: number) => {
     const scroller = scrollerRef.current;
     if (!scroller) return;
     const point = points.find((p) => p.level === level);
     if (!point) return;
-    const target = Math.max(0, point.y - scroller.clientHeight * 0.62);
+    const maxTop = getMaxScrollTop(scroller);
+    const target = Math.min(maxTop, Math.max(0, point.y - scroller.clientHeight * 0.62));
     scroller.scrollTo({ top: target, behavior: 'smooth' });
   };
 
@@ -113,6 +128,7 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     if (!scroller || !currentPoint) return;
 
     const updateVisibility = () => {
+      clampScrollBottom(scroller);
       const top = scroller.scrollTop;
       const bottom = top + scroller.clientHeight;
       const y = currentPoint.y;
@@ -127,7 +143,7 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
       scroller.removeEventListener('scroll', updateVisibility);
       window.removeEventListener('resize', updateVisibility);
     };
-  }, [currentPoint]);
+  }, [clampScrollBottom, currentPoint]);
 
   const levelLabel = language === 'ru' ? 'Карта уровней' : 'Level Map';
   const currentLabel = language === 'ru' ? 'Текущий прогресс' : 'Current Progress';
@@ -297,4 +313,11 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     </div>
   );
 }
+
+
+
+
+
+
+
 
