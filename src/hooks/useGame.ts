@@ -390,7 +390,7 @@ export const useGame = () => {
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
-            clearTrashByImpact(activeGrid, removeSet, regularMatches);
+            clearTrashByImpact(activeGrid, removeSet, allMatched);
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
@@ -576,7 +576,7 @@ export const useGame = () => {
             });
 
             const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
-            clearTrashByImpact(activeGrid, removeSet, allRegularMatches);
+            clearTrashByImpact(activeGrid, removeSet, allMatched);
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
@@ -695,7 +695,7 @@ export const useGame = () => {
             });
 
             const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
-            clearTrashByImpact(activeGrid, removeSet, allRegularMatches);
+            clearTrashByImpact(activeGrid, removeSet, allMatched);
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
@@ -882,6 +882,7 @@ export const useGame = () => {
         startAtLevel,
     };
 };
+
 
 
 

@@ -256,13 +256,20 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                     </motion.div>
                 )}
 
-                                {tile.hasTrash && (
+                                                {tile.hasTrash && (
                     <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
-                        <div className="absolute inset-[12%] rounded-2xl border-[2.5px] border-slate-100/75 bg-slate-700/40 shadow-[inset_0_0_18px_rgba(148,163,184,0.45)]" />
-                        <svg viewBox="0 0 100 100" className="w-8 h-8 drop-shadow-[0_0_10px_rgba(203,213,225,0.55)]">
-                            <path d="M12 58 L32 24 L52 36 L70 18 L88 30 L76 50 L92 68 L70 82 L48 72 L28 88 L14 72 L24 56 Z" fill="#9ca3af" />
-                            <path d="M28 56 L46 44 L56 58 L40 70 Z" fill="#d1d5db" fillOpacity="0.8" />
-                            <circle cx="66" cy="60" r="4" fill="#6b7280" />
+                        <div className="absolute inset-[12%] rounded-2xl border-[2.5px] border-slate-100/80 bg-slate-700/45 shadow-[inset_0_0_18px_rgba(148,163,184,0.5)]" />
+                        <svg viewBox="0 0 100 100" className="w-8 h-8 drop-shadow-[0_0_10px_rgba(226,232,240,0.45)]">
+                            <g fill="none" stroke="#e5e7eb" strokeWidth="6" strokeLinecap="round">
+                                <line x1="18" y1="24" x2="38" y2="44" />
+                                <line x1="62" y1="20" x2="82" y2="40" />
+                                <line x1="16" y1="74" x2="34" y2="56" />
+                                <line x1="66" y1="58" x2="84" y2="76" />
+                            </g>
+                            <rect x="38" y="38" width="24" height="24" rx="5" fill="#9ca3af" stroke="#f3f4f6" strokeWidth="4" />
+                            <circle cx="50" cy="50" r="5" fill="#4b5563" />
+                            <circle cx="26" cy="30" r="4" fill="#6b7280" />
+                            <circle cx="74" cy="68" r="4" fill="#6b7280" />
                         </svg>
                     </div>
                 )}
@@ -371,5 +378,6 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
         </motion.div>
     );
 };
+
 
 
