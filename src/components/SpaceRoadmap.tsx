@@ -72,6 +72,17 @@ const ORBIT_STATIONS = [
   { left: 260, top: 1980, scale: 1.1 },
   { left: 48, top: 2780, scale: 0.92 },
 ];
+const BOTTOM_NEBULAE = [
+  { left: -30, top: 3190, w: 210, h: 140, color: 'from-cyan-300/20 via-blue-500/14 to-transparent' },
+  { left: 150, top: 3270, w: 230, h: 150, color: 'from-fuchsia-300/18 via-violet-500/14 to-transparent' },
+  { left: 30, top: 3400, w: 280, h: 170, color: 'from-amber-300/14 via-orange-500/10 to-transparent' },
+];
+
+const BOTTOM_RELICS = [
+  { left: 34, top: 3330, scale: 1 },
+  { left: 250, top: 3440, scale: 0.9 },
+  { left: 188, top: 3512, scale: 0.75 },
+];
 
 export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame, levelStars }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
@@ -285,7 +296,7 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
               />
             ))}
 
-            {COMETS.map((comet, idx) => (
+                        {COMETS.map((comet, idx) => (
               <div
                 key={`comet-${idx}`}
                 className="pointer-events-none absolute h-[2px] w-16 rounded-full bg-gradient-to-r from-white/0 via-cyan-200/70 to-white/0"
@@ -293,6 +304,28 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
               />
             ))}
 
+            {BOTTOM_NEBULAE.map((nebula, idx) => (
+              <div
+                key={`bottom-nebula-${idx}`}
+                className={`pointer-events-none absolute rounded-full blur-2xl bg-gradient-to-br ${nebula.color}`}
+                style={{ left: nebula.left, top: nebula.top, width: nebula.w, height: nebula.h }}
+              />
+            ))}
+
+            {BOTTOM_RELICS.map((relic, idx) => (
+              <div
+                key={`bottom-relic-${idx}`}
+                className="pointer-events-none absolute"
+                style={{ left: relic.left, top: relic.top, transform: `scale(${relic.scale})` }}
+              >
+                <div className="relative h-14 w-14 rounded-2xl border border-cyan-100/30 bg-slate-900/55 shadow-[0_0_16px_rgba(59,130,246,0.25)]">
+                  <div className="absolute inset-[22%] rounded-md border border-cyan-100/45" />
+                  <div className="absolute left-1/2 top-1/2 h-[2px] w-10 -translate-x-1/2 -translate-y-1/2 bg-cyan-200/55" />
+                  <div className="absolute left-1/2 top-1/2 h-10 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-cyan-200/45" />
+                  <div className="absolute right-1 top-1 h-2 w-2 rounded-full bg-emerald-300/70" />
+                </div>
+              </div>
+            ))}
             <svg className="pointer-events-none absolute inset-0" width={MAP_WIDTH} height={mapHeight} viewBox={`0 0 ${MAP_WIDTH} ${mapHeight}`} fill="none" aria-hidden="true">
               <path d={pathD} stroke="rgba(148,163,184,0.34)" strokeWidth="14" strokeLinecap="round" />
               <path d={pathD} stroke="url(#roadGlow)" strokeWidth="8" strokeLinecap="round" />
@@ -395,3 +428,6 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
     </div>
   );
 }
+
+
+
