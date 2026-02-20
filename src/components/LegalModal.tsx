@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Facebook, Instagram, Mail, Send, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
@@ -28,6 +28,44 @@ export function LegalModal({
   onSelectSection,
 }: LegalModalProps) {
   const t = COPY[language];
+  const contactItems = [
+    {
+      id: 'email',
+      label: 'Email',
+      href: `mailto:${contacts.email}`,
+      value: contacts.email,
+      icon: Mail,
+      style: 'from-cyan-300 via-sky-400 to-blue-600',
+      glow: 'shadow-[0_0_20px_rgba(56,189,248,0.45)]',
+    },
+    {
+      id: 'telegram',
+      label: 'Telegram',
+      href: contacts.telegram,
+      value: contacts.telegram,
+      icon: Send,
+      style: 'from-sky-300 via-cyan-400 to-indigo-500',
+      glow: 'shadow-[0_0_20px_rgba(34,211,238,0.45)]',
+    },
+    {
+      id: 'facebook',
+      label: 'Facebook',
+      href: contacts.facebook,
+      value: contacts.facebook,
+      icon: Facebook,
+      style: 'from-blue-300 via-blue-500 to-indigo-700',
+      glow: 'shadow-[0_0_20px_rgba(59,130,246,0.45)]',
+    },
+    {
+      id: 'instagram',
+      label: 'Instagram',
+      href: contacts.instagram,
+      value: contacts.instagram,
+      icon: Instagram,
+      style: 'from-pink-300 via-fuchsia-500 to-orange-500',
+      glow: 'shadow-[0_0_20px_rgba(236,72,153,0.45)]',
+    },
+  ] as const;
 
   const tabs: LegalSection[] = ['offer', 'privacy', 'refunds', 'contacts'];
 
@@ -102,32 +140,44 @@ export function LegalModal({
     }
 
     return (
-      <div className="space-y-3 text-sm text-white/90">
+      <div className="space-y-4 text-sm text-white/90">
         <p>{language === 'ru' ? 'Контакты' : 'Contacts'}</p>
-        <p>
-          Email:{' '}
-          <a className="text-cyan-300 underline" href={`mailto:${contacts.email}`}>
-            {contacts.email}
-          </a>
-        </p>
-        <p>
-          Telegram:{' '}
-          <a className="text-cyan-300 underline" href={contacts.telegram} target="_blank" rel="noopener noreferrer">
-            {contacts.telegram}
-          </a>
-        </p>
-        <p>
-          Facebook:{' '}
-          <a className="text-cyan-300 underline" href={contacts.facebook} target="_blank" rel="noopener noreferrer">
-            {contacts.facebook}
-          </a>
-        </p>
-        <p>
-          Instagram:{' '}
-          <a className="text-cyan-300 underline" href={contacts.instagram} target="_blank" rel="noopener noreferrer">
-            {contacts.instagram}
-          </a>
-        </p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {contactItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <a
+                key={item.id}
+                href={item.href}
+                target={item.id === 'email' ? undefined : '_blank'}
+                rel={item.id === 'email' ? undefined : 'noopener noreferrer'}
+                className="group flex flex-col items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-2 py-3 transition-all hover:border-white/35 hover:bg-white/10"
+              >
+                <span className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${item.style} ${item.glow} transition-transform duration-200 group-hover:scale-105`}>
+                  <span className="flex h-[3.15rem] w-[3.15rem] items-center justify-center rounded-full border border-white/30 bg-slate-950 text-white">
+                    <Icon size={20} />
+                  </span>
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/90">{item.label}</span>
+              </a>
+            );
+          })}
+        </div>
+        <div className="space-y-1 text-xs text-white/70">
+          {contactItems.map((item) => (
+            <p key={`${item.id}-value`} className="truncate">
+              <span className="font-semibold text-white/85">{item.label}:</span>{' '}
+              <a
+                className="text-cyan-300 underline underline-offset-2"
+                href={item.href}
+                target={item.id === 'email' ? undefined : '_blank'}
+                rel={item.id === 'email' ? undefined : 'noopener noreferrer'}
+              >
+                {item.value}
+              </a>
+            </p>
+          ))}
+        </div>
       </div>
     );
   };
