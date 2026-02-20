@@ -874,8 +874,8 @@ function App() {
 
       {/* Top Bar: Progress & Settings */}
       <div className="w-full shrink-0 flex flex-col gap-1 sm:gap-2 z-10">
-        <div className="flex justify-between items-start px-1 sm:px-2">
-          <div className="flex items-center mt-1 sm:mt-2">
+        <div className="flex justify-between items-start px-1.5 sm:px-2.5">
+          <div className="ml-0.5 sm:ml-1 flex items-center mt-1 sm:mt-2">
             <button
               onClick={() => setIsPaused(true)}
               className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-2 sm:border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0"
@@ -901,7 +901,7 @@ function App() {
           <button
             type="button"
             onClick={openShop}
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-cyan-300/90 via-sky-300/80 to-blue-300/90 border-2 sm:border-4 border-white/70 shadow-[0_8px_18px_rgba(56,189,248,0.55)] backdrop-blur-md flex items-center justify-center text-black transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
+            className="mr-0.5 sm:mr-1 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-2 sm:border-4 border-white/70 shadow-[0_8px_18px_rgba(59,130,246,0.55)] backdrop-blur-md flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
             title={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
             aria-label={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
           >
