@@ -36,13 +36,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
 
             const isDesktop = vw >= 768;
             setIsMobile(!isDesktop);
-            const horizontalPadding = isDesktop ? 120 : 16;
-            const verticalPadding = isDesktop ? 300 : 240;
+            const horizontalPadding = isDesktop ? 150 : 22;
+            const verticalPadding = isDesktop ? 390 : 330;
             const rawAvailable = Math.min(vw - horizontalPadding, vh - verticalPadding);
-            const minAvailable = isDesktop ? 200 : 150;
+            const minAvailable = isDesktop ? 180 : 130;
             const available = Math.max(minAvailable, rawAvailable);
             const tileSize = Math.floor((available - GRID_GAP * (COLS - 1)) / COLS);
-            const clampedTile = Math.max(isDesktop ? 24 : 18, Math.min(isDesktop ? 60 : 48, tileSize));
+            const clampedTile = Math.max(isDesktop ? 20 : 14, Math.min(isDesktop ? 56 : 42, tileSize));
             setItemSize(clampedTile + GRID_GAP);
         };
 
@@ -89,7 +89,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
 
     return (
         <div
-            className={`relative bg-black/60 ${lowPerfMode ? '' : 'backdrop-blur-xl'} rounded-2xl border border-white/10 ${lowPerfMode ? 'shadow-lg' : 'shadow-2xl'} overflow-hidden`}
+            className={`relative bg-black/60 ${lowPerfMode ? '' : 'backdrop-blur-xl'} rounded-2xl border border-white/10 ${lowPerfMode ? 'shadow-lg' : 'shadow-2xl'} overflow-hidden touch-none`}
             style={{
                 width: BOARD_WIDTH,
                 height: BOARD_HEIGHT,

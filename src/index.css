@@ -35,10 +35,9 @@ body {
   /* Deep Space Cosmic Base */
   background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #0c0a09 100%);
   position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
   height: 100dvh;
   width: 100vw;
   overscroll-behavior: none;
@@ -46,11 +45,11 @@ body {
 
 #root {
   width: 100%;
-  min-height: 100dvh;
-  height: auto;
+  height: 100dvh;
   display: flex;
   justify-content: center;
-  align-items: stretch;
+  align-items: center;
+  overflow: hidden;
 }
 
 .safe-area-inset {
@@ -66,8 +65,7 @@ body {
   }
 
   #root {
-    min-height: 100vh;
-    height: auto;
+    height: 100vh;
   }
 }
 
