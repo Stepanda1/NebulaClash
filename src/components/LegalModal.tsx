@@ -163,21 +163,6 @@ export function LegalModal({
             );
           })}
         </div>
-        <div className="space-y-1 text-xs text-white/70">
-          {contactItems.map((item) => (
-            <p key={`${item.id}-value`} className="truncate">
-              <span className="font-semibold text-white/85">{item.label}:</span>{' '}
-              <a
-                className="text-cyan-300 underline underline-offset-2"
-                href={item.href}
-                target={item.id === 'email' ? undefined : '_blank'}
-                rel={item.id === 'email' ? undefined : 'noopener noreferrer'}
-              >
-                {item.value}
-              </a>
-            </p>
-          ))}
-        </div>
       </div>
     );
   };
