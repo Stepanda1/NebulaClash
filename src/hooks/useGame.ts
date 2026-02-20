@@ -847,6 +847,24 @@ export const useGame = () => {
         prepareLevel(sanitizedLevel + 1);
     };
 
+    const addExtraMoves = useCallback((amount: number): boolean => {
+        if (!Number.isFinite(amount)) return false;
+        const normalized = Math.floor(amount);
+        if (normalized <= 0) return false;
+        if (levelConfig.mode !== 'moves' || isLevelUp) return false;
+        setMoves(prev => prev + normalized);
+        return true;
+    }, [isLevelUp, levelConfig.mode]);
+
+    const addExtraTime = useCallback((seconds: number): boolean => {
+        if (!Number.isFinite(seconds)) return false;
+        const normalized = Math.floor(seconds);
+        if (normalized <= 0) return false;
+        if (levelConfig.mode !== 'time' || isLevelUp) return false;
+        setTimeLeft(prev => prev + normalized);
+        return true;
+    }, [isLevelUp, levelConfig.mode]);
+
     return {
         grid,
         score,
@@ -880,6 +898,8 @@ export const useGame = () => {
         handleRestart,
         handleNextLevel,
         startAtLevel,
+        addExtraMoves,
+        addExtraTime,
     };
 };
 

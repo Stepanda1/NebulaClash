@@ -123,3 +123,47 @@ Optional tuning:
 
 - `VITE_LONG_TASK_THRESHOLD_MS` (default `200`)
 - `VITE_LONG_TASK_MAX_PER_SESSION` (default `30`)
+
+## Shop / Space Coins
+
+The game has an in-game currency called Space Coins:
+
+- Spend coins on extra moves (`+5`) in move-based levels
+- Spend coins on extra time (`+30s`) in time-based levels
+
+Shop supports backend-driven payments and auto top-up through Lava webhook.
+
+### Frontend env vars
+
+- `VITE_SHOP_PACK_SMALL_URL`
+- `VITE_SHOP_PACK_MEDIUM_URL`
+- `VITE_SHOP_PACK_LARGE_URL`
+- `VITE_DEV_API_PROXY_TARGET` (default `http://localhost:8787`)
+
+Frontend links are optional fallback. For automatic top-up, configure backend vars and run `server/index.mjs`.
+
+### Backend env vars (`server/index.mjs`)
+
+- `PORT` (default `8787`)
+- `PUBLIC_BASE_URL` (public URL of backend, used in Lava `hookUrl`)
+- `LAVA_SHOP_ID`
+- `LAVA_SECRET_KEY`
+- `LAVA_SECRET_KEY_2` (webhook verification key)
+- `LAVA_CREATE_INVOICE_URL` (default `https://api.lava.ru/business/invoice/create`)
+- `LAVA_SUCCESS_URL`
+- `LAVA_FAIL_URL`
+- `SHOP_PACKS_JSON` (optional pack config)
+
+### Local run
+
+1. Start backend: `npm run server`
+2. Start frontend in second terminal: `npm run dev`
+3. Open shop, buy a pack, complete payment, webhook credits coins automatically.
+
+### Payout to Sber
+
+To receive money to your own Sber card/account:
+
+1. Use your own Lava merchant account and keys in backend env vars.
+2. In Lava dashboard open `Balance -> Payout details` and add payout details.
+3. Choose payout method `SBP` and select `Sberbank`.

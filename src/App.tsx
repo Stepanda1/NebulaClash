@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { useGame } from './hooks/useGame';
 import { PauseMenu } from './components/PauseMenu';
@@ -6,11 +6,12 @@ import { GameOverMenu } from './components/GameOverMenu';
 import { LevelUpModal } from './components/LevelUpModal';
 import { StarProgress } from './components/StarProgress';
 import { AudioPlayer } from './components/AudioPlayer';
-import { Coffee, Settings } from 'lucide-react';
+import { Coins, Settings, ShoppingCart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
 import { SpaceRoadmap } from './components/SpaceRoadmap';
 import { LevelStartModal } from './components/LevelStartModal';
+import { ShopModal } from './components/ShopModal';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import { COPY } from './i18n';
@@ -58,8 +59,23 @@ function getDefaultLanguage(): Language {
   return 'en';
 }
 
+function getOrCreatePlayerId(): string {
+  const existing = window.localStorage.getItem('match3_player_id');
+  if (existing) return existing;
+
+  const generated = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `player_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+
+  window.localStorage.setItem('match3_player_id', generated);
+  return generated;
+}
+
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, startAtLevel } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
+  const BOOSTER_COST = 30;
+  const MOVE_BOOST_AMOUNT = 5;
+  const TIME_BOOST_SECONDS = 30;
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -74,6 +90,10 @@ function App() {
   const [lowPerfMode, setLowPerfMode] = useState(false);
   const [language, setLanguage] = useState<Language>(getDefaultLanguage);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isShopOpen, setIsShopOpen] = useState(false);
+  const [spaceCoins, setSpaceCoins] = useState(120);
+  const [shopNotice, setShopNotice] = useState<string | null>(null);
+  const [pendingPackId, setPendingPackId] = useState<string | null>(null);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
@@ -91,8 +111,30 @@ function App() {
   const analyticsLightningCountRef = useRef(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
+  const playerIdRef = useRef<string>('');
+  const hasServerWalletRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
   const t = COPY[language];
+  const coinPacks = [
+    {
+      id: 'pack-120',
+      coins: 120,
+      priceLabel: '99 ₽ / $1.19',
+      url: import.meta.env.VITE_SHOP_PACK_SMALL_URL || undefined,
+    },
+    {
+      id: 'pack-300',
+      coins: 300,
+      priceLabel: '199 ₽ / $2.39',
+      url: import.meta.env.VITE_SHOP_PACK_MEDIUM_URL || undefined,
+    },
+    {
+      id: 'pack-800',
+      coins: 800,
+      priceLabel: '499 ₽ / $5.99',
+      url: import.meta.env.VITE_SHOP_PACK_LARGE_URL || undefined,
+    },
+  ];
   const goalAnalyticsValue = levelConfig.goal.type === 'collect_multi'
     ? Object.values(levelConfig.goal.targets).reduce((sum, value) => sum + (value ?? 0), 0)
     : levelConfig.goal.value;
@@ -179,6 +221,146 @@ function App() {
     trackEvent('language_change', { language: nextLanguage });
   };
 
+  const openShop = () => {
+    setIsShopOpen(true);
+    trackEvent('shop_open', { level, coins_balance: spaceCoins, mode: levelConfig.mode });
+  };
+
+  const syncWalletFromServer = useCallback(async (): Promise<boolean> => {
+    if (!playerIdRef.current) return false;
+
+    try {
+      const response = await fetch(`/api/wallet?playerId=${encodeURIComponent(playerIdRef.current)}`);
+      if (!response.ok) return false;
+      const payload = await response.json() as { balance?: number };
+      const nextBalance = Math.max(0, Math.floor(Number(payload.balance ?? 0)));
+      hasServerWalletRef.current = true;
+      setSpaceCoins(nextBalance);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const spendCoins = async (cost: number): Promise<boolean> => {
+    if (hasServerWalletRef.current) {
+      try {
+        const response = await fetch('/api/wallet/spend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            playerId: playerIdRef.current,
+            amount: cost,
+            reason: 'level_booster',
+          }),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({})) as { error?: string };
+          if (response.status === 409) {
+            setShopNotice(t.notEnoughCoins);
+          } else if (payload.error) {
+            setShopNotice(payload.error);
+          }
+          return false;
+        }
+
+        const payload = await response.json() as { balance?: number };
+        setSpaceCoins(Math.max(0, Math.floor(Number(payload.balance ?? 0))));
+        return true;
+      } catch {
+        setShopNotice(t.shopPackUnavailable);
+        return false;
+      }
+    }
+
+    if (spaceCoins < cost) {
+      setShopNotice(t.notEnoughCoins);
+      return false;
+    }
+    setSpaceCoins((prev) => prev - cost);
+    return true;
+  };
+
+  const refundCoins = async (cost: number) => {
+    if (hasServerWalletRef.current) {
+      await syncWalletFromServer();
+      return;
+    }
+    setSpaceCoins((prev) => prev + cost);
+  };
+
+  const buyExtraMoves = async () => {
+    if (!await spendCoins(BOOSTER_COST)) return;
+    const applied = addExtraMoves(MOVE_BOOST_AMOUNT);
+    if (!applied) {
+      await refundCoins(BOOSTER_COST);
+      return;
+    }
+    const notice = t.boughtExtraMoves(MOVE_BOOST_AMOUNT);
+    setShopNotice(notice);
+    trackEvent('shop_spend_coins', { item: 'extra_moves', cost: BOOSTER_COST, value: MOVE_BOOST_AMOUNT, level, mode: levelConfig.mode });
+  };
+
+  const buyExtraTime = async () => {
+    if (!await spendCoins(BOOSTER_COST)) return;
+    const applied = addExtraTime(TIME_BOOST_SECONDS);
+    if (!applied) {
+      await refundCoins(BOOSTER_COST);
+      return;
+    }
+    const notice = t.boughtExtraTime(TIME_BOOST_SECONDS);
+    setShopNotice(notice);
+    trackEvent('shop_spend_coins', { item: 'extra_time', cost: BOOSTER_COST, value: TIME_BOOST_SECONDS, level, mode: levelConfig.mode });
+  };
+
+  const buyCoinsPack = async (packId: string) => {
+    const pack = coinPacks.find((item) => item.id === packId);
+    if (!pack) return;
+
+    if (!hasServerWalletRef.current) {
+      if (pack.url) {
+        window.open(pack.url, '_blank', 'noopener,noreferrer');
+      } else {
+        setShopNotice(t.shopPackUnavailable);
+      }
+      return;
+    }
+
+    setPendingPackId(packId);
+    try {
+      const response = await fetch('/api/payments/lava/create-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: playerIdRef.current,
+          packId,
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({})) as { paymentUrl?: string; error?: string };
+      if (!response.ok || !payload.paymentUrl) {
+        if (pack.url) {
+          window.open(pack.url, '_blank', 'noopener,noreferrer');
+          return;
+        }
+        setShopNotice(payload.error || t.shopPackUnavailable);
+        return;
+      }
+
+      window.open(payload.paymentUrl, '_blank', 'noopener,noreferrer');
+      trackEvent('shop_real_money_click', { pack_id: packId, level, mode: levelConfig.mode });
+    } catch {
+      if (pack.url) {
+        window.open(pack.url, '_blank', 'noopener,noreferrer');
+      } else {
+        setShopNotice(t.shopPackUnavailable);
+      }
+    } finally {
+      setPendingPackId(null);
+    }
+  };
+
   const onToggleMute = () => {
     setIsMuted((prev) => {
       const next = !prev;
@@ -226,6 +408,48 @@ function App() {
     setIsMapOpen(true);
   };
 
+
+  useEffect(() => {
+    playerIdRef.current = getOrCreatePlayerId();
+  }, []);
+
+  useEffect(() => {
+    const savedCoins = localStorage.getItem('match3_space_coins');
+    const parsed = Number(savedCoins);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      setSpaceCoins(Math.floor(parsed));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!playerIdRef.current) return;
+    void syncWalletFromServer();
+  }, [syncWalletFromServer]);
+
+  useEffect(() => {
+    if (!isShopOpen || !hasServerWalletRef.current) return;
+    const id = window.setInterval(() => {
+      void syncWalletFromServer();
+    }, 5000);
+    return () => clearInterval(id);
+  }, [isShopOpen, syncWalletFromServer]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    if (paymentStatus !== 'success') return;
+
+    const orderId = params.get('orderId');
+    setShopNotice(language === 'ru' ? 'Платеж принят. Проверяю зачисление монет...' : 'Payment accepted. Checking coin top-up...');
+    void syncWalletFromServer();
+    if (orderId) {
+      trackEvent('shop_payment_return', { order_id: orderId });
+    }
+  }, [language, syncWalletFromServer]);
+
+  useEffect(() => {
+    localStorage.setItem('match3_space_coins', String(spaceCoins));
+  }, [spaceCoins]);
 
   useEffect(() => {
     const raw = localStorage.getItem('match3_level_stars');
@@ -357,6 +581,14 @@ function App() {
     setShowTutorial(false);
     setPendingSpawn(null);
   }, [level]);
+
+  useEffect(() => {
+    if (!shopNotice) return;
+    const timeout = window.setTimeout(() => {
+      setShopNotice(null);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [shopNotice]);
 
   useEffect(() => {
     if (!tutorialActive) return;
@@ -551,6 +783,22 @@ function App() {
 
       {/* Pause Overlay */}
       <AnimatePresence>
+        {isShopOpen && (
+          <ShopModal
+            language={language}
+            isTimeMode={levelConfig.mode === 'time'}
+            coinsBalance={spaceCoins}
+            boosterCost={BOOSTER_COST}
+            moveBoostAmount={MOVE_BOOST_AMOUNT}
+            timeBoostSeconds={TIME_BOOST_SECONDS}
+            packs={coinPacks}
+            onClose={() => setIsShopOpen(false)}
+            onBuyMoves={buyExtraMoves}
+            onBuyTime={buyExtraTime}
+            onBuyPack={buyCoinsPack}
+            pendingPackId={pendingPackId}
+          />
+        )}
         {isPaused && !isGameOver && (
           <PauseMenu
             onResume={() => setIsPaused(false)}
@@ -606,17 +854,26 @@ function App() {
           </div>
 
           {/* Donate Button */}
-          <a
-            href="https://dalink.to/stepanda1"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={openShop}
             className="w-[68px] h-10 sm:w-[76px] sm:h-12 rounded-2xl bg-gradient-to-br from-cyan-300/90 via-sky-300/80 to-blue-300/90 border-2 border-white/70 shadow-[0_8px_18px_rgba(56,189,248,0.55)] backdrop-blur-md flex items-center justify-center gap-1 text-black font-extrabold uppercase tracking-wide transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
-            title="Поддержать разработчика"
-            aria-label="Поддержать разработчика"
+            title={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
+            aria-label={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
           >
-            <Coffee className="w-4 h-4" />
-            <span className="text-[9px] sm:text-[10px]">{t.donate}</span>
-          </a>
+            <ShoppingCart className="w-4 h-4" />
+            <span className="text-[9px] sm:text-[10px]">{t.shop}</span>
+          </button>
+        </div>
+        <div className="mt-1 flex items-center justify-end">
+          <button
+            type="button"
+            onClick={openShop}
+            className="inline-flex items-center gap-1 rounded-full border border-cyan-200/40 bg-cyan-400/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-cyan-100 transition-all hover:bg-cyan-400/25"
+          >
+            <Coins className="h-3.5 w-3.5" />
+            <span>{spaceCoins}</span>
+          </button>
         </div>
       </div>
 
@@ -690,6 +947,11 @@ function App() {
             ))}
           </div>
         </div>
+        {shopNotice && (
+          <div className="mt-2 text-center text-xs sm:text-sm font-bold text-cyan-200">
+            {shopNotice}
+          </div>
+        )}
       </div>
 
     </div>

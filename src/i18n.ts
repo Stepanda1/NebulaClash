@@ -21,7 +21,20 @@ type Copy = {
     points: string;
     moves: string;
     time: string;
-    donate: string;
+    shop: string;
+    coins: string;
+    coinsAmount: (amount: number) => string;
+    buyExtraMoves: string;
+    buyExtraTime: string;
+    notEnoughCoins: string;
+    boughtExtraMoves: (amount: number) => string;
+    boughtExtraTime: (amount: number) => string;
+    buyCoins: string;
+    payRealMoney: string;
+    openPayment: string;
+    paymentNote: string;
+    shopPackUnavailable: string;
+    payoutToSberHint: string;
     level: (level: number) => string;
     tutorialSteps: [string, string, string];
     skipTutorial: string;
@@ -52,7 +65,20 @@ export const COPY: Record<Language, Copy> = {
         points: 'points',
         moves: 'Moves',
         time: 'Time',
-        donate: 'Donate',
+        shop: 'Shop',
+        coins: 'Space coins',
+        coinsAmount: (amount) => `${amount} coins`,
+        buyExtraMoves: 'Buy +5 moves',
+        buyExtraTime: 'Buy +30 sec',
+        notEnoughCoins: 'Not enough coins',
+        boughtExtraMoves: (amount) => `Added +${amount} moves`,
+        boughtExtraTime: (amount) => `Added +${amount} sec`,
+        buyCoins: 'Buy coins',
+        payRealMoney: 'Real money',
+        openPayment: 'Pay',
+        paymentNote: 'For auto top-up, connect provider webhook to your backend.',
+        shopPackUnavailable: 'Payment service is unavailable right now',
+        payoutToSberHint: 'Withdraw to Sber in Lava: Balance -> Payout details -> SBP -> Sberbank.',
         level: (level) => `Level ${level}`,
         tutorialSteps: [
             'Swipe the highlighted gems to make a line of 3.',
@@ -85,7 +111,20 @@ export const COPY: Record<Language, Copy> = {
         points: 'очков',
         moves: 'Ходы',
         time: 'Время',
-        donate: 'Донат',
+        shop: 'Магазин',
+        coins: 'Космические монеты',
+        coinsAmount: (amount) => `${amount} монет`,
+        buyExtraMoves: 'Купить +5 ходов',
+        buyExtraTime: 'Купить +30 сек',
+        notEnoughCoins: 'Недостаточно монет',
+        boughtExtraMoves: (amount) => `Добавлено +${amount} ходов`,
+        boughtExtraTime: (amount) => `Добавлено +${amount} сек`,
+        buyCoins: 'Купить монеты',
+        payRealMoney: 'Реальные деньги',
+        openPayment: 'Оплатить',
+        paymentNote: 'Для автозачисления подключите вебхук провайдера к вашему бэкенду.',
+        shopPackUnavailable: 'Платежный сервис сейчас недоступен',
+        payoutToSberHint: 'Вывод на Сбер в Lava: Баланс -> Реквизиты вывода -> СБП -> Сбербанк.',
         level: (level) => `Уровень ${level}`,
         tutorialSteps: [
             'Проведи по выделенным кристаллам, чтобы собрать линию из 3.',
