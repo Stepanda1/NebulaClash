@@ -12,6 +12,7 @@ import { TutorialHint } from './components/TutorialHint';
 import { SpaceRoadmap } from './components/SpaceRoadmap';
 import { LevelStartModal } from './components/LevelStartModal';
 import { ShopModal } from './components/ShopModal';
+import { LegalModal } from './components/LegalModal';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import { COPY } from './i18n';
@@ -91,6 +92,8 @@ function App() {
   const [language, setLanguage] = useState<Language>(getDefaultLanguage);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [legalSection, setLegalSection] = useState<'offer' | 'privacy' | 'refunds' | 'contacts'>('offer');
   const [spaceCoins, setSpaceCoins] = useState(120);
   const [shopNotice, setShopNotice] = useState<string | null>(null);
   const [pendingPackId, setPendingPackId] = useState<string | null>(null);
@@ -115,6 +118,16 @@ function App() {
   const hasServerWalletRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
   const t = COPY[language];
+  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'your-email@example.com';
+  const contactTelegram = import.meta.env.VITE_CONTACT_TELEGRAM || 'https://t.me/your_username';
+  const contactFacebook = import.meta.env.VITE_CONTACT_FACEBOOK || 'https://facebook.com/your.profile';
+  const contactInstagram = import.meta.env.VITE_CONTACT_INSTAGRAM || 'https://instagram.com/your.profile';
+  const legalLinks: Array<{ id: 'offer' | 'privacy' | 'refunds' | 'contacts'; label: string }> = [
+    { id: 'offer', label: t.offer },
+    { id: 'privacy', label: t.privacy },
+    { id: 'refunds', label: t.refunds },
+    { id: 'contacts', label: t.contacts },
+  ];
   const coinPacks = [
     {
       id: 'pack-120',
@@ -224,6 +237,11 @@ function App() {
   const openShop = () => {
     setIsShopOpen(true);
     trackEvent('shop_open', { level, coins_balance: spaceCoins, mode: levelConfig.mode });
+  };
+
+  const openLegal = (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => {
+    setLegalSection(section);
+    setIsLegalOpen(true);
   };
 
   const syncWalletFromServer = useCallback(async (): Promise<boolean> => {
@@ -749,6 +767,22 @@ function App() {
   if (isMapOpen) {
     return (
       <div className="relative h-full w-full">
+        <AnimatePresence>
+          {isLegalOpen && (
+            <LegalModal
+              language={language}
+              section={legalSection}
+              contacts={{
+                email: contactEmail,
+                telegram: contactTelegram,
+                facebook: contactFacebook,
+                instagram: contactInstagram,
+              }}
+              onClose={() => setIsLegalOpen(false)}
+              onSelectSection={setLegalSection}
+            />
+          )}
+        </AnimatePresence>
         <SpaceRoadmap
           unlockedLevel={unlockedLevel}
           language={language}
@@ -774,6 +808,11 @@ function App() {
             </div>
           </div>
         )}
+        <div className="absolute bottom-3 left-1/2 z-[60] -translate-x-1/2 rounded-full border border-white/25 bg-black/40 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/85">
+          <button type="button" onClick={() => openLegal('offer')} className="underline">
+            {t.legal}
+          </button>
+        </div>
       </div>
     );
   }
@@ -783,6 +822,20 @@ function App() {
 
       {/* Pause Overlay */}
       <AnimatePresence>
+        {isLegalOpen && (
+          <LegalModal
+            language={language}
+            section={legalSection}
+            contacts={{
+              email: contactEmail,
+              telegram: contactTelegram,
+              facebook: contactFacebook,
+              instagram: contactInstagram,
+            }}
+            onClose={() => setIsLegalOpen(false)}
+            onSelectSection={setLegalSection}
+          />
+        )}
         {isShopOpen && (
           <ShopModal
             language={language}
@@ -952,6 +1005,18 @@ function App() {
             {shopNotice}
           </div>
         )}
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] sm:text-xs text-white/75">
+          {legalLinks.map((link) => (
+            <button
+              key={link.id}
+              type="button"
+              onClick={() => openLegal(link.id)}
+              className="underline decoration-white/45 underline-offset-2 hover:text-white"
+            >
+              {link.label}
+            </button>
+          ))}
+        </div>
       </div>
 
     </div>

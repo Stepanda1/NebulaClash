@@ -35,6 +35,12 @@ type Copy = {
     paymentNote: string;
     shopPackUnavailable: string;
     payoutToSberHint: string;
+    legal: string;
+    offer: string;
+    privacy: string;
+    refunds: string;
+    contacts: string;
+    close: string;
     level: (level: number) => string;
     tutorialSteps: [string, string, string];
     skipTutorial: string;
@@ -79,6 +85,12 @@ export const COPY: Record<Language, Copy> = {
         paymentNote: 'For auto top-up, connect provider webhook to your backend.',
         shopPackUnavailable: 'Payment service is unavailable right now',
         payoutToSberHint: 'Withdraw to Sber in Lava: Balance -> Payout details -> SBP -> Sberbank.',
+        legal: 'Legal',
+        offer: 'Offer',
+        privacy: 'Privacy',
+        refunds: 'Refunds',
+        contacts: 'Contacts',
+        close: 'Close',
         level: (level) => `Level ${level}`,
         tutorialSteps: [
             'Swipe the highlighted gems to make a line of 3.',
@@ -125,6 +137,12 @@ export const COPY: Record<Language, Copy> = {
         paymentNote: 'Для автозачисления подключите вебхук провайдера к вашему бэкенду.',
         shopPackUnavailable: 'Платежный сервис сейчас недоступен',
         payoutToSberHint: 'Вывод на Сбер в Lava: Баланс -> Реквизиты вывода -> СБП -> Сбербанк.',
+        legal: 'Документы',
+        offer: 'Оферта',
+        privacy: 'Конфиденциальность',
+        refunds: 'Возврат',
+        contacts: 'Контакты',
+        close: 'Закрыть',
         level: (level) => `Уровень ${level}`,
         tutorialSteps: [
             'Проведи по выделенным кристаллам, чтобы собрать линию из 3.',

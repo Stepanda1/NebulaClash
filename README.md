@@ -167,3 +167,19 @@ To receive money to your own Sber card/account:
 1. Use your own Lava merchant account and keys in backend env vars.
 2. In Lava dashboard open `Balance -> Payout details` and add payout details.
 3. Choose payout method `SBP` and select `Sberbank`.
+
+## Legal Docs And Contacts
+
+The site includes built-in sections:
+
+- Public offer
+- Privacy policy
+- Refund policy
+- Contacts (email, Telegram, Facebook, Instagram)
+
+Set contacts via env vars:
+
+- `VITE_CONTACT_EMAIL`
+- `VITE_CONTACT_TELEGRAM`
+- `VITE_CONTACT_FACEBOOK`
+- `VITE_CONTACT_INSTAGRAM`
