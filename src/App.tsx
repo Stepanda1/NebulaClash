@@ -874,7 +874,7 @@ function App() {
 
       {/* Top Bar: Progress & Settings */}
       <div className="w-full shrink-0 flex flex-col gap-1 sm:gap-2 z-10">
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start px-1 sm:px-2">
           <div className="flex items-center mt-1 sm:mt-2">
             <button
               onClick={() => setIsPaused(true)}
@@ -909,7 +909,7 @@ function App() {
             <span className="text-[9px] sm:text-[10px]">{t.shop}</span>
           </button>
         </div>
-        <div className="mt-1 flex items-center justify-end">
+        <div className="mt-1 flex items-center justify-end pr-2 sm:pr-3">
           <button
             type="button"
             onClick={openShop}
