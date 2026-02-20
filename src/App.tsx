@@ -901,12 +901,11 @@ function App() {
           <button
             type="button"
             onClick={openShop}
-            className="w-[68px] h-10 sm:w-[76px] sm:h-12 rounded-2xl bg-gradient-to-br from-cyan-300/90 via-sky-300/80 to-blue-300/90 border-2 border-white/70 shadow-[0_8px_18px_rgba(56,189,248,0.55)] backdrop-blur-md flex items-center justify-center gap-1 text-black font-extrabold uppercase tracking-wide transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-cyan-300/90 via-sky-300/80 to-blue-300/90 border-2 sm:border-4 border-white/70 shadow-[0_8px_18px_rgba(56,189,248,0.55)] backdrop-blur-md flex items-center justify-center text-black transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
             title={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
             aria-label={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
           >
-            <ShoppingCart className="w-4 h-4" />
-            <span className="text-[9px] sm:text-[10px]">{t.shop}</span>
+            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
         <div className="mt-1 flex items-center justify-end pr-2 sm:pr-3">
