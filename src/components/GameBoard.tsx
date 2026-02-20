@@ -36,13 +36,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
 
             const isDesktop = vw >= 768;
             setIsMobile(!isDesktop);
-            const horizontalPadding = isDesktop ? 140 : 8;
-            const verticalPadding = isDesktop ? 330 : 280;
+            const horizontalPadding = isDesktop ? 120 : 16;
+            const verticalPadding = isDesktop ? 300 : 240;
             const rawAvailable = Math.min(vw - horizontalPadding, vh - verticalPadding);
-            const minAvailable = isDesktop ? 300 : 220;
+            const minAvailable = isDesktop ? 200 : 150;
             const available = Math.max(minAvailable, rawAvailable);
             const tileSize = Math.floor((available - GRID_GAP * (COLS - 1)) / COLS);
-            const clampedTile = Math.max(isDesktop ? 36 : 32, Math.min(isDesktop ? 60 : 48, tileSize));
+            const clampedTile = Math.max(isDesktop ? 24 : 18, Math.min(isDesktop ? 60 : 48, tileSize));
             setItemSize(clampedTile + GRID_GAP);
         };
 

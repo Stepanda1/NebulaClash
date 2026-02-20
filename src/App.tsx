@@ -122,12 +122,6 @@ function App() {
   const contactTelegram = import.meta.env.VITE_CONTACT_TELEGRAM || 'https://t.me/your_username';
   const contactFacebook = import.meta.env.VITE_CONTACT_FACEBOOK || 'https://facebook.com/your.profile';
   const contactInstagram = import.meta.env.VITE_CONTACT_INSTAGRAM || 'https://instagram.com/your.profile';
-  const legalLinks: Array<{ id: 'offer' | 'privacy' | 'refunds' | 'contacts'; label: string }> = [
-    { id: 'offer', label: t.offer },
-    { id: 'privacy', label: t.privacy },
-    { id: 'refunds', label: t.refunds },
-    { id: 'contacts', label: t.contacts },
-  ];
   const coinPacks = [
     {
       id: 'pack-120',
@@ -788,6 +782,7 @@ function App() {
           language={language}
           onStartLevel={onStartFromMap}
           onExitGame={onExitGame}
+          onOpenLegal={openLegal}
           levelStars={levelStars}
         />
         <AnimatePresence>
@@ -808,17 +803,12 @@ function App() {
             </div>
           </div>
         )}
-        <div className="absolute bottom-3 left-1/2 z-[60] -translate-x-1/2 rounded-full border border-white/25 bg-black/40 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/85">
-          <button type="button" onClick={() => openLegal('offer')} className="underline">
-            {t.legal}
-          </button>
-        </div>
       </div>
     );
   }
 
   return (
-    <div className={`flex flex-col items-center justify-between h-full w-full max-w-none max-h-none sm:max-w-lg sm:max-h-[900px] mx-auto p-1 sm:p-4 safe-area-inset relative overflow-hidden bg-black/30 backdrop-blur-none ${lowPerfMode ? 'sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-lg' : 'sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]'} ${shakeActive ? 'shake-soft' : ''}`}>
+    <div className={`flex h-full w-full max-w-none flex-col items-center justify-between overflow-x-hidden overflow-y-auto p-1 sm:mx-auto sm:max-h-[900px] sm:max-w-lg sm:p-4 safe-area-inset relative bg-black/30 backdrop-blur-none ${lowPerfMode ? 'sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-lg' : 'sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]'} ${shakeActive ? 'shake-soft' : ''}`}>
 
       {/* Pause Overlay */}
       <AnimatePresence>
@@ -857,6 +847,7 @@ function App() {
             onResume={() => setIsPaused(false)}
             onRestart={onRestart}
             onClose={() => setIsPaused(false)}
+            onOpenLegal={openLegal}
             isMuted={isMuted}
             onToggleMute={onToggleMute}
             volume={volume}
@@ -882,7 +873,7 @@ function App() {
       )}
 
       {/* Top Bar: Progress & Settings */}
-      <div className="w-full flex flex-col gap-1 sm:gap-2 z-10">
+      <div className="w-full shrink-0 flex flex-col gap-1 sm:gap-2 z-10">
         <div className="flex justify-between items-start">
           <div className="flex items-center mt-1 sm:mt-2">
             <button
@@ -931,7 +922,7 @@ function App() {
       </div>
 
       {/* Main Game Area */}
-      <div className="flex-1 flex flex-col justify-center items-center w-full relative">
+      <div className="flex-1 min-h-0 flex flex-col justify-center items-center w-full relative">
         {/* Score Popup Placeholder */}
         <div className="flex justify-center items-center h-8 sm:h-14 w-full z-10 shrink-0 -mt-1 sm:-mt-2 relative">
           <motion.span
@@ -979,7 +970,7 @@ function App() {
       </div>
 
       {/* Bottom Bar: Moves (Left) & Boosters (Right) */}
-      <div className="w-full z-10 pb-1 sm:pb-6 px-2 sm:px-4 -mt-1 sm:mt-0">
+      <div className="w-full shrink-0 z-10 pb-1 sm:pb-6 px-2 sm:px-4 -mt-1 sm:mt-0">
         <div className="flex items-end justify-between max-w-md mx-auto relative">
           {/* Moves Counter (Bottom Left) */}
           <div className="flex flex-col items-center justify-center bg-blue-600 w-14 h-14 sm:w-20 sm:h-20 rounded-2xl border-2 sm:border-4 border-white shadow-xl relative z-20">
@@ -1005,18 +996,6 @@ function App() {
             {shopNotice}
           </div>
         )}
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] sm:text-xs text-white/75">
-          {legalLinks.map((link) => (
-            <button
-              key={link.id}
-              type="button"
-              onClick={() => openLegal(link.id)}
-              className="underline decoration-white/45 underline-offset-2 hover:text-white"
-            >
-              {link.label}
-            </button>
-          ))}
-        </div>
       </div>
 
     </div>

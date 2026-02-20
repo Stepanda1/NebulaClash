@@ -8,6 +8,7 @@ type SpaceRoadmapProps = {
   language: Language;
   onStartLevel: (level: number) => void;
   onExitGame: () => void;
+  onOpenLegal: (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => void;
   levelStars: Record<number, number>;
 };
 
@@ -98,7 +99,7 @@ const BOTTOM_STARS = Array.from({ length: 28 }, (_, i) => ({
   opacity: 0.24 + (i % 6) * 0.1,
 }));
 
-export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame, levelStars }: SpaceRoadmapProps) {
+export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame, onOpenLegal, levelStars }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showJumpToCurrent, setShowJumpToCurrent] = useState(false);
@@ -236,6 +237,10 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
   const settingsLabel = language === 'ru' ? 'Настройки карты' : 'Map Settings';
   const comingSoonLabel = language === 'ru' ? 'Скоро' : 'Coming Soon';
   const endPoint = points[points.length - 1];
+  const openLegalFromSettings = (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => {
+    setIsSettingsOpen(false);
+    onOpenLegal(section);
+  };
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[radial-gradient(120%_130%_at_18%_12%,#3b1f7a_0%,#18103b_36%,#09041d_72%,#05020f_100%)] text-white">
@@ -444,6 +449,37 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
               <LogOut size={18} />
               {t.exitGame}
             </button>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => openLegalFromSettings('offer')}
+                className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs font-semibold"
+              >
+                {t.offer}
+              </button>
+              <button
+                type="button"
+                onClick={() => openLegalFromSettings('privacy')}
+                className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs font-semibold"
+              >
+                {t.privacy}
+              </button>
+              <button
+                type="button"
+                onClick={() => openLegalFromSettings('refunds')}
+                className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs font-semibold"
+              >
+                {t.refunds}
+              </button>
+              <button
+                type="button"
+                onClick={() => openLegalFromSettings('contacts')}
+                className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs font-semibold"
+              >
+                {t.contacts}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -8,6 +8,7 @@ interface PauseMenuProps {
     onResume: () => void;
     onRestart: () => void;
     onClose: () => void;
+    onOpenLegal: (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => void;
     isMuted: boolean;
     onToggleMute: () => void;
     volume: number;
@@ -16,7 +17,7 @@ interface PauseMenuProps {
     onLanguageChange: (language: Language) => void;
 }
 
-export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClose, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
+export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClose, onOpenLegal, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
     const t = COPY[language];
 
     return (
@@ -95,6 +96,36 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
                             aria-label="English language"
                         >
                             <span aria-hidden="true">EN</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="w-full p-3 rounded-xl bg-white/10 border border-white/20 shadow-inner">
+                    <div className="text-left text-white/80 text-sm font-bold tracking-wide mb-2">{t.legal}</div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => onOpenLegal('offer')}
+                            className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-sm font-semibold"
+                        >
+                            {t.offer}
+                        </button>
+                        <button
+                            onClick={() => onOpenLegal('privacy')}
+                            className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-sm font-semibold"
+                        >
+                            {t.privacy}
+                        </button>
+                        <button
+                            onClick={() => onOpenLegal('refunds')}
+                            className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-sm font-semibold"
+                        >
+                            {t.refunds}
+                        </button>
+                        <button
+                            onClick={() => onOpenLegal('contacts')}
+                            className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-sm font-semibold"
+                        >
+                            {t.contacts}
                         </button>
                     </div>
                 </div>
