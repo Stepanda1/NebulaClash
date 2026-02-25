@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Grid, Tile, GemType } from '../types';
-import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, getNovaAffectedTiles, expandSpecialChain, hasPossibleMoves, reshuffleBoard, ROWS, COLS } from '../logic/boardUtils';
+import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, getNovaAffectedTiles, getPulseAffectedTiles, expandSpecialChain, hasPossibleMoves, reshuffleBoard, ROWS, COLS } from '../logic/boardUtils';
 
 type Goal =
     | { type: 'collect'; value: number; color: GemType }
@@ -72,6 +72,7 @@ export const useGame = () => {
     const [comboLevel, setComboLevel] = useState(0);
     const [comboId, setComboId] = useState(0);
     const [bigBlastId, setBigBlastId] = useState(0);
+    const [smashId, setSmashId] = useState(0);
     const [bossHp, setBossHp] = useState(0);
     const [bossMaxHp, setBossMaxHp] = useState(0);
     const [bossHitTick, setBossHitTick] = useState(0);
@@ -192,7 +193,7 @@ export const useGame = () => {
         return expandSpecialChain(g, triggered);
     }, []);
 
-    const spawnSpecial = useCallback((type: 'bomb' | 'lightning') => {
+    const spawnSpecial = useCallback((type: 'bomb' | 'lightning' | 'cross' | 'nova' | 'pulse') => {
         setGrid(prev => {
             const newGrid = copyGrid(prev);
             const candidates: Tile[] = [];
@@ -330,7 +331,7 @@ export const useGame = () => {
     }, []);
 
     const applyBossDamage = useCallback((
-        matchMap: Map<string, 'match' | 'bomb' | 'lightning' | 'cross' | 'nova'>,
+        matchMap: Map<string, 'match' | 'bomb' | 'lightning' | 'cross' | 'nova' | 'pulse'>,
         totalRemoved: Set<string>,
         comboChainIndex: number,
     ) => {
@@ -343,6 +344,7 @@ export const useGame = () => {
             else if (type === 'lightning') damage += 10;
             else if (type === 'cross') damage += 12;
             else if (type === 'nova') damage += 14;
+            else if (type === 'pulse') damage += 10;
         });
 
         const overflow = Math.max(0, totalRemoved.size - matchMap.size);
@@ -417,6 +419,7 @@ export const useGame = () => {
                 else if (type === 'lightning') scoreGain += 40;
                 else if (type === 'cross') scoreGain += 60;
                 else if (type === 'nova') scoreGain += 70;
+                else if (type === 'pulse') scoreGain += 55;
             });
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
             if (extraTriggeredCount > 0) {
@@ -451,13 +454,20 @@ export const useGame = () => {
             setComboLevel(comboCount);
             setComboId(id => id + 1);
         }
+        if (comboCount >= 7) {
+            const specials: Array<'bomb' | 'lightning' | 'cross' | 'nova' | 'pulse'> = ['bomb', 'lightning', 'cross', 'nova', 'pulse'];
+            for (let i = 0; i < 3; i++) {
+                spawnSpecial(specials[Math.floor(Math.random() * specials.length)]);
+            }
+            setSmashId((id) => id + 1);
+        }
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval, spawnSpecial]);
 
     useEffect(() => {
         const goalReached = (() => {
@@ -542,6 +552,8 @@ export const useGame = () => {
             toRemove = getLightningAffectedTiles(activeGrid, x, y);
         } else if (tile.type === 'cross') {
             toRemove = getCrossAffectedTiles(activeGrid, x, y);
+        } else if (tile.type === 'pulse') {
+            toRemove = getPulseAffectedTiles(activeGrid, x, y);
         } else if (tile.type === 'nova') {
             toRemove = getNovaAffectedTiles(activeGrid, x, y);
         }
@@ -606,6 +618,7 @@ export const useGame = () => {
                 else if (type === 'lightning') scoreGain += 40;
                 else if (type === 'cross') scoreGain += 60;
                 else if (type === 'nova') scoreGain += 70;
+                else if (type === 'pulse') scoreGain += 55;
             });
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
             if (extraTriggeredCount > 0) {
@@ -651,7 +664,7 @@ export const useGame = () => {
         if (finalizeProcessing) {
             setIsProcessing(false);
         }
-    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getPulseAffectedTiles, getTriggeredSpecialRemoval]);
 
     const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
         let activeGrid = copyGrid(currentGrid);
@@ -665,6 +678,8 @@ export const useGame = () => {
                 getLightningAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
             } else if (tile.type === 'cross') {
                 getCrossAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
+            } else if (tile.type === 'pulse') {
+                getPulseAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
             } else if (tile.type === 'nova') {
                 getNovaAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
             }
@@ -730,6 +745,7 @@ export const useGame = () => {
                 else if (type === 'lightning') scoreGain += 40;
                 else if (type === 'cross') scoreGain += 60;
                 else if (type === 'nova') scoreGain += 70;
+                else if (type === 'pulse') scoreGain += 55;
             });
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
             if (extraTriggeredCount > 0) {
@@ -773,7 +789,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getPulseAffectedTiles, getTriggeredSpecialRemoval]);
 
     const attemptSwap = async (firstTile: Tile, secondTile: Tile) => {
         if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
@@ -947,6 +963,7 @@ export const useGame = () => {
         comboLevel,
         comboId,
         bigBlastId,
+        smashId,
         bossHp,
         bossMaxHp,
         bossHitTick,

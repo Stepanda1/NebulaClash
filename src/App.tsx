@@ -61,7 +61,7 @@ function getDefaultLanguage(): Language {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
   const BOOSTER_COST = 30;
   const MOVE_BOOST_AMOUNT = 5;
   const TIME_BOOST_SECONDS = 30;
@@ -707,6 +707,20 @@ function App() {
       clearTimeout(t2);
     };
   }, [bigBlastId, lowPerfMode]);
+
+  useEffect(() => {
+    if (smashId <= 0) return;
+    setComboText(language === 'ru' ? 'SMASH x7!' : 'SMASH x7!');
+    setComboStyle({ color: 'text-cyan-200', size: 'text-xl sm:text-3xl' });
+    setComboPos({ x: 50, y: 22 });
+    setComboFlash(true);
+    const t1 = window.setTimeout(() => setComboText(null), 950);
+    const t2 = window.setTimeout(() => setComboFlash(false), 420);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [smashId, language]);
 
   useEffect(() => {
     if (bossHitTick <= 0 || bossLastHitDamage <= 0) return;

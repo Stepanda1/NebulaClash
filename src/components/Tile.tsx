@@ -110,7 +110,7 @@ const getGemConfig = (type: TType) => {
 
 export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMobile, isLevelTransition, lowPerfMode, onClick, onPointerDown, onPointerEnter, onPointerUp, size }) => {
     // For special pieces, use gemType for visual rendering, type for special effect
-    const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova') 
+    const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova' || tile.type === 'pulse') 
         ? tile.gemType 
         : tile.type;
     
@@ -462,6 +462,32 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                 <path d="M50 10 L58 34 L82 18 L66 42 L92 50 L66 58 L82 82 L58 66 L50 90 L42 66 L18 82 L34 58 L8 50 L34 42 L18 18 L42 34 Z" fill={`url(#nova-${tile.id})`} />
                                 <circle cx="50" cy="50" r="11" fill={specDark} stroke={specLight} strokeWidth="3" />
                                 <circle cx="50" cy="50" r="5" fill="white" fillOpacity="0.8" />
+                            </svg>
+                        </div>
+                    </motion.div>
+                )}
+
+                {tile.type === 'pulse' && (
+                    <motion.div
+                        className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                        animate={lowFX ? { opacity: 0.95 } : { scale: [1, 1.08, 1], opacity: [0.9, 1, 0.9] }}
+                        transition={lowFX ? undefined : { duration: 1.05, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                        <div className="relative h-9 w-9">
+                            <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle, ${config.glow} 0%, rgba(0,0,0,0) 72%)` }} />
+                            {!lowFX && (
+                                <motion.div
+                                    className="absolute inset-[6%] rounded-full border"
+                                    style={{ borderColor: specLight }}
+                                    animate={{ scale: [0.7, 1.15], opacity: [0.65, 0] }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: "easeOut" }}
+                                />
+                            )}
+                            <svg viewBox="0 0 100 100" className="absolute inset-0" style={{ filter: `drop-shadow(0 0 10px ${config.glow})` }}>
+                                <circle cx="50" cy="50" r="15" fill={specDark} stroke={specLight} strokeWidth="4" />
+                                <circle cx="50" cy="50" r="8" fill={specMid} stroke="white" strokeOpacity="0.4" strokeWidth="2" />
+                                <path d="M50 12 L57 31 L76 24 L69 43 L88 50 L69 57 L76 76 L57 69 L50 88 L43 69 L24 76 L31 57 L12 50 L31 43 L24 24 L43 31 Z" fill={specLight} fillOpacity="0.9" />
+                                <circle cx="50" cy="50" r="4" fill="white" fillOpacity="0.85" />
                             </svg>
                         </div>
                     </motion.div>

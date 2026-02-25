@@ -1,5 +1,5 @@
 export type GemType = 'red' | 'blue' | 'green' | 'yellow' | 'purple' | 'orange';
-export type SpecialType = 'bomb' | 'lightning' | 'cross' | 'nova';
+export type SpecialType = 'bomb' | 'lightning' | 'cross' | 'nova' | 'pulse';
 export type TileType = GemType | SpecialType;
 
 export interface Tile {
