@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, Lock, LogOut, Settings, Sparkles, Star, X } from 'lucide-react';
+import { ArrowDown, Lock, LogOut, Settings, Sparkles, Star, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
@@ -10,6 +10,10 @@ type SpaceRoadmapProps = {
   onExitGame: () => void;
   onOpenLegal: (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => void;
   levelStars: Record<number, number>;
+  isMuted: boolean;
+  onToggleMute: () => void;
+  volume: number;
+  onVolumeChange: (volume: number) => void;
 };
 
 type Point = {
@@ -99,7 +103,18 @@ const BOTTOM_STARS = Array.from({ length: 28 }, (_, i) => ({
   opacity: 0.24 + (i % 6) * 0.1,
 }));
 
-export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame, onOpenLegal, levelStars }: SpaceRoadmapProps) {
+export function SpaceRoadmap({
+  unlockedLevel,
+  language,
+  onStartLevel,
+  onExitGame,
+  onOpenLegal,
+  levelStars,
+  isMuted,
+  onToggleMute,
+  volume,
+  onVolumeChange,
+}: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showJumpToCurrent, setShowJumpToCurrent] = useState(false);
@@ -441,10 +456,33 @@ export function SpaceRoadmap({ unlockedLevel, language, onStartLevel, onExitGame
             <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-cyan-200/80"><Sparkles size={13} />{settingsLabel}</div>
             <h3 className="mt-2 text-xl font-black text-white">{levelLabel}</h3>
 
+            <div className="mt-5 w-full rounded-xl border border-white/20 bg-white/10 p-3 shadow-inner">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-bold tracking-wide text-white/80">{t.sound}</span>
+                <button
+                  type="button"
+                  onClick={onToggleMute}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20 active:scale-95"
+                  aria-label={isMuted ? t.unmute : t.mute}
+                >
+                  {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                </button>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(volume * 100)}
+                onChange={(e) => onVolumeChange(Number(e.target.value) / 100)}
+                className="w-full accent-cyan-300"
+                aria-label={t.sound}
+              />
+            </div>
+
             <button
               type="button"
               onClick={onExitGame}
-              className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide text-white bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 active:scale-95 transition-all"
+              className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide text-white bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 active:scale-95 transition-all"
             >
               <LogOut size={18} />
               {t.exitGame}

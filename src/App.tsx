@@ -693,7 +693,15 @@ function App() {
           onExitGame={onExitGame}
           onOpenLegal={openLegal}
           levelStars={levelStars}
+          isMuted={isMuted}
+          onToggleMute={onToggleMute}
+          volume={volume}
+          onVolumeChange={(v) => {
+            setVolume(v);
+            if (v > 0 && isMuted) setIsMuted(false);
+          }}
         />
+        <AudioPlayer isMuted={isMuted} volume={volume} />
         <AnimatePresence>
           {levelToLaunch !== null && (
             <LevelStartModal
