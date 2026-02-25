@@ -61,7 +61,7 @@ function getDefaultLanguage(): Language {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
   const BOOSTER_COST = 30;
   const MOVE_BOOST_AMOUNT = 5;
   const TIME_BOOST_SECONDS = 30;
@@ -72,6 +72,8 @@ function App() {
   const [pendingSpawn, setPendingSpawn] = useState<null | 'bomb' | 'lightning'>(null);
   const [comboText, setComboText] = useState<string | null>(null);
   const [comboFlash, setComboFlash] = useState(false);
+  const [bossHitFlash, setBossHitFlash] = useState(false);
+  const [bossHitText, setBossHitText] = useState<string | null>(null);
   const [shakeActive, setShakeActive] = useState(false);
   const [pulseActive, setPulseActive] = useState(false);
   const [comboPos, setComboPos] = useState<{ x: number; y: number }>({ x: 50, y: 18 });
@@ -164,6 +166,10 @@ function App() {
 
     if (levelConfig.goal.type === 'lightning') {
       return <span>{language === 'ru' ? 'Молнии' : 'Lightnings'}: {levelLightningActivations}/{levelConfig.goal.value}</span>;
+    }
+
+    if (levelConfig.goal.type === 'boss') {
+      return <span>{language === 'ru' ? 'Босс' : 'Boss'}: {Math.max(0, bossHp)}/{Math.max(1, bossMaxHp)}</span>;
     }
 
     return <span>{language === 'ru' ? 'Космический мусор' : 'Space debris'}: {trashDestroyed}/{Math.max(levelConfig.goal.value, trashTotal)}</span>;
@@ -624,6 +630,41 @@ function App() {
     });
   };
 
+  const playBossHit = (damage: number) => {
+    if (isMuted || volume <= 0) return;
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    const now = ctx.currentTime;
+    const impact = ctx.createOscillator();
+    const impactGain = ctx.createGain();
+    impact.type = 'sawtooth';
+    impact.frequency.setValueAtTime(210, now);
+    impact.frequency.exponentialRampToValueAtTime(120, now + 0.1);
+    impactGain.gain.setValueAtTime(0.0001, now);
+    impactGain.gain.linearRampToValueAtTime(Math.min(0.08, 0.028 + damage * 0.0012) * volume, now + 0.012);
+    impactGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+    impact.connect(impactGain);
+    impactGain.connect(ctx.destination);
+
+    const zap = ctx.createOscillator();
+    const zapGain = ctx.createGain();
+    zap.type = 'triangle';
+    zap.frequency.setValueAtTime(980, now);
+    zap.frequency.exponentialRampToValueAtTime(620, now + 0.12);
+    zapGain.gain.setValueAtTime(0.0001, now + 0.01);
+    zapGain.gain.linearRampToValueAtTime(0.02 * volume, now + 0.03);
+    zapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+    zap.connect(zapGain);
+    zapGain.connect(ctx.destination);
+
+    impact.start(now);
+    zap.start(now + 0.01);
+    impact.stop(now + 0.17);
+    zap.stop(now + 0.16);
+  };
+
   useEffect(() => {
     if (matchTick <= 0) return;
     playClick();
@@ -666,6 +707,19 @@ function App() {
       clearTimeout(t2);
     };
   }, [bigBlastId, lowPerfMode]);
+
+  useEffect(() => {
+    if (bossHitTick <= 0 || bossLastHitDamage <= 0) return;
+    setBossHitFlash(true);
+    setBossHitText(`-${bossLastHitDamage}`);
+    playBossHit(bossLastHitDamage);
+    const t1 = window.setTimeout(() => setBossHitFlash(false), 240);
+    const t2 = window.setTimeout(() => setBossHitText(null), 700);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [bossHitTick, bossLastHitDamage]);
 
   if (isMapOpen) {
     return (
@@ -811,6 +865,35 @@ function App() {
               <div className="text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase">{t.goal}</div>
               <div className="text-xl sm:text-2xl font-extrabold leading-tight">{renderGoalContent()}</div>
             </div>
+            {levelConfig.goal.type === 'boss' && (
+              <div className="relative mt-2 w-full max-w-xs sm:max-w-sm px-2">
+                <div className="relative overflow-hidden rounded-2xl border border-rose-200/60 bg-slate-950/80 px-2 py-2 shadow-[0_0_22px_rgba(244,63,94,0.28)]">
+                  {bossHitFlash && !lowPerfMode && (
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(251,113,133,0.45)_0%,rgba(244,63,94,0.12)_45%,rgba(0,0,0,0)_75%)] animate-[comboFlash_0.24s_ease-out]" />
+                  )}
+                  <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-rose-100/85">
+                    <span>{language === 'ru' ? 'Щит босса' : 'Boss Shield'}</span>
+                    <span>{Math.max(0, bossHp)}/{Math.max(1, bossMaxHp)}</span>
+                  </div>
+                  <div className="h-3 rounded-full border border-white/10 bg-white/10 p-[2px]">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-rose-400 via-fuchsia-400 to-violet-400 shadow-[0_0_12px_rgba(244,63,94,0.55)] transition-[width] duration-300"
+                      style={{ width: `${Math.max(0, Math.min(100, bossMaxHp > 0 ? (bossHp / bossMaxHp) * 100 : 0))}%` }}
+                    />
+                  </div>
+                  {bossHitText && !lowPerfMode && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                      animate={{ opacity: 1, y: -6, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="pointer-events-none absolute right-3 top-1 text-sm font-black text-rose-300 drop-shadow-[0_0_10px_rgba(251,113,133,0.75)]"
+                    >
+                      {bossHitText}
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Donate Button */}
@@ -856,6 +939,9 @@ function App() {
         <div className={`relative p-2 sm:p-3 mb-1 sm:mb-3 bg-white/15 sm:bg-white/20 backdrop-blur-none ${lowPerfMode ? '' : 'sm:backdrop-blur-xl'} rounded-3xl border-4 border-white/40 ${lowPerfMode ? 'shadow-lg' : 'shadow-2xl'} [transform:translateZ(0)] ${pulseActive ? 'frame-pulse' : ''}`}>
           {!lowPerfMode && comboFlash && (
             <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle,rgba(255,255,255,0.45)_0%,rgba(59,130,246,0.15)_40%,rgba(0,0,0,0)_70%)] animate-[comboFlash_0.4s_ease-out]" />
+          )}
+          {!lowPerfMode && bossHitFlash && levelConfig.goal.type === 'boss' && (
+            <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_50%_12%,rgba(251,113,133,0.28)_0%,rgba(139,92,246,0.14)_35%,rgba(0,0,0,0)_70%)] animate-[comboFlash_0.3s_ease-out]" />
           )}
           {!lowPerfMode && comboText && (
             <motion.div

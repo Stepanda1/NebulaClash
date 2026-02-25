@@ -7,7 +7,8 @@ type Goal =
     | { type: 'collect_multi'; targets: Partial<Record<GemType, number>> }
     | { type: 'bombs'; value: number }
     | { type: 'lightning'; value: number }
-    | { type: 'trash'; value: number };
+    | { type: 'trash'; value: number }
+    | { type: 'boss'; value: number };
 
 type LevelConfig = {
     mode: 'moves' | 'time';
@@ -32,6 +33,7 @@ const LEVEL_CONFIGS: LevelConfig[] = [
     { mode: 'moves', limit: 24, goal: { type: 'collect_multi', targets: { yellow: 12, purple: 12 } } },
     { mode: 'moves', limit: 22, goal: { type: 'trash', value: 12 }, trashCount: 12 },
     { mode: 'moves', limit: 24, goal: { type: 'bombs', value: 5 } },
+    { mode: 'moves', limit: 26, goal: { type: 'boss', value: 120 } },
 ];
 
 export const useGame = () => {
@@ -70,6 +72,10 @@ export const useGame = () => {
     const [comboLevel, setComboLevel] = useState(0);
     const [comboId, setComboId] = useState(0);
     const [bigBlastId, setBigBlastId] = useState(0);
+    const [bossHp, setBossHp] = useState(0);
+    const [bossMaxHp, setBossMaxHp] = useState(0);
+    const [bossHitTick, setBossHitTick] = useState(0);
+    const [bossLastHitDamage, setBossLastHitDamage] = useState(0);
 
     const levelIndex = (level - 1) % LEVEL_CONFIGS.length;
     const levelConfig = LEVEL_CONFIGS[levelIndex];
@@ -149,6 +155,9 @@ export const useGame = () => {
         setLevelLightningActivations(0);
         setTrashDestroyed(0);
         setTrashTotal(config.trashCount ?? (config.goal.type === 'trash' ? config.goal.value : 0));
+        setBossMaxHp(config.goal.type === 'boss' ? config.goal.value : 0);
+        setBossHp(config.goal.type === 'boss' ? config.goal.value : 0);
+        setBossLastHitDamage(0);
         setValidMoves(0);
     };
 
@@ -320,6 +329,33 @@ export const useGame = () => {
         }
     }, []);
 
+    const applyBossDamage = useCallback((
+        matchMap: Map<string, 'match' | 'bomb' | 'lightning' | 'cross'>,
+        totalRemoved: Set<string>,
+        comboChainIndex: number,
+    ) => {
+        if (goal.type !== 'boss' || totalRemoved.size === 0) return;
+
+        let damage = 0;
+        matchMap.forEach((type) => {
+            if (type === 'match') damage += 2;
+            else if (type === 'bomb') damage += 8;
+            else if (type === 'lightning') damage += 10;
+            else if (type === 'cross') damage += 12;
+        });
+
+        const overflow = Math.max(0, totalRemoved.size - matchMap.size);
+        damage += overflow;
+        damage += Math.min(6, Math.floor(totalRemoved.size / 4));
+        damage += Math.min(4, comboChainIndex);
+
+        if (damage <= 0) return;
+
+        setBossLastHitDamage(damage);
+        setBossHitTick((tick) => tick + 1);
+        setBossHp((prev) => Math.max(0, prev - damage));
+    }, [goal.type]);
+
     const swapTiles = (g: Grid, t1: Tile, t2: Tile): Grid => {
         const newGrid = copyGrid(g);
         const tile1 = newGrid[t1.y][t1.x];
@@ -363,6 +399,7 @@ export const useGame = () => {
 
             countCollected(activeGrid, totalRemoved);
             countSpecialGoalActivations(activeGrid, totalRemoved);
+            applyBossDamage(matchMap, totalRemoved, comboCount);
             comboCount += 1;
             setMatchTick(t => t + 1);
             if (totalRemoved.size >= 12) {
@@ -418,7 +455,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
 
     useEffect(() => {
         const goalReached = (() => {
@@ -437,14 +474,17 @@ export const useGame = () => {
             if (goal.type === 'lightning') {
                 return levelLightningActivations >= goal.value;
             }
-            return trashDestroyed >= goal.value;
+            if (goal.type === 'trash') {
+                return trashDestroyed >= goal.value;
+            }
+            return bossHp <= 0;
         })();
 
         if (goalReached && !isLevelUp) {
             setIsProcessing(true);
             setIsLevelUp(true);
         }
-    }, [collected, goal, isLevelUp, levelBombActivations, levelLightningActivations, trashDestroyed]);
+    }, [bossHp, collected, goal, isLevelUp, levelBombActivations, levelLightningActivations, trashDestroyed]);
 
     useEffect(() => {
         if (!isTimeMode || isPaused || isProcessing || isLevelUp) return;
@@ -518,6 +558,7 @@ export const useGame = () => {
         }
         countCollected(activeGrid, toRemove);
         countSpecialGoalActivations(activeGrid, toRemove);
+        applyBossDamage(new Map(), toRemove, 0);
 
         setScore(prev => prev + toRemove.size * 10);
 
@@ -552,6 +593,7 @@ export const useGame = () => {
             setMatchTick(t => t + 1);
             countCollected(activeGrid, totalRemoved);
             countSpecialGoalActivations(activeGrid, totalRemoved);
+            applyBossDamage(matchMap, totalRemoved, comboCount);
 
             let scoreGain = 0;
             matchMap.forEach((type) => {
@@ -604,7 +646,7 @@ export const useGame = () => {
         if (finalizeProcessing) {
             setIsProcessing(false);
         }
-    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
 
     const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
         let activeGrid = copyGrid(currentGrid);
@@ -637,6 +679,7 @@ export const useGame = () => {
         }
         countCollected(activeGrid, toRemove);
         countSpecialGoalActivations(activeGrid, toRemove);
+        applyBossDamage(new Map(), toRemove, 0);
 
         setScore(prev => prev + toRemove.size * 10);
 
@@ -671,6 +714,7 @@ export const useGame = () => {
             setMatchTick(t => t + 1);
             countCollected(activeGrid, totalRemoved);
             countSpecialGoalActivations(activeGrid, totalRemoved);
+            applyBossDamage(matchMap, totalRemoved, comboCount);
 
             let scoreGain = 0;
             matchMap.forEach((type) => {
@@ -721,7 +765,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
 
     const attemptSwap = async (firstTile: Tile, secondTile: Tile) => {
         if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
@@ -895,6 +939,10 @@ export const useGame = () => {
         comboLevel,
         comboId,
         bigBlastId,
+        bossHp,
+        bossMaxHp,
+        bossHitTick,
+        bossLastHitDamage,
         handleRestart,
         handleNextLevel,
         startAtLevel,

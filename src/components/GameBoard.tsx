@@ -27,6 +27,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
     const GRID_GAP = 4;
     const dragStartRef = React.useRef<Tile | null>(null);
     const draggingRef = React.useRef(false);
+    const dragRafRef = React.useRef<number | null>(null);
+    const pendingPointerRef = React.useRef<{ x: number; y: number } | null>(null);
 
     useEffect(() => {
         const updateSize = () => {
@@ -49,6 +51,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         updateSize();
         window.addEventListener('resize', updateSize);
         return () => window.removeEventListener('resize', updateSize);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (dragRafRef.current !== null) {
+                cancelAnimationFrame(dragRafRef.current);
+                dragRafRef.current = null;
+            }
+        };
     }, []);
 
     const ITEM_SIZE = itemSize;
@@ -98,22 +109,29 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
             onPointerLeave={() => { draggingRef.current = false; dragStartRef.current = null; }}
             onPointerMove={(e) => {
                 if (!draggingRef.current) return;
-                const start = dragStartRef.current;
-                if (!start) return;
-                const targetEl = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
-                const tileEl = targetEl?.closest('[data-tile="true"]') as HTMLElement | null;
-                if (!tileEl) return;
-                const tx = Number(tileEl.dataset.x);
-                const ty = Number(tileEl.dataset.y);
-                if (!Number.isFinite(tx) || !Number.isFinite(ty)) return;
-                if (tx === start.x && ty === start.y) return;
-                const dx = Math.abs(tx - start.x);
-                const dy = Math.abs(ty - start.y);
-                if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-                    draggingRef.current = false;
-                    dragStartRef.current = null;
-                    onTileSwipe(start, grid[ty][tx]);
-                }
+                pendingPointerRef.current = { x: e.clientX, y: e.clientY };
+                if (dragRafRef.current !== null) return;
+                dragRafRef.current = window.requestAnimationFrame(() => {
+                    dragRafRef.current = null;
+                    const point = pendingPointerRef.current;
+                    if (!point || !draggingRef.current) return;
+                    const start = dragStartRef.current;
+                    if (!start) return;
+                    const targetEl = document.elementFromPoint(point.x, point.y) as HTMLElement | null;
+                    const tileEl = targetEl?.closest('[data-tile="true"]') as HTMLElement | null;
+                    if (!tileEl) return;
+                    const tx = Number(tileEl.dataset.x);
+                    const ty = Number(tileEl.dataset.y);
+                    if (!Number.isFinite(tx) || !Number.isFinite(ty)) return;
+                    if (tx === start.x && ty === start.y) return;
+                    const dx = Math.abs(tx - start.x);
+                    const dy = Math.abs(ty - start.y);
+                    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+                        draggingRef.current = false;
+                        dragStartRef.current = null;
+                        onTileSwipe(start, grid[ty][tx]);
+                    }
+                });
             }}
         >
             {/* Very Subtle Checkered Pattern */}

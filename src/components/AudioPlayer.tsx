@@ -8,10 +8,9 @@ interface AudioPlayerProps {
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({ isMuted, volume }) => {
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Relaxing background music (free to use under CC BY 4.0).
-    // CC0 track (OpenGameArt)
+    // Background music: CC0 track (OpenGameArt)
     // Title: "Outer Space Loop"
-    // Author: yd
+    // Author: wipics
     // Source: https://opengameart.org/content/outer-space-loop
     // License: https://creativecommons.org/publicdomain/zero/1.0/
     const MUSIC_URL = "/bgm.mp3";
