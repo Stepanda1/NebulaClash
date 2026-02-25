@@ -548,15 +548,35 @@ function App() {
     if (ctx.state === 'suspended') {
       ctx.resume();
     }
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.value = 520;
-    gain.gain.value = 0.05 * volume;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.05);
+    const now = ctx.currentTime;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.linearRampToValueAtTime(0.03 * volume, now + 0.012);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+    master.connect(ctx.destination);
+
+    const tone = ctx.createOscillator();
+    tone.type = 'triangle';
+    tone.frequency.setValueAtTime(720, now);
+    tone.frequency.exponentialRampToValueAtTime(980, now + 0.03);
+    tone.frequency.exponentialRampToValueAtTime(760, now + 0.14);
+
+    const shimmer = ctx.createOscillator();
+    const shimmerGain = ctx.createGain();
+    shimmer.type = 'sine';
+    shimmer.frequency.setValueAtTime(1440, now);
+    shimmerGain.gain.setValueAtTime(0.0001, now);
+    shimmerGain.gain.linearRampToValueAtTime(0.012 * volume, now + 0.01);
+    shimmerGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+    tone.connect(master);
+    shimmer.connect(shimmerGain);
+    shimmerGain.connect(ctx.destination);
+
+    tone.start(now);
+    shimmer.start(now + 0.004);
+    tone.stop(now + 0.15);
+    shimmer.stop(now + 0.1);
   };
 
   const playCombo = () => {
@@ -565,22 +585,43 @@ function App() {
     if (ctx.state === 'suspended') {
       ctx.resume();
     }
-    const g = ctx.createGain();
-    g.gain.value = 0.08 * volume;
-    g.connect(ctx.destination);
-    const o1 = ctx.createOscillator();
-    const o2 = ctx.createOscillator();
-    o1.type = 'sine';
-    o2.type = 'sine';
-    o1.frequency.value = 320;
-    o2.frequency.value = 480;
-    o1.connect(g);
-    o2.connect(g);
     const now = ctx.currentTime;
-    o1.start(now);
-    o2.start(now + 0.02);
-    o1.stop(now + 0.18);
-    o2.stop(now + 0.22);
+    const notes = [523.25, 659.25, 783.99];
+
+    notes.forEach((freq, index) => {
+      const start = now + index * 0.045;
+      const end = start + 0.16;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const sparkle = ctx.createOscillator();
+      const sparkleGain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, start);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.04, start + 0.03);
+      osc.frequency.exponentialRampToValueAtTime(freq, end);
+
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.linearRampToValueAtTime((0.04 - index * 0.006) * volume, start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+      sparkle.type = 'sine';
+      sparkle.frequency.setValueAtTime(freq * 2, start);
+      sparkleGain.gain.setValueAtTime(0.0001, start);
+      sparkleGain.gain.linearRampToValueAtTime(0.012 * volume, start + 0.01);
+      sparkleGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.08);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      sparkle.connect(sparkleGain);
+      sparkleGain.connect(ctx.destination);
+
+      osc.start(start);
+      sparkle.start(start + 0.003);
+      osc.stop(end);
+      sparkle.stop(start + 0.09);
+    });
   };
 
   useEffect(() => {
