@@ -1,7 +1,5 @@
-$ErrorActionPreference = "Stop"
-
 param(
-  [string]$Host = "37.140.192.43",
+  [string]$SshHost = "37.140.192.43",
   [int]$Port = 22,
   [string]$User = "u3426655",
   [string]$SitePath = "/var/www/u3426655/data/www/nebulaclash.com",
@@ -10,10 +8,12 @@ param(
   [switch]$ResetBackendState = $true
 )
 
+$ErrorActionPreference = "Stop"
+
 $projectDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 function Invoke-Remote($command) {
-  & ssh -p $Port "$User@$Host" $command
+  & ssh -p $Port "$User@$SshHost" $command
   if ($LASTEXITCODE -ne 0) {
     throw "Remote command failed: $command"
   }
@@ -28,7 +28,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Uploading static files to $SitePath ..."
-& scp -P $Port -r "dist/." "$User@$Host`:$SitePath/"
+& scp -P $Port -r "dist/." "$User@$SshHost`:$SitePath/"
 if ($LASTEXITCODE -ne 0) {
   throw "Static upload failed"
 }
@@ -39,16 +39,16 @@ if ($UploadBackend) {
   Invoke-Remote "mkdir -p '$BackendPath' '$BackendPath/data'"
 
   Write-Host "Uploading backend files..."
-  & scp -P $Port -r ".\server" "$User@$Host`:$BackendPath/"
+  & scp -P $Port -r ".\server" "$User@$SshHost`:$BackendPath/"
   if ($LASTEXITCODE -ne 0) { throw "Backend server upload failed" }
 
-  & scp -P $Port ".\package.json" "$User@$Host`:$BackendPath/"
+  & scp -P $Port ".\package.json" "$User@$SshHost`:$BackendPath/"
   if ($LASTEXITCODE -ne 0) { throw "package.json upload failed" }
 
-  & scp -P $Port ".\package-lock.json" "$User@$Host`:$BackendPath/"
+  & scp -P $Port ".\package-lock.json" "$User@$SshHost`:$BackendPath/"
   if ($LASTEXITCODE -ne 0) { throw "package-lock.json upload failed" }
 
-  & scp -P $Port ".\data\.gitkeep" "$User@$Host`:$BackendPath/data/"
+  & scp -P $Port ".\data\.gitkeep" "$User@$SshHost`:$BackendPath/data/"
   if ($LASTEXITCODE -ne 0) { throw "data/.gitkeep upload failed" }
   Invoke-Remote "chmod 755 '$BackendPath' '$BackendPath/server' '$BackendPath/data' && chmod 644 '$BackendPath/package.json' '$BackendPath/package-lock.json' '$BackendPath/server/'*.mjs"
   if ($ResetBackendState) {
