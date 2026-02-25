@@ -121,6 +121,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
     if (!config) return null;
 
     const lowFX = isMobile || isLevelTransition || lowPerfMode;
+    const [specLight, specMid, specDark] = config.base;
 
     return (
         <motion.div
@@ -326,18 +327,26 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                         <div className="relative h-10 w-10">
                             {!lowFX && (
                                 <motion.div
-                                    className="absolute inset-[-5px] rounded-full bg-[radial-gradient(circle,rgba(56,189,248,0.22)_0%,rgba(99,102,241,0.14)_40%,rgba(0,0,0,0)_75%)]"
+                                    className="absolute inset-[-5px] rounded-full"
+                                    style={{ background: `radial-gradient(circle, ${config.glow} 0%, rgba(255,255,255,0.08) 35%, rgba(0,0,0,0) 75%)` }}
                                     animate={{ scale: [0.95, 1.1, 0.95], opacity: [0.55, 0.9, 0.55] }}
                                     transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                                 />
                             )}
-                            <div className="absolute left-1/2 top-[7px] h-[9px] w-[13px] -translate-x-1/2 rounded-t-md border border-cyan-100/40 bg-gradient-to-b from-slate-300 to-slate-600 shadow-[0_0_8px_rgba(148,163,184,0.35)]" />
+                            <div className="absolute left-1/2 top-[7px] h-[9px] w-[13px] -translate-x-1/2 rounded-t-md border bg-gradient-to-b from-slate-300 to-slate-600 shadow-[0_0_8px_rgba(148,163,184,0.35)]" style={{ borderColor: 'rgba(255,255,255,0.35)' }} />
                             <div className="absolute left-1/2 top-[4px] h-[8px] w-[3px] -translate-x-1/2 rounded-full bg-slate-200/80" />
-                            <div className="absolute inset-x-[5px] bottom-[4px] top-[11px] rounded-full border border-cyan-100/35 bg-[radial-gradient(circle_at_28%_24%,#dbeafe_0%,#60a5fa_22%,#1d4ed8_55%,#1e1b4b_100%)] shadow-[0_0_14px_rgba(59,130,246,0.55),inset_-4px_-6px_10px_rgba(15,23,42,0.6)]" />
+                            <div
+                                className="absolute inset-x-[5px] bottom-[4px] top-[11px] rounded-full border shadow-[inset_-4px_-6px_10px_rgba(15,23,42,0.6)]"
+                                style={{
+                                    borderColor: 'rgba(255,255,255,0.28)',
+                                    background: `radial-gradient(circle at 28% 24%, ${specLight} 0%, ${specMid} 24%, ${specDark} 68%, #020617 100%)`,
+                                    boxShadow: `0 0 14px ${config.glow}, inset -4px -6px 10px rgba(15,23,42,0.6)`,
+                                }}
+                            />
                             <div className="absolute inset-x-[8px] bottom-[7px] top-[14px] rounded-full border border-white/15" />
-                            <div className="absolute left-[10px] right-[10px] top-[21px] h-[2px] rounded-full bg-cyan-100/35" />
+                            <div className="absolute left-[10px] right-[10px] top-[21px] h-[2px] rounded-full" style={{ background: 'rgba(255,255,255,0.3)' }} />
                             <div className="absolute left-[13px] top-[16px] h-[5px] w-[5px] rounded-full bg-white/75 blur-[0.5px]" />
-                            <div className="absolute right-[12px] bottom-[13px] h-[4px] w-[4px] rounded-full bg-cyan-200/50" />
+                            <div className="absolute right-[12px] bottom-[13px] h-[4px] w-[4px] rounded-full" style={{ background: specLight, opacity: 0.55 }} />
                             {!lowFX && (
                                 <motion.div
                                     className="absolute left-1/2 top-[-1px] h-4 w-4 -translate-x-1/2"
@@ -346,7 +355,8 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                 >
                                     <div className="absolute left-1/2 top-1 h-2.5 w-[2px] -translate-x-1/2 rounded-full bg-gradient-to-t from-slate-300 to-white" />
                                     <motion.div
-                                        className="absolute left-1/2 top-[-1px] h-3 w-3 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,#fef3c7_0%,#f59e0b_45%,rgba(249,115,22,0)_72%)]"
+                                        className="absolute left-1/2 top-[-1px] h-3 w-3 -translate-x-1/2 rounded-full"
+                                        style={{ background: `radial-gradient(circle, #ffffff 0%, ${specLight} 32%, ${specMid} 58%, rgba(0,0,0,0) 76%)` }}
                                         animate={{ scale: [0.85, 1.15, 0.9], opacity: [0.7, 1, 0.65] }}
                                         transition={{ duration: 0.55, repeat: Infinity, ease: "easeInOut" }}
                                     />
@@ -363,13 +373,14 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                         transition={lowFX ? undefined : { duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
                     >
                         <div className="relative w-8 h-8">
-                            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.65),rgba(14,116,144,0.0))]" />
-                            <svg viewBox="0 0 100 100" className="absolute inset-0 drop-shadow-[0_0_12px_rgba(34,211,238,0.9)]">
+                            <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle_at_50%_50%, ${config.glow}, rgba(0,0,0,0))` }} />
+                            <svg viewBox="0 0 100 100" className="absolute inset-0" style={{ filter: `drop-shadow(0 0 12px ${config.glow})` }}>
                                 <defs>
                                     <linearGradient id={`bolt-${tile.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#e0f2fe" />
-                                        <stop offset="50%" stopColor="#22d3ee" />
-                                        <stop offset="100%" stopColor="#0284c7" />
+                                        <stop offset="0%" stopColor="#ffffff" />
+                                        <stop offset="35%" stopColor={specLight} />
+                                        <stop offset="70%" stopColor={specMid} />
+                                        <stop offset="100%" stopColor={specDark} />
                                     </linearGradient>
                                 </defs>
                                 <path d="M52 5 L32 52 L54 52 L28 95 L72 36 L48 36 Z" fill={`url(#bolt-${tile.id})`} />
@@ -381,7 +392,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                 transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
                             >
                                 <svg viewBox="0 0 100 100" className="absolute inset-0 opacity-60">
-                                    <path d="M58 12 L40 46 L56 46 L36 86 L70 38 L52 38 Z" fill="#a5f3fc" />
+                                    <path d="M58 12 L40 46 L56 46 L36 86 L70 38 L52 38 Z" fill={specLight} />
                                 </svg>
                             </motion.div>
                             )}
@@ -395,10 +406,21 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                         animate={lowFX ? { opacity: 0.95 } : { scale: [1, 1.2, 1] }}
                         transition={lowFX ? undefined : { duration: 1.5, repeat: Infinity }}
                     >
-                        <svg viewBox="0 0 100 100" className="w-7 h-7 drop-shadow-lg">
-                            <line x1="30" y1="30" x2="70" y2="70" stroke="magenta" strokeWidth="4" strokeLinecap="round"/>
-                            <line x1="70" y1="30" x2="30" y2="70" stroke="magenta" strokeWidth="4" strokeLinecap="round"/>
-                        </svg>
+                        <div className="relative h-8 w-8">
+                            <div className="absolute inset-0 rounded-full opacity-75" style={{ background: `radial-gradient(circle, ${config.glow} 0%, rgba(0,0,0,0) 72%)` }} />
+                            <svg viewBox="0 0 100 100" className="absolute inset-0" style={{ filter: `drop-shadow(0 0 10px ${config.glow})` }}>
+                                <defs>
+                                    <linearGradient id={`cross-${tile.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#ffffff" />
+                                        <stop offset="45%" stopColor={specLight} />
+                                        <stop offset="100%" stopColor={specMid} />
+                                    </linearGradient>
+                                </defs>
+                                <line x1="28" y1="28" x2="72" y2="72" stroke={`url(#cross-${tile.id})`} strokeWidth="8" strokeLinecap="round" />
+                                <line x1="72" y1="28" x2="28" y2="72" stroke={`url(#cross-${tile.id})`} strokeWidth="8" strokeLinecap="round" />
+                                <circle cx="50" cy="50" r="8" fill={specDark} stroke={specLight} strokeWidth="3" />
+                            </svg>
+                        </div>
                     </motion.div>
                 )}
             </div>
