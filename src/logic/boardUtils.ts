@@ -48,14 +48,14 @@ export const createBoard = (): Grid => {
     return reshuffleBoard(fallback);
 };
 
-export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightning' | 'cross'> => {
-    const matchMap = new Map<string, 'match' | 'bomb' | 'lightning' | 'cross'>();
+export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightning' | 'cross' | 'nova'> => {
+    const matchMap = new Map<string, 'match' | 'bomb' | 'lightning' | 'cross' | 'nova'>();
     const processed = new Set<string>();
 
     const getTileBaseType = (tile: Tile): GemType | null => {
         if (tile.hasTrash) return null;
         if (tile.type == null) return null;
-        if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross') {
+        if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova') {
             return tile.gemType || null;
         }
         return tile.type as GemType;
@@ -67,7 +67,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
         return b1 !== null && b1 === b2;
     };
 
-    const addGroup = (tileIds: string[], type: 'match' | 'bomb' | 'lightning' | 'cross') => {
+    const addGroup = (tileIds: string[], type: 'match' | 'bomb' | 'lightning' | 'cross' | 'nova') => {
         for (const id of tileIds) {
             if (processed.has(id)) return;
         }
@@ -77,7 +77,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
         }
     };
 
-    // 1) T-shapes (5) -> cross
+    // 1) T-shapes (5) -> nova
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS - 2; x++) {
             const a = grid[y][x];
@@ -91,7 +91,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
                 const up1 = grid[y - 1][x + 1];
                 const up2 = grid[y - 2][x + 1];
                 if (isSameType(a, up1) && isSameType(a, up2)) {
-                    addGroup([a.id, b.id, c.id, up1.id, up2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, up1.id, up2.id], 'nova');
                 }
             }
 
@@ -100,7 +100,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
                 const down1 = grid[y + 1][x + 1];
                 const down2 = grid[y + 2][x + 1];
                 if (isSameType(a, down1) && isSameType(a, down2)) {
-                    addGroup([a.id, b.id, c.id, down1.id, down2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, down1.id, down2.id], 'nova');
                 }
             }
         }
@@ -119,7 +119,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
                 const left1 = grid[y + 1][x - 1];
                 const left2 = grid[y + 1][x - 2];
                 if (isSameType(a, left1) && isSameType(a, left2)) {
-                    addGroup([a.id, b.id, c.id, left1.id, left2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, left1.id, left2.id], 'nova');
                 }
             }
 
@@ -128,13 +128,13 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
                 const right1 = grid[y + 1][x + 1];
                 const right2 = grid[y + 1][x + 2];
                 if (isSameType(a, right1) && isSameType(a, right2)) {
-                    addGroup([a.id, b.id, c.id, right1.id, right2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, right1.id, right2.id], 'nova');
                 }
             }
         }
     }
 
-    // 2) L-shapes (5) -> cross
+    // 2) L-shapes (5) -> nova
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS - 2; x++) {
             const a = grid[y][x];
@@ -148,14 +148,14 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
                 const up1 = grid[y - 1][x];
                 const up2 = grid[y - 2][x];
                 if (isSameType(a, up1) && isSameType(a, up2)) {
-                    addGroup([a.id, b.id, c.id, up1.id, up2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, up1.id, up2.id], 'nova');
                 }
             }
             if (y <= ROWS - 3) {
                 const down1 = grid[y + 1][x];
                 const down2 = grid[y + 2][x];
                 if (isSameType(a, down1) && isSameType(a, down2)) {
-                    addGroup([a.id, b.id, c.id, down1.id, down2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, down1.id, down2.id], 'nova');
                 }
             }
 
@@ -164,14 +164,14 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
                 const up1 = grid[y - 1][x + 2];
                 const up2 = grid[y - 2][x + 2];
                 if (isSameType(a, up1) && isSameType(a, up2)) {
-                    addGroup([a.id, b.id, c.id, up1.id, up2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, up1.id, up2.id], 'nova');
                 }
             }
             if (y <= ROWS - 3) {
                 const down1 = grid[y + 1][x + 2];
                 const down2 = grid[y + 2][x + 2];
                 if (isSameType(a, down1) && isSameType(a, down2)) {
-                    addGroup([a.id, b.id, c.id, down1.id, down2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, down1.id, down2.id], 'nova');
                 }
             }
         }
@@ -190,14 +190,14 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
                 const left1 = grid[y][x - 1];
                 const left2 = grid[y][x - 2];
                 if (isSameType(a, left1) && isSameType(a, left2)) {
-                    addGroup([a.id, b.id, c.id, left1.id, left2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, left1.id, left2.id], 'nova');
                 }
             }
             if (x <= COLS - 3) {
                 const right1 = grid[y][x + 1];
                 const right2 = grid[y][x + 2];
                 if (isSameType(a, right1) && isSameType(a, right2)) {
-                    addGroup([a.id, b.id, c.id, right1.id, right2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, right1.id, right2.id], 'nova');
                 }
             }
 
@@ -206,20 +206,20 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
                 const left1 = grid[y + 2][x - 1];
                 const left2 = grid[y + 2][x - 2];
                 if (isSameType(a, left1) && isSameType(a, left2)) {
-                    addGroup([a.id, b.id, c.id, left1.id, left2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, left1.id, left2.id], 'nova');
                 }
             }
             if (x <= COLS - 3) {
                 const right1 = grid[y + 2][x + 1];
                 const right2 = grid[y + 2][x + 2];
                 if (isSameType(a, right1) && isSameType(a, right2)) {
-                    addGroup([a.id, b.id, c.id, right1.id, right2.id], 'cross');
+                    addGroup([a.id, b.id, c.id, right1.id, right2.id], 'nova');
                 }
             }
         }
     }
 
-    // 3) Line matches: 5+ -> lightning, 4 -> bomb, 3 -> match
+    // 3) Line matches: 7+ -> cross, 5-6 -> lightning, 4 -> bomb, 3 -> match
     for (let y = 0; y < ROWS; y++) {
         let x = 0;
         while (x < COLS) {
@@ -233,7 +233,8 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             if (len >= 3) {
                 const ids = [];
                 for (let i = start; i <= end; i++) ids.push(grid[y][i].id);
-                if (len >= 5) addGroup(ids, 'lightning');
+                if (len >= 7) addGroup(ids, 'cross');
+                else if (len >= 5) addGroup(ids, 'lightning');
                 else if (len === 4) addGroup(ids, 'bomb');
                 else addGroup(ids, 'match');
             }
@@ -254,7 +255,8 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             if (len >= 3) {
                 const ids = [];
                 for (let i = start; i <= end; i++) ids.push(grid[i][x].id);
-                if (len >= 5) addGroup(ids, 'lightning');
+                if (len >= 7) addGroup(ids, 'cross');
+                else if (len >= 5) addGroup(ids, 'lightning');
                 else if (len === 4) addGroup(ids, 'bomb');
                 else addGroup(ids, 'match');
             }
@@ -266,12 +268,12 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
 };
 
 // Convert matched tiles to single special piece (one per combo)
-export const convertToSpecialPieces = (grid: Grid, matchMap: Map<string, 'match' | 'bomb' | 'lightning' | 'cross'>): Grid => {
+export const convertToSpecialPieces = (grid: Grid, matchMap: Map<string, 'match' | 'bomb' | 'lightning' | 'cross' | 'nova'>): Grid => {
     const newGrid = copyGrid(grid);
 
     const specialIds = new Set<string>();
     matchMap.forEach((type, tileId) => {
-        if (type === 'bomb' || type === 'lightning' || type === 'cross') {
+        if (type === 'bomb' || type === 'lightning' || type === 'cross' || type === 'nova') {
             specialIds.add(tileId);
         }
     });
@@ -300,7 +302,7 @@ export const convertToSpecialPieces = (grid: Grid, matchMap: Map<string, 'match'
             const tile = newGrid[y][x];
             if (!specialIds.has(tile.id) || visited.has(tile.id)) continue;
 
-            const specialType = matchMap.get(tile.id) as 'bomb' | 'lightning' | 'cross';
+            const specialType = matchMap.get(tile.id) as 'bomb' | 'lightning' | 'cross' | 'nova';
             const group: Tile[] = [];
             const queue: Tile[] = [tile];
             visited.add(tile.id);
@@ -309,7 +311,7 @@ export const convertToSpecialPieces = (grid: Grid, matchMap: Map<string, 'match'
                 const current = queue.shift()!;
                 group.push(current);
                 for (const neighbor of getNeighbors(current.x, current.y)) {
-                    if (specialIds.has(neighbor.id) && !visited.has(neighbor.id) && matchMap.get(neighbor.id) === specialType) {
+                if (specialIds.has(neighbor.id) && !visited.has(neighbor.id) && matchMap.get(neighbor.id) === specialType) {
                         visited.add(neighbor.id);
                         queue.push(neighbor);
                     }
@@ -328,7 +330,7 @@ export const convertToSpecialPieces = (grid: Grid, matchMap: Map<string, 'match'
             });
 
             const specialTile = sorted[0];
-            const gemType = (specialTile.type === 'bomb' || specialTile.type === 'lightning' || specialTile.type === 'cross')
+            const gemType = (specialTile.type === 'bomb' || specialTile.type === 'lightning' || specialTile.type === 'cross' || specialTile.type === 'nova')
                 ? specialTile.gemType
                 : specialTile.type as GemType;
 
@@ -388,6 +390,55 @@ export const getLightningAffectedTiles = (grid: Grid, x: number, y: number, dire
     return affected;
 };
 
+// Nova: diagonal starburst + local 3x3 shockwave
+export const getNovaAffectedTiles = (grid: Grid, x: number, y: number): Set<string> => {
+    const affected = new Set<string>();
+
+    // Center + 3x3 neighborhood
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+            affected.add(grid[ny][nx].id);
+        }
+    }
+
+    // Main diagonal
+    let dx = x;
+    let dy = y;
+    while (dx >= 0 && dy >= 0) {
+        affected.add(grid[dy][dx].id);
+        dx--;
+        dy--;
+    }
+    dx = x + 1;
+    dy = y + 1;
+    while (dx < COLS && dy < ROWS) {
+        affected.add(grid[dy][dx].id);
+        dx++;
+        dy++;
+    }
+
+    // Anti-diagonal
+    dx = x;
+    dy = y;
+    while (dx < COLS && dy >= 0) {
+        affected.add(grid[dy][dx].id);
+        dx++;
+        dy--;
+    }
+    dx = x - 1;
+    dy = y + 1;
+    while (dx >= 0 && dy < ROWS) {
+        affected.add(grid[dy][dx].id);
+        dx--;
+        dy++;
+    }
+
+    return affected;
+};
+
 export const expandSpecialChain = (grid: Grid, initial: Set<string>): Set<string> => {
     const idMap = new Map<string, Tile>();
     for (let y = 0; y < ROWS; y++) {
@@ -403,7 +454,7 @@ export const expandSpecialChain = (grid: Grid, initial: Set<string>): Set<string
 
     for (const id of initial) {
         const tile = idMap.get(id);
-        if (tile && (tile.type === 'bomb' || tile.type === 'lightning')) {
+        if (tile && (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova')) {
             queue.push(tile);
             triggered.add(tile.id);
         }
@@ -413,14 +464,18 @@ export const expandSpecialChain = (grid: Grid, initial: Set<string>): Set<string
         const tile = queue.shift()!;
         const affected = tile.type === 'bomb'
             ? getBombAffectedTiles(grid, tile.x, tile.y)
-            : getLightningAffectedTiles(grid, tile.x, tile.y);
+            : tile.type === 'lightning'
+                ? getLightningAffectedTiles(grid, tile.x, tile.y)
+                : tile.type === 'cross'
+                    ? getCrossAffectedTiles(grid, tile.x, tile.y)
+                    : getNovaAffectedTiles(grid, tile.x, tile.y);
 
         for (const id of affected) {
             if (!toRemove.has(id)) {
                 toRemove.add(id);
             }
             const nextTile = idMap.get(id);
-            if (nextTile && (nextTile.type === 'bomb' || nextTile.type === 'lightning') && !triggered.has(nextTile.id)) {
+            if (nextTile && (nextTile.type === 'bomb' || nextTile.type === 'lightning' || nextTile.type === 'cross' || nextTile.type === 'nova') && !triggered.has(nextTile.id)) {
                 triggered.add(nextTile.id);
                 queue.push(nextTile);
             }
@@ -601,8 +656,8 @@ export const hasPossibleMoves = (grid: Grid): boolean => {
             if (x + 1 < COLS) {
                 const right = grid[y][x + 1];
                 if (!current.hasTrash && !right.hasTrash && (
-                    current.type === 'bomb' || current.type === 'lightning' || current.type === 'cross' ||
-                    right.type === 'bomb' || right.type === 'lightning' || right.type === 'cross'
+                    current.type === 'bomb' || current.type === 'lightning' || current.type === 'cross' || current.type === 'nova' ||
+                    right.type === 'bomb' || right.type === 'lightning' || right.type === 'cross' || right.type === 'nova'
                 )) {
                     return true;
                 }
@@ -613,8 +668,8 @@ export const hasPossibleMoves = (grid: Grid): boolean => {
             if (y + 1 < ROWS) {
                 const down = grid[y + 1][x];
                 if (!current.hasTrash && !down.hasTrash && (
-                    current.type === 'bomb' || current.type === 'lightning' || current.type === 'cross' ||
-                    down.type === 'bomb' || down.type === 'lightning' || down.type === 'cross'
+                    current.type === 'bomb' || current.type === 'lightning' || current.type === 'cross' || current.type === 'nova' ||
+                    down.type === 'bomb' || down.type === 'lightning' || down.type === 'cross' || down.type === 'nova'
                 )) {
                     return true;
                 }

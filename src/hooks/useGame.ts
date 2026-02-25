@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Grid, Tile, GemType } from '../types';
-import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, expandSpecialChain, hasPossibleMoves, reshuffleBoard, ROWS, COLS } from '../logic/boardUtils';
+import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, getNovaAffectedTiles, expandSpecialChain, hasPossibleMoves, reshuffleBoard, ROWS, COLS } from '../logic/boardUtils';
 
 type Goal =
     | { type: 'collect'; value: number; color: GemType }
@@ -183,7 +183,7 @@ export const useGame = () => {
         matchedIds.forEach((id) => {
             const tile = idMap.get(id);
             if (!tile) return;
-            if (tile.type === 'bomb' || tile.type === 'lightning') {
+            if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova') {
                 triggered.add(id);
             }
         });
@@ -199,13 +199,13 @@ export const useGame = () => {
             for (let y = 1; y < ROWS; y++) {
                 for (let x = 0; x < COLS; x++) {
                     const tile = newGrid[y][x];
-                    if ((tile as { type?: unknown }).type == null || tile.hasTrash) continue;
-                    candidates.push(tile);
-                }
+                if ((tile as { type?: unknown }).type == null || tile.hasTrash) continue;
+                candidates.push(tile);
+            }
             }
             if (candidates.length === 0) return prev;
             const pick = candidates[Math.floor(Math.random() * candidates.length)];
-            const base = (pick.type === 'bomb' || pick.type === 'lightning' || pick.type === 'cross')
+            const base = (pick.type === 'bomb' || pick.type === 'lightning' || pick.type === 'cross' || pick.type === 'nova')
                 ? pick.gemType
                 : (pick.type as GemType);
             newGrid[pick.y][pick.x] = {
@@ -233,7 +233,7 @@ export const useGame = () => {
                 if (!ids.has(tile.id) || tile.hasTrash) continue;
                 if ((tile as { type?: unknown }).type == null) continue;
 
-                const base = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross')
+                const base = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova')
                     ? tile.gemType
                     : (tile.type as GemType);
 
@@ -330,7 +330,7 @@ export const useGame = () => {
     }, []);
 
     const applyBossDamage = useCallback((
-        matchMap: Map<string, 'match' | 'bomb' | 'lightning' | 'cross'>,
+        matchMap: Map<string, 'match' | 'bomb' | 'lightning' | 'cross' | 'nova'>,
         totalRemoved: Set<string>,
         comboChainIndex: number,
     ) => {
@@ -342,6 +342,7 @@ export const useGame = () => {
             else if (type === 'bomb') damage += 8;
             else if (type === 'lightning') damage += 10;
             else if (type === 'cross') damage += 12;
+            else if (type === 'nova') damage += 14;
         });
 
         const overflow = Math.max(0, totalRemoved.size - matchMap.size);
@@ -414,7 +415,8 @@ export const useGame = () => {
                 scoreGain += 10;
                 if (type === 'bomb') scoreGain += 40;
                 else if (type === 'lightning') scoreGain += 40;
-                else if (type === 'cross') scoreGain += 50;
+                else if (type === 'cross') scoreGain += 60;
+                else if (type === 'nova') scoreGain += 70;
             });
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
             if (extraTriggeredCount > 0) {
@@ -540,6 +542,8 @@ export const useGame = () => {
             toRemove = getLightningAffectedTiles(activeGrid, x, y);
         } else if (tile.type === 'cross') {
             toRemove = getCrossAffectedTiles(activeGrid, x, y);
+        } else if (tile.type === 'nova') {
+            toRemove = getNovaAffectedTiles(activeGrid, x, y);
         }
 
         toRemove = expandSpecialChain(activeGrid, toRemove);
@@ -600,7 +604,8 @@ export const useGame = () => {
                 scoreGain += 10;
                 if (type === 'bomb') scoreGain += 40;
                 else if (type === 'lightning') scoreGain += 40;
-                else if (type === 'cross') scoreGain += 50;
+                else if (type === 'cross') scoreGain += 60;
+                else if (type === 'nova') scoreGain += 70;
             });
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
             if (extraTriggeredCount > 0) {
@@ -660,6 +665,8 @@ export const useGame = () => {
                 getLightningAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
             } else if (tile.type === 'cross') {
                 getCrossAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
+            } else if (tile.type === 'nova') {
+                getNovaAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
             }
         }
 
@@ -721,7 +728,8 @@ export const useGame = () => {
                 scoreGain += 10;
                 if (type === 'bomb') scoreGain += 40;
                 else if (type === 'lightning') scoreGain += 40;
-                else if (type === 'cross') scoreGain += 50;
+                else if (type === 'cross') scoreGain += 60;
+                else if (type === 'nova') scoreGain += 70;
             });
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
             if (extraTriggeredCount > 0) {
@@ -775,8 +783,8 @@ export const useGame = () => {
         if (!isAdjacent) return;
         if (firstTile.hasTrash || secondTile.hasTrash) return;
 
-        const selectedWasSpecial = firstTile.type === 'bomb' || firstTile.type === 'lightning';
-        const clickedWasSpecial = secondTile.type === 'bomb' || secondTile.type === 'lightning';
+        const selectedWasSpecial = firstTile.type === 'bomb' || firstTile.type === 'lightning' || firstTile.type === 'cross' || firstTile.type === 'nova';
+        const clickedWasSpecial = secondTile.type === 'bomb' || secondTile.type === 'lightning' || secondTile.type === 'cross' || secondTile.type === 'nova';
         const nextGrid = swapTiles(grid, firstTile, secondTile);
         setGrid(nextGrid);
         setSelectedTile(null);
@@ -835,7 +843,7 @@ export const useGame = () => {
 
         if (selectedTile && selectedTile.id === clickedTile.id) {
             const tile = grid[clickedTile.y][clickedTile.x];
-            if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross') {
+            if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova') {
                 setIsProcessing(true);
                 setSelectedTile(null);
                 if (tile.type === 'bomb') {

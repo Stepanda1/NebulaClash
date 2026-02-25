@@ -110,7 +110,7 @@ const getGemConfig = (type: TType) => {
 
 export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMobile, isLevelTransition, lowPerfMode, onClick, onPointerDown, onPointerEnter, onPointerUp, size }) => {
     // For special pieces, use gemType for visual rendering, type for special effect
-    const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross') 
+    const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova') 
         ? tile.gemType 
         : tile.type;
     
@@ -372,8 +372,9 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                         animate={lowFX ? { opacity: 0.95 } : { opacity: [1, 0.6, 1] }}
                         transition={lowFX ? undefined : { duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
                     >
-                        <div className="relative w-8 h-8">
+                        <div className="relative w-9 h-9">
                             <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle_at_50%_50%, ${config.glow}, rgba(0,0,0,0))` }} />
+                            <div className="absolute inset-[10%] rounded-full border" style={{ borderColor: 'rgba(255,255,255,0.22)' }} />
                             <svg viewBox="0 0 100 100" className="absolute inset-0" style={{ filter: `drop-shadow(0 0 12px ${config.glow})` }}>
                                 <defs>
                                     <linearGradient id={`bolt-${tile.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -383,18 +384,32 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                         <stop offset="100%" stopColor={specDark} />
                                     </linearGradient>
                                 </defs>
-                                <path d="M52 5 L32 52 L54 52 L28 95 L72 36 L48 36 Z" fill={`url(#bolt-${tile.id})`} />
+                                <path d="M51 4 L31 47 L49 47 L38 69 L57 69 L28 96 L43 58 L27 58 L50 4 Z" fill={`url(#bolt-${tile.id})`} />
+                                <path d="M57 12 L44 40 L58 40 L46 60 L64 60 L40 88 L52 54 L40 54 L57 12 Z" fill="white" fillOpacity="0.22" />
                             </svg>
                             {!lowFX && (
-                            <motion.div
-                                className="absolute inset-0"
-                                animate={{ rotate: [0, -6, 0] }}
-                                transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
-                            >
-                                <svg viewBox="0 0 100 100" className="absolute inset-0 opacity-60">
-                                    <path d="M58 12 L40 46 L56 46 L36 86 L70 38 L52 38 Z" fill={specLight} />
-                                </svg>
-                            </motion.div>
+                                <>
+                                    <motion.div
+                                        className="absolute inset-0"
+                                        animate={{ rotate: [0, -6, 0] }}
+                                        transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                                    >
+                                        <svg viewBox="0 0 100 100" className="absolute inset-0 opacity-60">
+                                            <path d="M60 14 L49 38 L60 38 L48 56 L65 56 L44 82 L53 51 L42 51 L60 14 Z" fill={specLight} />
+                                        </svg>
+                                    </motion.div>
+                                    <motion.div
+                                        className="absolute inset-0"
+                                        animate={{ opacity: [0.15, 0.6, 0.15] }}
+                                        transition={{ duration: 0.7, repeat: Infinity }}
+                                    >
+                                        <svg viewBox="0 0 100 100">
+                                            <path d="M22 48 L34 42" stroke={specLight} strokeWidth="4" strokeLinecap="round" />
+                                            <path d="M70 24 L80 18" stroke={specLight} strokeWidth="4" strokeLinecap="round" />
+                                            <path d="M66 76 L80 82" stroke={specLight} strokeWidth="4" strokeLinecap="round" />
+                                        </svg>
+                                    </motion.div>
+                                </>
                             )}
                         </div>
                     </motion.div>
@@ -406,8 +421,9 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                         animate={lowFX ? { opacity: 0.95 } : { scale: [1, 1.2, 1] }}
                         transition={lowFX ? undefined : { duration: 1.5, repeat: Infinity }}
                     >
-                        <div className="relative h-8 w-8">
+                        <div className="relative h-9 w-9">
                             <div className="absolute inset-0 rounded-full opacity-75" style={{ background: `radial-gradient(circle, ${config.glow} 0%, rgba(0,0,0,0) 72%)` }} />
+                            <div className="absolute inset-[8%] rounded-full border" style={{ borderColor: 'rgba(255,255,255,0.24)' }} />
                             <svg viewBox="0 0 100 100" className="absolute inset-0" style={{ filter: `drop-shadow(0 0 10px ${config.glow})` }}>
                                 <defs>
                                     <linearGradient id={`cross-${tile.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -416,9 +432,36 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                         <stop offset="100%" stopColor={specMid} />
                                     </linearGradient>
                                 </defs>
-                                <line x1="28" y1="28" x2="72" y2="72" stroke={`url(#cross-${tile.id})`} strokeWidth="8" strokeLinecap="round" />
-                                <line x1="72" y1="28" x2="28" y2="72" stroke={`url(#cross-${tile.id})`} strokeWidth="8" strokeLinecap="round" />
-                                <circle cx="50" cy="50" r="8" fill={specDark} stroke={specLight} strokeWidth="3" />
+                                <line x1="24" y1="24" x2="76" y2="76" stroke={`url(#cross-${tile.id})`} strokeWidth="10" strokeLinecap="round" />
+                                <line x1="76" y1="24" x2="24" y2="76" stroke={`url(#cross-${tile.id})`} strokeWidth="10" strokeLinecap="round" />
+                                <line x1="50" y1="14" x2="50" y2="86" stroke="white" strokeOpacity="0.18" strokeWidth="3" />
+                                <line x1="14" y1="50" x2="86" y2="50" stroke="white" strokeOpacity="0.18" strokeWidth="3" />
+                                <circle cx="50" cy="50" r="10" fill={specDark} stroke={specLight} strokeWidth="3.5" />
+                                <circle cx="50" cy="50" r="4" fill="white" fillOpacity="0.65" />
+                            </svg>
+                        </div>
+                    </motion.div>
+                )}
+
+                {tile.type === 'nova' && (
+                    <motion.div
+                        className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                        animate={lowFX ? { opacity: 0.95 } : { rotate: [0, 12, 0, -12, 0], scale: [1, 1.06, 1] }}
+                        transition={lowFX ? undefined : { duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                        <div className="relative h-9 w-9">
+                            <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle, ${config.glow} 0%, rgba(0,0,0,0) 72%)` }} />
+                            <svg viewBox="0 0 100 100" className="absolute inset-0" style={{ filter: `drop-shadow(0 0 12px ${config.glow})` }}>
+                                <defs>
+                                    <linearGradient id={`nova-${tile.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#ffffff" />
+                                        <stop offset="45%" stopColor={specLight} />
+                                        <stop offset="100%" stopColor={specMid} />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M50 10 L58 34 L82 18 L66 42 L92 50 L66 58 L82 82 L58 66 L50 90 L42 66 L18 82 L34 58 L8 50 L34 42 L18 18 L42 34 Z" fill={`url(#nova-${tile.id})`} />
+                                <circle cx="50" cy="50" r="11" fill={specDark} stroke={specLight} strokeWidth="3" />
+                                <circle cx="50" cy="50" r="5" fill="white" fillOpacity="0.8" />
                             </svg>
                         </div>
                     </motion.div>
