@@ -256,20 +256,36 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                     </motion.div>
                 )}
 
-                                                {tile.hasTrash && (
+                {tile.hasTrash && (
                     <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
-                        <div className="absolute inset-[12%] rounded-2xl border-[2.5px] border-slate-100/80 bg-slate-700/45 shadow-[inset_0_0_18px_rgba(148,163,184,0.5)]" />
-                        <svg viewBox="0 0 100 100" className="w-8 h-8 drop-shadow-[0_0_10px_rgba(226,232,240,0.45)]">
-                            <g fill="none" stroke="#e5e7eb" strokeWidth="6" strokeLinecap="round">
-                                <line x1="18" y1="24" x2="38" y2="44" />
-                                <line x1="62" y1="20" x2="82" y2="40" />
-                                <line x1="16" y1="74" x2="34" y2="56" />
-                                <line x1="66" y1="58" x2="84" y2="76" />
+                        <div className="absolute inset-[10%] rounded-2xl border-[2.5px] border-slate-100/75 bg-[radial-gradient(circle_at_28%_20%,rgba(248,250,252,0.18),rgba(51,65,85,0.5)_48%,rgba(15,23,42,0.72)_100%)] shadow-[inset_0_0_18px_rgba(148,163,184,0.35),0_0_12px_rgba(148,163,184,0.15)]" />
+                        {!lowFX && (
+                            <motion.div
+                                className="absolute inset-[9%] rounded-2xl border border-cyan-200/20"
+                                animate={{ opacity: [0.15, 0.4, 0.15] }}
+                                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                        )}
+                        <svg viewBox="0 0 100 100" className="w-9 h-9 drop-shadow-[0_0_10px_rgba(226,232,240,0.35)]">
+                            <defs>
+                                <linearGradient id={`trash-core-${tile.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#cbd5e1" />
+                                    <stop offset="55%" stopColor="#94a3b8" />
+                                    <stop offset="100%" stopColor="#475569" />
+                                </linearGradient>
+                            </defs>
+                            <ellipse cx="50" cy="50" rx="31" ry="12" fill="rgba(125,211,252,0.08)" stroke="rgba(186,230,253,0.28)" strokeWidth="2" />
+                            <g fill="url(#trash-core-${tile.id})" stroke="#f1f5f9" strokeOpacity="0.65" strokeWidth="2.2">
+                                <path d="M22 46 L35 35 L47 39 L42 53 L28 58 Z" />
+                                <path d="M52 28 L68 24 L78 36 L66 46 L51 41 Z" />
+                                <path d="M55 56 L73 54 L82 68 L67 77 L50 70 Z" />
+                                <path d="M24 62 L39 58 L47 70 L34 80 L20 73 Z" />
+                                <path d="M43 44 L58 40 L65 52 L55 63 L41 58 Z" />
                             </g>
-                            <rect x="38" y="38" width="24" height="24" rx="5" fill="#9ca3af" stroke="#f3f4f6" strokeWidth="4" />
-                            <circle cx="50" cy="50" r="5" fill="#4b5563" />
-                            <circle cx="26" cy="30" r="4" fill="#6b7280" />
-                            <circle cx="74" cy="68" r="4" fill="#6b7280" />
+                            <circle cx="58" cy="47" r="3.2" fill="#0f172a" fillOpacity="0.6" />
+                            <circle cx="33" cy="50" r="2.4" fill="#e2e8f0" fillOpacity="0.55" />
+                            <circle cx="70" cy="33" r="1.8" fill="#f8fafc" fillOpacity="0.8" />
+                            <path d="M28 32 Q35 28 41 31" stroke="#bae6fd" strokeOpacity="0.45" strokeWidth="2" fill="none" strokeLinecap="round" />
                         </svg>
                     </div>
                 )}
@@ -304,26 +320,37 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                 {tile.type === 'bomb' && (
                     <motion.div
                         className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
-                        animate={lowFX ? { opacity: 0.95 } : { rotate: 360 }}
-                        transition={lowFX ? undefined : { duration: 6, repeat: Infinity, ease: "linear" }}
+                        animate={lowFX ? { opacity: 0.95 } : { y: [0, -1.5, 0] }}
+                        transition={lowFX ? undefined : { duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
                     >
-                        <div className="relative w-9 h-9">
-                            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,#fff6b8,40%,#fbbf24_60%,#b45309_100%)] shadow-[0_0_18px_rgba(251,191,36,0.8)]" />
-                            <div className="absolute inset-1 rounded-full border border-yellow-200/60" />
-                            <div className="absolute inset-[-6px] rounded-full border-2 border-yellow-300/50 blur-[1px]" />
+                        <div className="relative h-10 w-10">
                             {!lowFX && (
-                            <motion.div
-                                className="absolute inset-0 rounded-full"
-                                animate={{ boxShadow: ["0 0 8px rgba(251,191,36,0.4)", "0 0 20px rgba(251,191,36,0.9)", "0 0 8px rgba(251,191,36,0.4)"] }}
-                                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-                            />
+                                <motion.div
+                                    className="absolute inset-[-5px] rounded-full bg-[radial-gradient(circle,rgba(56,189,248,0.22)_0%,rgba(99,102,241,0.14)_40%,rgba(0,0,0,0)_75%)]"
+                                    animate={{ scale: [0.95, 1.1, 0.95], opacity: [0.55, 0.9, 0.55] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                                />
                             )}
+                            <div className="absolute left-1/2 top-[7px] h-[9px] w-[13px] -translate-x-1/2 rounded-t-md border border-cyan-100/40 bg-gradient-to-b from-slate-300 to-slate-600 shadow-[0_0_8px_rgba(148,163,184,0.35)]" />
+                            <div className="absolute left-1/2 top-[4px] h-[8px] w-[3px] -translate-x-1/2 rounded-full bg-slate-200/80" />
+                            <div className="absolute inset-x-[5px] bottom-[4px] top-[11px] rounded-full border border-cyan-100/35 bg-[radial-gradient(circle_at_28%_24%,#dbeafe_0%,#60a5fa_22%,#1d4ed8_55%,#1e1b4b_100%)] shadow-[0_0_14px_rgba(59,130,246,0.55),inset_-4px_-6px_10px_rgba(15,23,42,0.6)]" />
+                            <div className="absolute inset-x-[8px] bottom-[7px] top-[14px] rounded-full border border-white/15" />
+                            <div className="absolute left-[10px] right-[10px] top-[21px] h-[2px] rounded-full bg-cyan-100/35" />
+                            <div className="absolute left-[13px] top-[16px] h-[5px] w-[5px] rounded-full bg-white/75 blur-[0.5px]" />
+                            <div className="absolute right-[12px] bottom-[13px] h-[4px] w-[4px] rounded-full bg-cyan-200/50" />
                             {!lowFX && (
-                            <motion.div
-                                className="absolute -top-1 left-1/2 h-2 w-4 -translate-x-1/2 rounded-full bg-gradient-to-r from-orange-200 via-yellow-200 to-orange-200 blur-[1px]"
-                                animate={{ scaleX: [0.9, 1.1, 0.9], opacity: [0.6, 1, 0.6] }}
-                                transition={{ duration: 1.2, repeat: Infinity }}
-                            />
+                                <motion.div
+                                    className="absolute left-1/2 top-[-1px] h-4 w-4 -translate-x-1/2"
+                                    animate={{ rotate: [-8, 8, -8] }}
+                                    transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+                                >
+                                    <div className="absolute left-1/2 top-1 h-2.5 w-[2px] -translate-x-1/2 rounded-full bg-gradient-to-t from-slate-300 to-white" />
+                                    <motion.div
+                                        className="absolute left-1/2 top-[-1px] h-3 w-3 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,#fef3c7_0%,#f59e0b_45%,rgba(249,115,22,0)_72%)]"
+                                        animate={{ scale: [0.85, 1.15, 0.9], opacity: [0.7, 1, 0.65] }}
+                                        transition={{ duration: 0.55, repeat: Infinity, ease: "easeInOut" }}
+                                    />
+                                </motion.div>
                             )}
                         </div>
                     </motion.div>
