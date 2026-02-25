@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { useGame } from './hooks/useGame';
 import { PauseMenu } from './components/PauseMenu';
@@ -60,18 +60,6 @@ function getDefaultLanguage(): Language {
   return 'en';
 }
 
-function getOrCreatePlayerId(): string {
-  const existing = window.localStorage.getItem('match3_player_id');
-  if (existing) return existing;
-
-  const generated = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `player_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
-
-  window.localStorage.setItem('match3_player_id', generated);
-  return generated;
-}
-
 function App() {
   const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
   const BOOSTER_COST = 30;
@@ -96,7 +84,6 @@ function App() {
   const [legalSection, setLegalSection] = useState<'offer' | 'privacy' | 'refunds' | 'contacts'>('offer');
   const [spaceCoins, setSpaceCoins] = useState(120);
   const [shopNotice, setShopNotice] = useState<string | null>(null);
-  const [pendingPackId, setPendingPackId] = useState<string | null>(null);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
@@ -114,8 +101,6 @@ function App() {
   const analyticsLightningCountRef = useRef(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
-  const playerIdRef = useRef<string>('');
-  const hasServerWalletRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
   const t = COPY[language];
   const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'your-email@example.com';
@@ -238,54 +223,7 @@ function App() {
     setIsLegalOpen(true);
   };
 
-  const syncWalletFromServer = useCallback(async (): Promise<boolean> => {
-    if (!playerIdRef.current) return false;
-
-    try {
-      const response = await fetch(`/api/wallet?playerId=${encodeURIComponent(playerIdRef.current)}`);
-      if (!response.ok) return false;
-      const payload = await response.json() as { balance?: number };
-      const nextBalance = Math.max(0, Math.floor(Number(payload.balance ?? 0)));
-      hasServerWalletRef.current = true;
-      setSpaceCoins(nextBalance);
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
-
   const spendCoins = async (cost: number): Promise<boolean> => {
-    if (hasServerWalletRef.current) {
-      try {
-        const response = await fetch('/api/wallet/spend', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            playerId: playerIdRef.current,
-            amount: cost,
-            reason: 'level_booster',
-          }),
-        });
-
-        if (!response.ok) {
-          const payload = await response.json().catch(() => ({})) as { error?: string };
-          if (response.status === 409) {
-            setShopNotice(t.notEnoughCoins);
-          } else if (payload.error) {
-            setShopNotice(payload.error);
-          }
-          return false;
-        }
-
-        const payload = await response.json() as { balance?: number };
-        setSpaceCoins(Math.max(0, Math.floor(Number(payload.balance ?? 0))));
-        return true;
-      } catch {
-        setShopNotice(t.shopPackUnavailable);
-        return false;
-      }
-    }
-
     if (spaceCoins < cost) {
       setShopNotice(t.notEnoughCoins);
       return false;
@@ -295,10 +233,6 @@ function App() {
   };
 
   const refundCoins = async (cost: number) => {
-    if (hasServerWalletRef.current) {
-      await syncWalletFromServer();
-      return;
-    }
     setSpaceCoins((prev) => prev + cost);
   };
 
@@ -329,48 +263,12 @@ function App() {
   const buyCoinsPack = async (packId: string) => {
     const pack = coinPacks.find((item) => item.id === packId);
     if (!pack) return;
-
-    if (!hasServerWalletRef.current) {
-      if (pack.url) {
-        window.open(pack.url, '_blank', 'noopener,noreferrer');
-      } else {
-        setShopNotice(t.shopPackUnavailable);
-      }
+    if (pack.url) {
+      window.open(pack.url, '_blank', 'noopener,noreferrer');
+      trackEvent('shop_real_money_click', { pack_id: packId, level, mode: levelConfig.mode });
       return;
     }
-
-    setPendingPackId(packId);
-    try {
-      const response = await fetch('/api/payments/lava/create-invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId: playerIdRef.current,
-          packId,
-        }),
-      });
-
-      const payload = await response.json().catch(() => ({})) as { paymentUrl?: string; error?: string };
-      if (!response.ok || !payload.paymentUrl) {
-        if (pack.url) {
-          window.open(pack.url, '_blank', 'noopener,noreferrer');
-          return;
-        }
-        setShopNotice(payload.error || t.shopPackUnavailable);
-        return;
-      }
-
-      window.open(payload.paymentUrl, '_blank', 'noopener,noreferrer');
-      trackEvent('shop_real_money_click', { pack_id: packId, level, mode: levelConfig.mode });
-    } catch {
-      if (pack.url) {
-        window.open(pack.url, '_blank', 'noopener,noreferrer');
-      } else {
-        setShopNotice(t.shopPackUnavailable);
-      }
-    } finally {
-      setPendingPackId(null);
-    }
+    setShopNotice(t.shopPackUnavailable);
   };
 
   const onToggleMute = () => {
@@ -422,42 +320,12 @@ function App() {
 
 
   useEffect(() => {
-    playerIdRef.current = getOrCreatePlayerId();
-  }, []);
-
-  useEffect(() => {
     const savedCoins = localStorage.getItem('match3_space_coins');
     const parsed = Number(savedCoins);
     if (Number.isFinite(parsed) && parsed >= 0) {
       setSpaceCoins(Math.floor(parsed));
     }
   }, []);
-
-  useEffect(() => {
-    if (!playerIdRef.current) return;
-    void syncWalletFromServer();
-  }, [syncWalletFromServer]);
-
-  useEffect(() => {
-    if (!isShopOpen || !hasServerWalletRef.current) return;
-    const id = window.setInterval(() => {
-      void syncWalletFromServer();
-    }, 5000);
-    return () => clearInterval(id);
-  }, [isShopOpen, syncWalletFromServer]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const paymentStatus = params.get('payment');
-    if (paymentStatus !== 'success') return;
-
-    const orderId = params.get('orderId');
-    setShopNotice(language === 'ru' ? 'Платеж принят. Проверяю зачисление монет...' : 'Payment accepted. Checking coin top-up...');
-    void syncWalletFromServer();
-    if (orderId) {
-      trackEvent('shop_payment_return', { order_id: orderId });
-    }
-  }, [language, syncWalletFromServer]);
 
   useEffect(() => {
     localStorage.setItem('match3_space_coins', String(spaceCoins));
@@ -839,7 +707,6 @@ function App() {
             onBuyMoves={buyExtraMoves}
             onBuyTime={buyExtraTime}
             onBuyPack={buyCoinsPack}
-            pendingPackId={pendingPackId}
           />
         )}
         {isPaused && !isGameOver && (

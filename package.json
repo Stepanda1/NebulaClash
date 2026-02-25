@@ -1,11 +1,12 @@
 {
-  "name": "match3-game",
+  "name": "NebulaClash",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "server": "node server/index.mjs",
+    "server:reset-state": "node server/reset-state.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

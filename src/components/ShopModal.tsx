@@ -22,7 +22,6 @@ type ShopModalProps = {
   onBuyMoves: () => void;
   onBuyTime: () => void;
   onBuyPack: (packId: string) => void;
-  pendingPackId: string | null;
 };
 
 export function ShopModal({
@@ -37,7 +36,6 @@ export function ShopModal({
   onBuyMoves,
   onBuyTime,
   onBuyPack,
-  pendingPackId,
 }: ShopModalProps) {
   const t = COPY[language];
 
@@ -115,23 +113,20 @@ export function ShopModal({
                     type="button"
                     key={pack.id}
                     onClick={() => onBuyPack(pack.id)}
-                    disabled={pendingPackId !== null}
-                    className="flex w-full items-center justify-between rounded-xl border border-emerald-200/35 bg-emerald-500/15 px-3 py-2 text-left transition-all hover:bg-emerald-500/25 disabled:opacity-60"
+                    className="flex w-full items-center justify-between rounded-xl border border-emerald-200/35 bg-emerald-500/15 px-3 py-2 text-left transition-all hover:bg-emerald-500/25"
                   >
                     <span className="text-sm font-semibold">{t.coinsAmount(pack.coins)}</span>
                     <span className="text-xs font-bold text-emerald-100">
-                      {pendingPackId === pack.id ? '...' : `${pack.priceLabel} · ${t.openPayment}`}
+                      {`${pack.priceLabel} · ${t.openPayment}`}
                     </span>
                   </button>
                 )
               ))}
             </div>
             <div className="mt-3 text-xs text-white/65">
-              {t.payRealMoney}: Lava
+              {language === 'ru' ? 'Онлайн-оплата временно отключена в игре' : 'In-game online payments are temporarily disabled'}
               <br />
-              {t.paymentNote}
-              <br />
-              {t.payoutToSberHint}
+              {language === 'ru' ? 'Позже можно подключить другой платежный провайдер.' : 'You can connect another payment provider later.'}
             </div>
           </div>
         </div>
