@@ -377,8 +377,6 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                     >
                         <div className="relative w-9 h-9">
                             <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle_at_50%_50%, ${config.glow}, rgba(0,0,0,0))` }} />
-                            <div className="absolute inset-[14%] rounded-full border-2 bg-black/35 backdrop-blur-[1px]" style={{ borderColor: 'rgba(255,255,255,0.38)' }} />
-                            <div className="absolute inset-[10%] rounded-full border" style={{ borderColor: 'rgba(255,255,255,0.22)' }} />
                             <svg viewBox="0 0 100 100" className="absolute inset-0" style={{ filter: `drop-shadow(0 0 12px ${config.glow})` }}>
                                 <defs>
                                     <linearGradient id={`bolt-${tile.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -388,9 +386,11 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                         <stop offset="100%" stopColor={specDark} />
                                     </linearGradient>
                                 </defs>
-                                <path d="M51 4 L31 47 L49 47 L38 69 L57 69 L28 96 L43 58 L27 58 L50 4 Z" fill="none" stroke="rgba(15,23,42,0.85)" strokeWidth="8" strokeLinejoin="round" strokeLinecap="round" />
-                                <path d="M51 4 L31 47 L49 47 L38 69 L57 69 L28 96 L43 58 L27 58 L50 4 Z" fill={`url(#bolt-${tile.id})`} stroke="rgba(255,255,255,0.65)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
-                                <path d="M57 12 L44 40 L58 40 L46 60 L64 60 L40 88 L52 54 L40 54 L57 12 Z" fill="white" fillOpacity="0.22" />
+                                <path d="M60 5 L34 40 L49 40 L37 63 L54 63 L27 95 L42 56 L29 56 L47 30 L36 30 L60 5 Z" fill="none" stroke="rgba(15,23,42,0.9)" strokeWidth="10" strokeLinejoin="round" strokeLinecap="round" />
+                                <path d="M60 5 L34 40 L49 40 L37 63 L54 63 L27 95 L42 56 L29 56 L47 30 L36 30 L60 5 Z" fill={`url(#bolt-${tile.id})`} stroke="rgba(255,255,255,0.72)" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" />
+                                <path d="M56 13 L41 34 L52 34 L42 52 L58 52 L38 80 L47 49 L38 49 L49 27 L43 27 L56 13 Z" fill="white" fillOpacity="0.25" />
+                                <path d="M65 17 L76 12" stroke={specLight} strokeWidth="4" strokeLinecap="round" opacity="0.75" />
+                                <path d="M21 66 L32 61" stroke={specLight} strokeWidth="4" strokeLinecap="round" opacity="0.7" />
                             </svg>
                             {!lowFX && (
                                 <>
@@ -399,8 +399,8 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                         animate={{ rotate: [0, -6, 0] }}
                                         transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
                                     >
-                                        <svg viewBox="0 0 100 100" className="absolute inset-0 opacity-60">
-                                            <path d="M60 14 L49 38 L60 38 L48 56 L65 56 L44 82 L53 51 L42 51 L60 14 Z" fill={specLight} />
+                                        <svg viewBox="0 0 100 100" className="absolute inset-0 opacity-55">
+                                            <path d="M63 11 L47 33 L56 33 L45 53 L60 53 L41 78 L49 48 L41 48 L52 26 L46 26 L63 11 Z" fill={specLight} />
                                         </svg>
                                     </motion.div>
                                     <motion.div
@@ -409,9 +409,10 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                         transition={{ duration: 0.7, repeat: Infinity }}
                                     >
                                         <svg viewBox="0 0 100 100">
-                                            <path d="M22 48 L34 42" stroke={specLight} strokeWidth="4" strokeLinecap="round" />
-                                            <path d="M70 24 L80 18" stroke={specLight} strokeWidth="4" strokeLinecap="round" />
-                                            <path d="M66 76 L80 82" stroke={specLight} strokeWidth="4" strokeLinecap="round" />
+                                            <path d="M20 44 L31 38" stroke={specLight} strokeWidth="4" strokeLinecap="round" />
+                                            <path d="M71 26 L82 20" stroke={specLight} strokeWidth="4" strokeLinecap="round" />
+                                            <path d="M66 73 L81 79" stroke={specLight} strokeWidth="4" strokeLinecap="round" />
+                                            <path d="M50 90 L58 82" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.45" />
                                         </svg>
                                     </motion.div>
                                 </>
