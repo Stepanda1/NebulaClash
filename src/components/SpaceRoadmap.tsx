@@ -364,12 +364,12 @@ export function SpaceRoadmap({
             {secondSectorStart && (
               <>
                 <div
-                  className="pointer-events-none absolute left-2 right-2 rounded-3xl border border-emerald-200/10 bg-gradient-to-b from-emerald-300/6 via-teal-400/6 to-transparent"
+                  className="pointer-events-none absolute left-2 right-2 rounded-3xl via-teal-400/6 to-transparent"
                   style={{ top: Math.max(90, secondSectorStart.y - 120), bottom: 60 }}
                 />
                 <div
                   className="pointer-events-none absolute left-1/2 z-[6] -translate-x-1/2 rounded-full border border-emerald-200/30 bg-slate-950/70 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
-                  style={{ top: secondSectorStart.y - 34 }}
+                  style={{ top: secondSectorStart.y - 88 }}
                 >
                   {secondSectorLabel}
                 </div>
