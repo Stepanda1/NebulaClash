@@ -38,6 +38,7 @@ function GoalGemIcon({ color }: { color: GemType }) {
 
 
 type LevelStarsMap = Record<number, number>;
+const TUTORIAL_SEEN_KEY = 'match3_tutorial_seen';
 
 function getStarsFromScore(score: number): number {
   if (score >= 2200) return 3;
@@ -90,6 +91,10 @@ function App() {
   const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
   const [isLaunchingLevel, setIsLaunchingLevel] = useState(false);
+  const [hasSeenTutorial, setHasSeenTutorial] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(TUTORIAL_SEEN_KEY) === '1';
+  });
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
@@ -184,7 +189,7 @@ function App() {
   const onRestart = () => {
     trackEvent('restart_click', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
     handleRestart();
-    if (level === 1) {
+    if (level === 1 && !hasSeenTutorial) {
       setShowTutorial(true);
       setTutorialStep(0);
       setPendingSpawn(null);
@@ -208,6 +213,8 @@ function App() {
     }, 120);
   };
   const onSkipTutorial = () => {
+    setHasSeenTutorial(true);
+    window.localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
     setShowTutorial(false);
     setTutorialStep(0);
     setPendingSpawn(null);
@@ -455,7 +462,7 @@ function App() {
 
 
   useEffect(() => {
-    if (level === 1) {
+    if (level === 1 && !hasSeenTutorial) {
       setShowTutorial(true);
       setTutorialStep(0);
       setPendingSpawn(null);
@@ -465,8 +472,9 @@ function App() {
       return;
     }
     setShowTutorial(false);
+    setTutorialStep(0);
     setPendingSpawn(null);
-  }, [level]);
+  }, [level, hasSeenTutorial, match3Moves, bombDoubleActivations, lightningSwaps]);
 
   useEffect(() => {
     if (!shopNotice) return;
@@ -498,7 +506,11 @@ function App() {
     if (!tutorialActive) return;
     if (tutorialStep === 2 && lightningSwaps > lightningRef.current) {
       lightningRef.current = lightningSwaps;
+      setHasSeenTutorial(true);
+      window.localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
       setShowTutorial(false);
+      setTutorialStep(0);
+      setPendingSpawn(null);
     }
   }, [lightningSwaps, tutorialActive, tutorialStep]);
 

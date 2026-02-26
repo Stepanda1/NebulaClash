@@ -259,15 +259,16 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
 
                 {tile.hasTrash && (
                     <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
-                        <div className="absolute inset-[10%] rounded-2xl border-[2.5px] border-slate-100/75 bg-[radial-gradient(circle_at_28%_20%,rgba(248,250,252,0.18),rgba(51,65,85,0.5)_48%,rgba(15,23,42,0.72)_100%)] shadow-[inset_0_0_18px_rgba(148,163,184,0.35),0_0_12px_rgba(148,163,184,0.15)]" />
+                        <div className="absolute inset-[2%] rounded-2xl border-[2.5px] border-slate-50/85 bg-[radial-gradient(circle_at_30%_18%,rgba(255,255,255,0.2),rgba(30,41,59,0.82)_42%,rgba(2,6,23,0.94)_100%)] shadow-[inset_0_0_18px_rgba(148,163,184,0.4),0_0_14px_rgba(15,23,42,0.35)]" />
+                        <div className="absolute inset-[6%] rounded-xl border border-cyan-100/20 bg-black/35" />
                         {!lowFX && (
                             <motion.div
-                                className="absolute inset-[9%] rounded-2xl border border-cyan-200/20"
-                                animate={{ opacity: [0.15, 0.4, 0.15] }}
+                                className="absolute inset-[4%] rounded-2xl border border-cyan-200/30"
+                                animate={{ opacity: [0.2, 0.55, 0.2] }}
                                 transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
                             />
                         )}
-                        <svg viewBox="0 0 100 100" className="w-9 h-9 drop-shadow-[0_0_10px_rgba(226,232,240,0.35)]">
+                        <svg viewBox="0 0 100 100" className="h-10 w-10 drop-shadow-[0_0_12px_rgba(255,255,255,0.35)]">
                             <defs>
                                 <linearGradient id={`trash-core-${tile.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
                                     <stop offset="0%" stopColor="#cbd5e1" />
@@ -275,7 +276,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                     <stop offset="100%" stopColor="#475569" />
                                 </linearGradient>
                             </defs>
-                            <ellipse cx="50" cy="50" rx="31" ry="12" fill="rgba(125,211,252,0.08)" stroke="rgba(186,230,253,0.28)" strokeWidth="2" />
+                            <ellipse cx="50" cy="50" rx="31" ry="12" fill="rgba(125,211,252,0.12)" stroke="rgba(255,255,255,0.38)" strokeWidth="2.2" />
                             <g fill="url(#trash-core-${tile.id})" stroke="#f1f5f9" strokeOpacity="0.65" strokeWidth="2.2">
                                 <path d="M22 46 L35 35 L47 39 L42 53 L28 58 Z" />
                                 <path d="M52 28 L68 24 L78 36 L66 46 L51 41 Z" />
@@ -283,10 +284,12 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                 <path d="M24 62 L39 58 L47 70 L34 80 L20 73 Z" />
                                 <path d="M43 44 L58 40 L65 52 L55 63 L41 58 Z" />
                             </g>
-                            <circle cx="58" cy="47" r="3.2" fill="#0f172a" fillOpacity="0.6" />
+                            <circle cx="58" cy="47" r="3.2" fill="#020617" fillOpacity="0.95" />
                             <circle cx="33" cy="50" r="2.4" fill="#e2e8f0" fillOpacity="0.55" />
                             <circle cx="70" cy="33" r="1.8" fill="#f8fafc" fillOpacity="0.8" />
                             <path d="M28 32 Q35 28 41 31" stroke="#bae6fd" strokeOpacity="0.45" strokeWidth="2" fill="none" strokeLinecap="round" />
+                            <path d="M20 50 L80 50" stroke="rgba(255,255,255,0.16)" strokeWidth="2" strokeLinecap="round" />
+                            <path d="M50 20 L50 80" stroke="rgba(255,255,255,0.12)" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                     </div>
                 )}

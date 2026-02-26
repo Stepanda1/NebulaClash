@@ -68,11 +68,26 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
     };
 
     const addGroup = (tileIds: string[], type: 'match' | 'bomb' | 'lightning' | 'cross' | 'nova' | 'pulse') => {
+        const hasExistingSpecial = tileIds.some((id) => {
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const tile = grid[y][x];
+                    if (tile.id !== id) continue;
+                    return tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova' || tile.type === 'pulse';
+                }
+            }
+            return false;
+        });
+
+        // Existing specials should not be consumed to craft a stronger special:
+        // they stay regular matched tiles and explode through chain resolution.
+        const finalType = hasExistingSpecial && type !== 'match' ? 'match' : type;
+
         for (const id of tileIds) {
             if (processed.has(id)) return;
         }
         for (const id of tileIds) {
-            matchMap.set(id, type);
+            matchMap.set(id, finalType);
             processed.add(id);
         }
     };
@@ -103,7 +118,8 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             if (y >= 2) {
                 const up1 = grid[y - 1][x + 1];
                 const up2 = grid[y - 2][x + 1];
-                if (isSameType(a, up1) && isSameType(a, up2)) {
+                const up3 = y >= 3 ? grid[y - 3][x + 1] : null;
+                if (isSameType(a, up1) && isSameType(a, up2) && !(up3 && isSameType(a, up3))) {
                     addGroup([a.id, b.id, c.id, up1.id, up2.id], 'pulse');
                 }
             }
@@ -112,7 +128,8 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             if (y <= ROWS - 3) {
                 const down1 = grid[y + 1][x + 1];
                 const down2 = grid[y + 2][x + 1];
-                if (isSameType(a, down1) && isSameType(a, down2)) {
+                const down3 = y <= ROWS - 4 ? grid[y + 3][x + 1] : null;
+                if (isSameType(a, down1) && isSameType(a, down2) && !(down3 && isSameType(a, down3))) {
                     addGroup([a.id, b.id, c.id, down1.id, down2.id], 'pulse');
                 }
             }
@@ -131,7 +148,8 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             if (x >= 2) {
                 const left1 = grid[y + 1][x - 1];
                 const left2 = grid[y + 1][x - 2];
-                if (isSameType(a, left1) && isSameType(a, left2)) {
+                const left3 = x >= 3 ? grid[y + 1][x - 3] : null;
+                if (isSameType(a, left1) && isSameType(a, left2) && !(left3 && isSameType(a, left3))) {
                     addGroup([a.id, b.id, c.id, left1.id, left2.id], 'pulse');
                 }
             }
@@ -140,7 +158,8 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             if (x <= COLS - 3) {
                 const right1 = grid[y + 1][x + 1];
                 const right2 = grid[y + 1][x + 2];
-                if (isSameType(a, right1) && isSameType(a, right2)) {
+                const right3 = x <= COLS - 4 ? grid[y + 1][x + 3] : null;
+                if (isSameType(a, right1) && isSameType(a, right2) && !(right3 && isSameType(a, right3))) {
                     addGroup([a.id, b.id, c.id, right1.id, right2.id], 'pulse');
                 }
             }
@@ -519,7 +538,7 @@ export const getNovaAffectedTiles = (grid: Grid, x: number, y: number): Set<stri
     return affected;
 };
 
-export const expandSpecialChain = (grid: Grid, initial: Set<string>): Set<string> => {
+export const expandSpecialChain = (grid: Grid, initial: Set<string>, skipSpecialIds: Set<string> = new Set()): Set<string> => {
     const idMap = new Map<string, Tile>();
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
@@ -534,7 +553,7 @@ export const expandSpecialChain = (grid: Grid, initial: Set<string>): Set<string
 
     for (const id of initial) {
         const tile = idMap.get(id);
-        if (tile && (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova' || tile.type === 'pulse')) {
+        if (tile && (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova' || tile.type === 'pulse') && !skipSpecialIds.has(tile.id)) {
             queue.push(tile);
             triggered.add(tile.id);
         }

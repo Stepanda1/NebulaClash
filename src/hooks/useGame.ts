@@ -583,7 +583,7 @@ export const useGame = () => {
             toRemove = getNovaAffectedTiles(activeGrid, x, y);
         }
 
-        toRemove = expandSpecialChain(activeGrid, toRemove);
+        toRemove = expandSpecialChain(activeGrid, toRemove, new Set([tile.id]));
 
         if (explodeTimeoutRef.current !== null) {
             clearTimeout(explodeTimeoutRef.current);
@@ -711,7 +711,7 @@ export const useGame = () => {
             }
         }
 
-        toRemove = expandSpecialChain(activeGrid, toRemove);
+        toRemove = expandSpecialChain(activeGrid, toRemove, new Set(tiles.map((t) => t.id)));
 
         if (explodeTimeoutRef.current !== null) {
             clearTimeout(explodeTimeoutRef.current);
