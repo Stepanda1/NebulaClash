@@ -92,6 +92,36 @@ const FIRST_SECTOR_CRYSTAL_FIELDS = Array.from({ length: 14 }, (_, i) => ({
   rotate: (i * 31) % 360,
   size: 8 + (i % 3) * 3,
 }));
+const EARLY_ZONE_NEBULAE = [
+  { left: -24, top: 3920, w: 220, h: 150, color: 'from-cyan-300/18 via-blue-500/12 to-transparent' },
+  { left: 154, top: 4250, w: 210, h: 140, color: 'from-fuchsia-300/16 via-violet-500/10 to-transparent' },
+  { left: 22, top: 4680, w: 260, h: 170, color: 'from-emerald-300/14 via-cyan-500/10 to-transparent' },
+  { left: 132, top: 5250, w: 240, h: 160, color: 'from-amber-300/14 via-orange-500/10 to-transparent' },
+  { left: -10, top: 5900, w: 240, h: 160, color: 'from-rose-300/14 via-pink-500/10 to-transparent' },
+  { left: 130, top: 6520, w: 230, h: 155, color: 'from-sky-300/16 via-indigo-500/10 to-transparent' },
+];
+const EARLY_ZONE_BEACONS = [
+  { left: 26, top: 4040, scale: 1 },
+  { left: 274, top: 4470, scale: 0.9 },
+  { left: 56, top: 5030, scale: 1.08 },
+  { left: 262, top: 5660, scale: 0.95 },
+  { left: 44, top: 6320, scale: 1.02 },
+  { left: 252, top: 6870, scale: 0.88 },
+];
+const EARLY_ZONE_WRECKS = [
+  { left: 208, top: 3860, w: 46, h: 18, rotate: -18 },
+  { left: 32, top: 4380, w: 52, h: 20, rotate: 14 },
+  { left: 236, top: 4905, w: 42, h: 16, rotate: -9 },
+  { left: 96, top: 5510, w: 56, h: 22, rotate: 11 },
+  { left: 214, top: 6095, w: 48, h: 18, rotate: -15 },
+  { left: 118, top: 6755, w: 58, h: 22, rotate: 8 },
+];
+const EARLY_ZONE_RINGS = [
+  { left: 150, top: 4140, w: 74, h: 26, rotate: 18 },
+  { left: 62, top: 4780, w: 88, h: 30, rotate: -14 },
+  { left: 202, top: 5440, w: 80, h: 28, rotate: 12 },
+  { left: 46, top: 6200, w: 92, h: 32, rotate: -10 },
+];
 const BOTTOM_NEBULAE = [
   { left: -30, top: 3190, w: 210, h: 140, color: 'from-cyan-300/20 via-blue-500/14 to-transparent' },
   { left: 150, top: 3270, w: 230, h: 150, color: 'from-fuchsia-300/18 via-violet-500/14 to-transparent' },
@@ -367,6 +397,53 @@ export function SpaceRoadmap({
                 >
                   <div className={`absolute left-1/2 top-[-18%] h-[35%] w-[40%] -translate-x-1/2 rotate-45 ${item.hue === 'cyan' ? 'bg-cyan-200/35' : 'bg-fuchsia-200/30'}`} />
                 </div>
+              </div>
+            ))}
+
+            {EARLY_ZONE_NEBULAE.map((nebula, idx) => (
+              <div
+                key={`early-nebula-${idx}`}
+                className={`pointer-events-none absolute rounded-full blur-2xl bg-gradient-to-br ${nebula.color}`}
+                style={{ left: nebula.left, top: nebula.top, width: nebula.w, height: nebula.h }}
+              />
+            ))}
+
+            {EARLY_ZONE_RINGS.map((ring, idx) => (
+              <div
+                key={`early-ring-${idx}`}
+                className="pointer-events-none absolute rounded-full border border-white/14 bg-white/[0.02]"
+                style={{ left: ring.left, top: ring.top, width: ring.w, height: ring.h, transform: `rotate(${ring.rotate}deg)` }}
+              >
+                <div className="absolute inset-[12%] rounded-full border border-cyan-200/18" />
+              </div>
+            ))}
+
+            {EARLY_ZONE_BEACONS.map((beacon, idx) => (
+              <div
+                key={`early-beacon-${idx}`}
+                className="pointer-events-none absolute"
+                style={{ left: beacon.left, top: beacon.top, transform: `scale(${beacon.scale})` }}
+              >
+                <div className="relative h-12 w-12">
+                  <div className="absolute left-1/2 top-[7px] h-8 w-[3px] -translate-x-1/2 rounded-full bg-slate-300/60" />
+                  <div className="absolute left-1/2 top-[2px] h-4 w-4 -translate-x-1/2 rounded-full border border-cyan-100/35 bg-slate-900/70 shadow-[0_0_14px_rgba(34,211,238,0.28)]" />
+                  <div className="absolute left-1/2 top-[4px] h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-cyan-200/80" />
+                  <div className="absolute left-1/2 top-[1px] h-8 w-8 -translate-x-1/2 rounded-full bg-cyan-300/10 blur-md" />
+                  <div className="absolute bottom-[4px] left-1/2 h-[2px] w-8 -translate-x-1/2 bg-white/20" />
+                </div>
+              </div>
+            ))}
+
+            {EARLY_ZONE_WRECKS.map((wreck, idx) => (
+              <div
+                key={`early-wreck-${idx}`}
+                className="pointer-events-none absolute"
+                style={{ left: wreck.left, top: wreck.top, width: wreck.w, height: wreck.h, transform: `rotate(${wreck.rotate}deg)` }}
+              >
+                <div className="absolute inset-0 rounded-lg border border-slate-200/12 bg-slate-700/20" />
+                <div className="absolute left-[8%] right-[22%] top-[34%] h-[2px] rounded-full bg-cyan-200/28" />
+                <div className="absolute right-[10%] top-[22%] h-[56%] w-[2px] rounded-full bg-white/12" />
+                <div className="absolute left-[14%] top-[18%] h-[24%] w-[18%] rounded-full bg-white/12" />
               </div>
             ))}
 
