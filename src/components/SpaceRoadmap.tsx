@@ -436,10 +436,10 @@ export function SpaceRoadmap({
             {EARLY_ZONE_GAS_ARCS.map((arc, idx) => (
               <div
                 key={`early-gas-arc-${idx}`}
-                className={`pointer-events-none absolute rounded-full border border-white/6 bg-gradient-to-r ${arc.color} blur-[1px]`}
+                className={`pointer-events-none absolute rounded-full bg-gradient-to-r ${arc.color} blur-[1px]`}
                 style={{ left: arc.left, top: arc.top, width: arc.w, height: arc.h, transform: `rotate(${arc.rotate}deg)` }}
               >
-                <div className="absolute inset-[8%] rounded-full border border-white/8" />
+                <div className="absolute inset-[8%] rounded-full" />
               </div>
             ))}
 
