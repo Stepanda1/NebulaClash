@@ -67,7 +67,7 @@ function getDefaultLanguage(): Language {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, levelCrossActivations, levelPulseActivations, levelNovaActivations, levelSmashEvents, comboX5Count, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, levelCrossActivations, levelPulseActivations, levelNovaActivations, levelSmashEvents, comboX5Count, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, goalClearId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
   const BOOSTER_COST = 30;
   const MOVE_BOOST_AMOUNT = 5;
   const TIME_BOOST_SECONDS = 30;
@@ -80,6 +80,7 @@ function App() {
   const [comboFlash, setComboFlash] = useState(false);
   const [bossHitFlash, setBossHitFlash] = useState(false);
   const [bossHitText, setBossHitText] = useState<string | null>(null);
+  const [goalClearText, setGoalClearText] = useState<string | null>(null);
   const [shakeActive, setShakeActive] = useState(false);
   const [pulseActive, setPulseActive] = useState(false);
   const [comboPos, setComboPos] = useState<{ x: number; y: number }>({ x: 50, y: 18 });
@@ -773,6 +774,17 @@ function App() {
     };
   }, [bossHitTick, bossLastHitDamage]);
 
+  useEffect(() => {
+    if (goalClearId <= 0) return;
+    const phrases = language === 'ru'
+      ? ['Отлично!', 'Великолепно!', 'Невероятно!', 'Идеально!', 'Космос!']
+      : ['Great!', 'Amazing!', 'Unbelievable!', 'Excellent!', 'Spectacular!'];
+    const picked = phrases[(goalClearId - 1) % phrases.length];
+    setGoalClearText(picked);
+    const t1 = window.setTimeout(() => setGoalClearText(null), 760);
+    return () => clearTimeout(t1);
+  }, [goalClearId, language]);
+
   if (isMapOpen) {
     return (
       <div className="relative h-full w-full">
@@ -1008,6 +1020,25 @@ function App() {
               exit={{ opacity: 0 }}
             >
               {comboText}
+            </motion.div>
+          )}
+          {!lowPerfMode && goalClearText && (
+            <motion.div
+              className="pointer-events-none absolute inset-0 z-[60] flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                initial={{ scale: 0.72, y: 8 }}
+                animate={{ scale: 1, y: 0 }}
+                className="rounded-2xl border border-amber-200/50 bg-[radial-gradient(circle_at_50%_30%,rgba(253,224,71,0.35),rgba(245,158,11,0.18)_55%,rgba(2,6,23,0.8)_100%)] px-4 py-2 text-center shadow-[0_0_28px_rgba(251,191,36,0.35)]"
+              >
+                <div className="text-[10px] uppercase tracking-[0.28em] text-amber-100/80">{language === 'ru' ? 'Цель выполнена' : 'Goal Complete'}</div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-amber-100 drop-shadow-[0_0_10px_rgba(251,191,36,0.45)]">
+                  {goalClearText}
+                </div>
+              </motion.div>
             </motion.div>
           )}
           <GameBoard

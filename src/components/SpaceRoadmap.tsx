@@ -78,6 +78,20 @@ const ORBIT_STATIONS = [
   { left: 260, top: 1980, scale: 1.1 },
   { left: 48, top: 2780, scale: 0.92 },
 ];
+const FIRST_SECTOR_RELICS = [
+  { left: 18, top: 260, w: 34, h: 18, rotate: -12 },
+  { left: 278, top: 560, w: 28, h: 16, rotate: 18 },
+  { left: 46, top: 980, w: 38, h: 20, rotate: -8 },
+  { left: 252, top: 1320, w: 30, h: 16, rotate: 11 },
+  { left: 68, top: 1680, w: 42, h: 22, rotate: -16 },
+];
+const FIRST_SECTOR_CRYSTAL_FIELDS = Array.from({ length: 14 }, (_, i) => ({
+  left: 18 + ((i * 53) % 300),
+  top: 160 + i * 120,
+  hue: i % 2 === 0 ? 'cyan' : 'fuchsia',
+  rotate: (i * 31) % 360,
+  size: 8 + (i % 3) * 3,
+}));
 const BOTTOM_NEBULAE = [
   { left: -30, top: 3190, w: 210, h: 140, color: 'from-cyan-300/20 via-blue-500/14 to-transparent' },
   { left: 150, top: 3270, w: 230, h: 150, color: 'from-fuchsia-300/18 via-violet-500/14 to-transparent' },
@@ -121,6 +135,7 @@ export function SpaceRoadmap({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showJumpToCurrent, setShowJumpToCurrent] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const didInitialPositionRef = useRef(false);
   const t = COPY[language];
 
   const points = useMemo<Point[]>(() => {
@@ -166,18 +181,19 @@ export function SpaceRoadmap({
     }
   }, [getMaxScrollTop]);
 
-  const scrollToLevel = (level: number) => {
+  const scrollToLevel = (level: number, behavior: ScrollBehavior = 'smooth') => {
     const scroller = scrollerRef.current;
     if (!scroller) return;
     const point = points.find((p) => p.level === level);
     if (!point) return;
     const maxTop = getMaxScrollTop(scroller);
     const target = Math.min(maxTop, Math.max(0, point.y - scroller.clientHeight * 0.62));
-    scroller.scrollTo({ top: target, behavior: 'smooth' });
+    scroller.scrollTo({ top: target, behavior });
   };
 
   useEffect(() => {
-    scrollToLevel(selectedLevel);
+    scrollToLevel(selectedLevel, didInitialPositionRef.current ? 'smooth' : 'auto');
+    didInitialPositionRef.current = true;
   }, [selectedLevel]);
 
   useEffect(() => {
@@ -322,6 +338,34 @@ export function SpaceRoadmap({
                   <div className="absolute inset-[22%] rounded-full border border-cyan-100/60" />
                   <div className="absolute left-1/2 top-1/2 h-[2px] w-14 -translate-x-1/2 -translate-y-1/2 bg-cyan-200/70" />
                   <div className="absolute left-1/2 top-1/2 h-14 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-cyan-200/40" />
+                </div>
+              </div>
+            ))}
+
+            {FIRST_SECTOR_RELICS.map((relic, idx) => (
+              <div
+                key={`relic-${idx}`}
+                className="pointer-events-none absolute"
+                style={{ left: relic.left, top: relic.top, width: relic.w, height: relic.h, transform: `rotate(${relic.rotate}deg)` }}
+              >
+                <div className="absolute inset-0 rounded-lg border border-cyan-100/20 bg-slate-900/45 shadow-[0_0_12px_rgba(34,211,238,0.12)]" />
+                <div className="absolute inset-y-[35%] left-[10%] right-[10%] rounded-full bg-gradient-to-r from-transparent via-cyan-200/45 to-transparent" />
+                <div className="absolute left-[18%] top-[18%] h-[22%] w-[18%] rounded-full bg-cyan-100/25" />
+                <div className="absolute right-[16%] bottom-[18%] h-[20%] w-[16%] rounded-full bg-fuchsia-200/20" />
+              </div>
+            ))}
+
+            {FIRST_SECTOR_CRYSTAL_FIELDS.map((item, idx) => (
+              <div
+                key={`crystal-field-${idx}`}
+                className="pointer-events-none absolute"
+                style={{ left: item.left, top: item.top, transform: `rotate(${item.rotate}deg)` }}
+              >
+                <div
+                  className={`relative rounded-[3px] border ${item.hue === 'cyan' ? 'border-cyan-100/25 bg-cyan-300/15' : 'border-fuchsia-100/25 bg-fuchsia-300/12'}`}
+                  style={{ width: item.size, height: item.size * 1.5 }}
+                >
+                  <div className={`absolute left-1/2 top-[-18%] h-[35%] w-[40%] -translate-x-1/2 rotate-45 ${item.hue === 'cyan' ? 'bg-cyan-200/35' : 'bg-fuchsia-200/30'}`} />
                 </div>
               </div>
             ))}

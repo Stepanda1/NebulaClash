@@ -145,6 +145,7 @@ export const useGame = () => {
     const [bossMaxHp, setBossMaxHp] = useState(0);
     const [bossHitTick, setBossHitTick] = useState(0);
     const [bossLastHitDamage, setBossLastHitDamage] = useState(0);
+    const [goalClearId, setGoalClearId] = useState(0);
     const goalFinalizingRef = useRef(false);
     const gridRef = useRef<Grid>(grid);
 
@@ -696,6 +697,8 @@ export const useGame = () => {
         goalFinalizingRef.current = true;
         void (async () => {
             setIsProcessing(true);
+            setGoalClearId((id) => id + 1);
+            await new Promise(r => setTimeout(r, 720));
             if (levelConfig.mode === 'moves' && moves > 0) {
                 await runVictoryMoveBonus(gridRef.current, moves);
             }
@@ -1173,6 +1176,7 @@ export const useGame = () => {
         bossMaxHp,
         bossHitTick,
         bossLastHitDamage,
+        goalClearId,
         handleRestart,
         handleNextLevel,
         startAtLevel,
