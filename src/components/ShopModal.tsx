@@ -72,7 +72,7 @@ export function ShopModal({
         </button>
 
         <div className="relative z-10 mb-4 rounded-2xl border border-cyan-200/20 bg-white/[0.03] p-3">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 pr-12">
             <div>
               <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">
                 <Sparkles size={12} />
