@@ -265,7 +265,7 @@ export const useGame = () => {
         matchedIds.forEach((id) => {
             const tile = idMap.get(id);
             if (!tile) return;
-            if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova') {
+            if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova' || tile.type === 'pulse') {
                 triggered.add(id);
             }
         });
@@ -574,7 +574,7 @@ export const useGame = () => {
         let activeGrid = currentGrid;
         let matchMap = findMatches(activeGrid);
         let iteration = 0;
-        let comboCount = 0;
+        let comboCount = 1;
 
         while (matchMap.size > 0 && iteration < 10) {
             const regularMatches = new Set<string>();
@@ -755,7 +755,7 @@ export const useGame = () => {
         const x = tile.x;
         const y = tile.y;
         let toRemove = new Set<string>();
-        let comboCount = 0;
+        let comboCount = 1;
 
         if (tile.type === 'bomb') {
             toRemove = getBombAffectedTiles(activeGrid, x, y);
