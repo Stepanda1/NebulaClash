@@ -65,10 +65,10 @@ export function ShopModal({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20 active:scale-95"
+          className="absolute right-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-rose-200/35 bg-gradient-to-br from-rose-500 to-red-600 text-white transition-all hover:from-rose-400 hover:to-red-500 active:scale-95 shadow-[0_8px_24px_rgba(239,68,68,0.35)]"
           aria-label={language === 'ru' ? 'Закрыть магазин' : 'Close shop'}
         >
-          <X size={18} />
+          <X size={18} strokeWidth={3} />
         </button>
 
         <div className="relative z-10 mb-4 rounded-2xl border border-cyan-200/20 bg-white/[0.03] p-3">
@@ -81,9 +81,9 @@ export function ShopModal({
               <div className="mt-1 text-sm text-white/80">{t.buyCoins}</div>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-200/35 bg-gradient-to-r from-amber-300/25 via-yellow-300/20 to-orange-300/25 px-3 py-1.5 shadow-[0_0_20px_rgba(251,191,36,0.16)]">
-              <span className="relative inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-yellow-200 via-amber-300 to-orange-500 shadow-[inset_0_1px_1px_rgba(255,255,255,0.55),0_2px_8px_rgba(251,146,60,0.35)]">
-                <span className="absolute inset-[2px] rounded-full border border-amber-50/40" />
-                <Coins size={13} className="relative text-amber-950" />
+              <span className="relative inline-flex h-6 w-6 items-center justify-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#fde68a_0%,#fbbf24_42%,#f59e0b_72%,#d97706_100%)] shadow-[inset_0_1px_2px_rgba(255,255,255,0.45),inset_0_-2px_3px_rgba(146,64,14,0.35),0_2px_8px_rgba(251,146,60,0.35)]">
+                <span className="absolute left-[5px] top-[4px] h-1.5 w-2.5 rounded-full bg-white/35 blur-[0.5px]" />
+                <Coins size={13} className="relative text-amber-950/95" />
               </span>
               <span className="text-lg font-black text-amber-100">{coinsBalance}</span>
             </div>
@@ -158,9 +158,9 @@ export function ShopModal({
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-200 via-amber-300 to-orange-500 shadow-[inset_0_1px_1px_rgba(255,255,255,0.55),0_2px_8px_rgba(251,146,60,0.35)]">
-                        <span className="absolute inset-[2px] rounded-full border border-amber-50/40" />
-                        <Coins size={14} className="relative text-amber-950" />
+                      <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#fde68a_0%,#fbbf24_42%,#f59e0b_72%,#d97706_100%)] shadow-[inset_0_1px_2px_rgba(255,255,255,0.45),inset_0_-2px_3px_rgba(146,64,14,0.35),0_2px_8px_rgba(251,146,60,0.35)]">
+                        <span className="absolute left-[6px] top-[5px] h-1.5 w-3 rounded-full bg-white/35 blur-[0.5px]" />
+                        <Coins size={14} className="relative text-amber-950/95" />
                       </span>
                       <span className="text-sm font-black text-white">{t.coinsAmount(pack.coins)}</span>
                     </div>

@@ -942,9 +942,9 @@ function App() {
             onClick={openShop}
             className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/35 bg-gradient-to-r from-amber-300/20 via-yellow-300/15 to-orange-300/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.14)] transition-all hover:from-amber-300/30 hover:via-yellow-300/22 hover:to-orange-300/30"
           >
-            <span className="relative inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-gradient-to-br from-yellow-200 via-amber-300 to-orange-500 shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_1px_6px_rgba(251,146,60,0.35)]">
-              <span className="absolute inset-[1.5px] rounded-full border border-amber-50/40" />
-              <Coins className="relative h-2.5 w-2.5 text-amber-950" />
+            <span className="relative inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#fde68a_0%,#fbbf24_42%,#f59e0b_72%,#d97706_100%)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.45),inset_0_-1px_2px_rgba(146,64,14,0.28),0_1px_6px_rgba(251,146,60,0.35)]">
+              <span className="absolute left-[3px] top-[2px] h-1 w-1.5 rounded-full bg-white/35 blur-[0.4px]" />
+              <Coins className="relative h-2.5 w-2.5 text-amber-950/95" />
             </span>
             <span>{spaceCoins}</span>
           </button>
