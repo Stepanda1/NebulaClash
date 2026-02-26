@@ -27,7 +27,7 @@ const LEVEL_CONFIGS: LevelConfig[] = [
     { mode: 'moves', limit: 28, goal: { type: 'collect', value: 18, color: 'red' } },
     { mode: 'moves', limit: 26, goal: { type: 'bombs', value: 4 } },
     { mode: 'time', limit: 55, goal: { type: 'collect_multi', targets: { red: 10, green: 10 } } },
-    { mode: 'moves', limit: 24, goal: { type: 'lightning', value: 4 } },
+    { mode: 'moves', limit: 24, goal: { type: 'lightning', value: 2 } },
     { mode: 'moves', limit: 26, goal: { type: 'trash', value: 10 }, trashCount: 10 },
     { mode: 'time', limit: 60, goal: { type: 'collect', value: 18, color: 'blue' } },
     { mode: 'moves', limit: 24, goal: { type: 'collect_multi', targets: { yellow: 12, purple: 12 } } },
