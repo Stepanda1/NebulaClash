@@ -92,19 +92,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
         }
     };
 
-    // 0) 2x2 square -> bomb
-    for (let y = 0; y < ROWS - 1; y++) {
-        for (let x = 0; x < COLS - 1; x++) {
-            const a = grid[y][x];
-            const b = grid[y][x + 1];
-            const c = grid[y + 1][x];
-            const d = grid[y + 1][x + 1];
-            if (isSameType(a, b) && isSameType(a, c) && isSameType(a, d)) {
-                addGroup([a.id, b.id, c.id, d.id], 'bomb');
-            }
-        }
-    }
-
+    // 0) Strong shapes first: T/L patterns should win over weaker square/line bombs.
     // 1) T-shapes (5) -> pulse, T-shapes (6-7) -> nova
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS - 2; x++) {
@@ -310,6 +298,19 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
                 if (isSameType(a, right1) && isSameType(a, right2)) {
                     addGroup([a.id, b.id, c.id, right1.id, right2.id], 'cross');
                 }
+            }
+        }
+    }
+
+    // 2b) 2x2 square -> bomb (after stronger T/L/Nova shapes)
+    for (let y = 0; y < ROWS - 1; y++) {
+        for (let x = 0; x < COLS - 1; x++) {
+            const a = grid[y][x];
+            const b = grid[y][x + 1];
+            const c = grid[y + 1][x];
+            const d = grid[y + 1][x + 1];
+            if (isSameType(a, b) && isSameType(a, c) && isSameType(a, d)) {
+                addGroup([a.id, b.id, c.id, d.id], 'bomb');
             }
         }
     }
