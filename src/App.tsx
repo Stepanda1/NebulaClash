@@ -197,7 +197,7 @@ function App() {
     }
 
     if (levelConfig.goal.type === 'combo_x5') {
-      return <span>{language === 'ru' ? 'Комбо x5+' : 'Combo x5+'}: {comboX5Count}/{levelConfig.goal.value}</span>;
+      return <span>{language === 'ru' ? 'Комбо x4+' : 'Combo x4+'}: {comboX5Count}/{levelConfig.goal.value}</span>;
     }
 
     if (levelConfig.goal.type === 'boss') {

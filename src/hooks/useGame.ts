@@ -496,7 +496,7 @@ export const useGame = () => {
             setComboLevel(effectiveCombo);
             setComboId(id => id + 1);
         }
-        if (effectiveCombo >= 5) {
+        if (effectiveCombo >= 4) {
             setComboX5Count(prev => prev + 1);
         }
         if (effectiveCombo >= 7) {
