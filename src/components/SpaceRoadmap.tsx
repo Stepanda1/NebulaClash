@@ -100,6 +100,13 @@ const EARLY_ZONE_NEBULAE = [
   { left: -10, top: 5900, w: 240, h: 160, color: 'from-rose-300/14 via-pink-500/10 to-transparent' },
   { left: 130, top: 6520, w: 230, h: 155, color: 'from-sky-300/16 via-indigo-500/10 to-transparent' },
 ];
+const EARLY_ZONE_GAS_ARCS = [
+  { left: -30, top: 3800, w: 310, h: 90, rotate: -12, color: 'from-cyan-300/12 via-transparent to-fuchsia-300/10' },
+  { left: 70, top: 4520, w: 290, h: 86, rotate: 10, color: 'from-violet-300/12 via-transparent to-cyan-300/10' },
+  { left: -10, top: 5320, w: 340, h: 96, rotate: -8, color: 'from-emerald-300/10 via-transparent to-sky-300/10' },
+  { left: 34, top: 6080, w: 300, h: 88, rotate: 14, color: 'from-amber-300/10 via-transparent to-rose-300/10' },
+  { left: -24, top: 6820, w: 320, h: 92, rotate: -10, color: 'from-cyan-300/10 via-transparent to-indigo-300/10' },
+];
 const EARLY_ZONE_BEACONS = [
   { left: 26, top: 4040, scale: 1 },
   { left: 274, top: 4470, scale: 0.9 },
@@ -107,6 +114,11 @@ const EARLY_ZONE_BEACONS = [
   { left: 262, top: 5660, scale: 0.95 },
   { left: 44, top: 6320, scale: 1.02 },
   { left: 252, top: 6870, scale: 0.88 },
+];
+const EARLY_ZONE_PORTALS = [
+  { left: 238, top: 4180, size: 54, hue: 'cyan' },
+  { left: 26, top: 5730, size: 58, hue: 'violet' },
+  { left: 248, top: 6460, size: 50, hue: 'emerald' },
 ];
 const EARLY_ZONE_WRECKS = [
   { left: 208, top: 3860, w: 46, h: 18, rotate: -18 },
@@ -121,6 +133,19 @@ const EARLY_ZONE_RINGS = [
   { left: 62, top: 4780, w: 88, h: 30, rotate: -14 },
   { left: 202, top: 5440, w: 80, h: 28, rotate: 12 },
   { left: 46, top: 6200, w: 92, h: 32, rotate: -10 },
+];
+const EARLY_ZONE_STAR_CLUSTERS = Array.from({ length: 56 }, (_, i) => ({
+  left: 12 + ((i * 47) % 316),
+  top: 3720 + i * 62,
+  size: 1 + (i % 3),
+  opacity: 0.22 + (i % 5) * 0.11,
+  tint: i % 4 === 0 ? 'cyan' : i % 4 === 1 ? 'violet' : i % 4 === 2 ? 'white' : 'amber',
+}));
+const EARLY_ZONE_DRONES = [
+  { left: 132, top: 4325, rotate: 18 },
+  { left: 226, top: 5080, rotate: -14 },
+  { left: 82, top: 5905, rotate: 12 },
+  { left: 214, top: 6645, rotate: -20 },
 ];
 const BOTTOM_NEBULAE = [
   { left: -30, top: 3190, w: 210, h: 140, color: 'from-cyan-300/20 via-blue-500/14 to-transparent' },
@@ -408,6 +433,16 @@ export function SpaceRoadmap({
               />
             ))}
 
+            {EARLY_ZONE_GAS_ARCS.map((arc, idx) => (
+              <div
+                key={`early-gas-arc-${idx}`}
+                className={`pointer-events-none absolute rounded-full border border-white/6 bg-gradient-to-r ${arc.color} blur-[1px]`}
+                style={{ left: arc.left, top: arc.top, width: arc.w, height: arc.h, transform: `rotate(${arc.rotate}deg)` }}
+              >
+                <div className="absolute inset-[8%] rounded-full border border-white/8" />
+              </div>
+            ))}
+
             {EARLY_ZONE_RINGS.map((ring, idx) => (
               <div
                 key={`early-ring-${idx}`}
@@ -415,6 +450,33 @@ export function SpaceRoadmap({
                 style={{ left: ring.left, top: ring.top, width: ring.w, height: ring.h, transform: `rotate(${ring.rotate}deg)` }}
               >
                 <div className="absolute inset-[12%] rounded-full border border-cyan-200/18" />
+              </div>
+            ))}
+
+            {EARLY_ZONE_PORTALS.map((portal, idx) => (
+              <div
+                key={`early-portal-${idx}`}
+                className="pointer-events-none absolute"
+                style={{ left: portal.left, top: portal.top, width: portal.size, height: portal.size }}
+              >
+                <div
+                  className={`absolute inset-0 rounded-full ${
+                    portal.hue === 'cyan' ? 'bg-cyan-300/10' : portal.hue === 'violet' ? 'bg-violet-300/10' : 'bg-emerald-300/10'
+                  } blur-xl`}
+                />
+                <div className="absolute inset-0 rounded-full border border-white/14 bg-black/20" />
+                <div
+                  className={`absolute inset-[12%] rounded-full border-2 ${
+                    portal.hue === 'cyan'
+                      ? 'border-cyan-200/45 shadow-[0_0_18px_rgba(34,211,238,0.22)]'
+                      : portal.hue === 'violet'
+                        ? 'border-violet-200/40 shadow-[0_0_18px_rgba(168,85,247,0.22)]'
+                        : 'border-emerald-200/40 shadow-[0_0_18px_rgba(16,185,129,0.22)]'
+                  }`}
+                />
+                <div className="absolute inset-[26%] rounded-full border border-white/12" />
+                <div className="absolute left-1/2 top-1/2 h-[2px] w-[72%] -translate-x-1/2 -translate-y-1/2 bg-white/12" />
+                <div className="absolute left-1/2 top-1/2 h-[72%] w-[2px] -translate-x-1/2 -translate-y-1/2 bg-white/10" />
               </div>
             ))}
 
@@ -434,6 +496,21 @@ export function SpaceRoadmap({
               </div>
             ))}
 
+            {EARLY_ZONE_DRONES.map((drone, idx) => (
+              <div
+                key={`early-drone-${idx}`}
+                className="pointer-events-none absolute"
+                style={{ left: drone.left, top: drone.top, transform: `rotate(${drone.rotate}deg)` }}
+              >
+                <div className="relative h-8 w-8 rounded-full border border-cyan-100/18 bg-slate-900/30">
+                  <div className="absolute inset-[22%] rounded-full border border-white/12" />
+                  <div className="absolute left-1/2 top-1/2 h-[2px] w-10 -translate-x-1/2 -translate-y-1/2 bg-cyan-200/16" />
+                  <div className="absolute left-1/2 top-1/2 h-10 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-violet-200/12" />
+                  <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-100/25" />
+                </div>
+              </div>
+            ))}
+
             {EARLY_ZONE_WRECKS.map((wreck, idx) => (
               <div
                 key={`early-wreck-${idx}`}
@@ -445,6 +522,22 @@ export function SpaceRoadmap({
                 <div className="absolute right-[10%] top-[22%] h-[56%] w-[2px] rounded-full bg-white/12" />
                 <div className="absolute left-[14%] top-[18%] h-[24%] w-[18%] rounded-full bg-white/12" />
               </div>
+            ))}
+
+            {EARLY_ZONE_STAR_CLUSTERS.map((star, idx) => (
+              <div
+                key={`early-star-cluster-${idx}`}
+                className={`pointer-events-none absolute rounded-full ${
+                  star.tint === 'cyan'
+                    ? 'bg-cyan-100'
+                    : star.tint === 'violet'
+                      ? 'bg-violet-100'
+                      : star.tint === 'amber'
+                        ? 'bg-amber-100'
+                        : 'bg-white'
+                }`}
+                style={{ left: star.left, top: star.top, width: star.size, height: star.size, opacity: star.opacity }}
+              />
             ))}
 
             {STARS.map((star, idx) => (
