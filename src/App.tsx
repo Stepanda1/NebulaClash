@@ -771,6 +771,7 @@ function App() {
         <SpaceRoadmap
           unlockedLevel={unlockedLevel}
           language={language}
+          onLanguageChange={onLanguageChange}
           onStartLevel={onStartFromMap}
           onExitGame={onExitGame}
           onOpenLegal={openLegal}

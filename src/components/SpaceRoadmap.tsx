@@ -6,6 +6,7 @@ import { COPY } from '../i18n';
 type SpaceRoadmapProps = {
   unlockedLevel: number;
   language: Language;
+  onLanguageChange: (language: Language) => void;
   onStartLevel: (level: number) => void;
   onExitGame: () => void;
   onOpenLegal: (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => void;
@@ -106,6 +107,7 @@ const BOTTOM_STARS = Array.from({ length: 28 }, (_, i) => ({
 export function SpaceRoadmap({
   unlockedLevel,
   language,
+  onLanguageChange,
   onStartLevel,
   onExitGame,
   onOpenLegal,
@@ -457,6 +459,30 @@ export function SpaceRoadmap({
             <h3 className="mt-2 text-xl font-black text-white">{levelLabel}</h3>
 
             <div className="mt-5 w-full rounded-xl border border-white/20 bg-white/10 p-3 shadow-inner">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="text-sm font-bold tracking-wide text-white/80">{language === 'ru' ? 'Язык' : 'Language'}</span>
+                <div className="inline-flex rounded-full border border-white/20 bg-black/20 p-1">
+                  <button
+                    type="button"
+                    onClick={() => onLanguageChange('ru')}
+                    className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide transition-all ${language === 'ru' ? 'bg-cyan-300 text-slate-900 shadow' : 'text-white/80 hover:bg-white/10'}`}
+                    aria-pressed={language === 'ru'}
+                  >
+                    RU
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onLanguageChange('en')}
+                    className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide transition-all ${language === 'en' ? 'bg-cyan-300 text-slate-900 shadow' : 'text-white/80 hover:bg-white/10'}`}
+                    aria-pressed={language === 'en'}
+                  >
+                    EN
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 w-full rounded-xl border border-white/20 bg-white/10 p-3 shadow-inner">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-bold tracking-wide text-white/80">{t.sound}</span>
                 <button
