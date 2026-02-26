@@ -67,7 +67,7 @@ function getDefaultLanguage(): Language {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, levelCrossActivations, levelPulseActivations, levelNovaActivations, levelSmashEvents, comboX5Count, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
   const BOOSTER_COST = 30;
   const MOVE_BOOST_AMOUNT = 5;
   const TIME_BOOST_SECONDS = 30;
@@ -173,6 +173,30 @@ function App() {
 
     if (levelConfig.goal.type === 'lightning') {
       return <span>{language === 'ru' ? 'Молнии' : 'Lightnings'}: {levelLightningActivations}/{levelConfig.goal.value}</span>;
+    }
+
+    if (levelConfig.goal.type === 'special') {
+      const specialLabel = (() => {
+        if (levelConfig.goal.special === 'bomb') return language === 'ru' ? 'Бомбы' : 'Bombs';
+        if (levelConfig.goal.special === 'lightning') return language === 'ru' ? 'Молнии' : 'Lightnings';
+        if (levelConfig.goal.special === 'cross') return language === 'ru' ? 'Кресты' : 'Cross';
+        if (levelConfig.goal.special === 'pulse') return language === 'ru' ? 'Импульсы' : 'Pulse';
+        if (levelConfig.goal.special === 'nova') return language === 'ru' ? 'Новы' : 'Nova';
+        return language === 'ru' ? 'Smash-события' : 'Smash Events';
+      })();
+      const progress = (() => {
+        if (levelConfig.goal.special === 'bomb') return levelBombActivations;
+        if (levelConfig.goal.special === 'lightning') return levelLightningActivations;
+        if (levelConfig.goal.special === 'cross') return levelCrossActivations;
+        if (levelConfig.goal.special === 'pulse') return levelPulseActivations;
+        if (levelConfig.goal.special === 'nova') return levelNovaActivations;
+        return levelSmashEvents;
+      })();
+      return <span>{specialLabel}: {progress}/{levelConfig.goal.value}</span>;
+    }
+
+    if (levelConfig.goal.type === 'combo_x5') {
+      return <span>{language === 'ru' ? 'Комбо x5+' : 'Combo x5+'}: {comboX5Count}/{levelConfig.goal.value}</span>;
     }
 
     if (levelConfig.goal.type === 'boss') {

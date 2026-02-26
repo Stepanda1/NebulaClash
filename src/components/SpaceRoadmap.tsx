@@ -30,7 +30,7 @@ type Decoration = {
   color: string;
 };
 
-const TOTAL_LEVELS = 30;
+const TOTAL_LEVELS = 60;
 const MAP_WIDTH = 340;
 const NODE_SIZE = 42;
 const TOP_PADDING = 110;
@@ -254,6 +254,8 @@ export function SpaceRoadmap({
   const settingsLabel = language === 'ru' ? 'Настройки карты' : 'Map Settings';
   const comingSoonLabel = language === 'ru' ? 'Скоро' : 'Coming Soon';
   const endPoint = points[points.length - 1];
+  const secondSectorStart = points.find((p) => p.level === 31);
+  const secondSectorLabel = language === 'ru' ? 'Локация 2: Квантовый Пояс' : 'Location 2: Quantum Belt';
   const openLegalFromSettings = (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => {
     setIsSettingsOpen(false);
     onOpenLegal(section);
@@ -288,6 +290,20 @@ export function SpaceRoadmap({
 
         <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-white/15 bg-black/30 shadow-[0_0_80px_rgba(56,189,248,0.16)] backdrop-blur-md">
           <div className="relative mx-auto w-[340px]" style={{ height: mapHeight }}>
+            {secondSectorStart && (
+              <>
+                <div
+                  className="pointer-events-none absolute left-2 right-2 rounded-3xl border border-emerald-200/10 bg-gradient-to-b from-emerald-300/6 via-teal-400/6 to-transparent"
+                  style={{ top: Math.max(90, secondSectorStart.y - 120), bottom: 60 }}
+                />
+                <div
+                  className="pointer-events-none absolute left-1/2 z-[6] -translate-x-1/2 rounded-full border border-emerald-200/30 bg-slate-950/70 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
+                  style={{ top: secondSectorStart.y - 34 }}
+                >
+                  {secondSectorLabel}
+                </div>
+              </>
+            )}
             {PLANETS.map((item, idx) => (
               <div key={idx} className="pointer-events-none absolute" style={{ left: item.left, top: item.top, width: item.size, height: item.size }}>
                 <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${item.color} border border-white/20 shadow-[inset_-10px_-8px_20px_rgba(15,23,42,0.35)]`} />
@@ -395,6 +411,7 @@ export function SpaceRoadmap({
               const isCurrent = point.level === unlockedLevel;
               const isLocked = point.level > unlockedLevel;
               const isSelected = point.level === selectedLevel;
+              const isSecondSector = point.level > 30;
               const stars = Math.max(0, Math.min(3, levelStars[point.level] ?? 0));
 
               return (
@@ -409,8 +426,12 @@ export function SpaceRoadmap({
                       isLocked
                         ? 'border-slate-500/50 bg-slate-700/60 text-slate-300'
                         : isCurrent
-                          ? 'border-yellow-200 bg-gradient-to-br from-amber-300 to-orange-500 text-slate-900 shadow-[0_0_28px_rgba(251,191,36,0.65)]'
-                          : 'border-cyan-100/90 bg-gradient-to-br from-sky-300 to-blue-600 text-white shadow-[0_0_20px_rgba(56,189,248,0.45)]'
+                          ? (isSecondSector
+                              ? 'border-emerald-100 bg-gradient-to-br from-emerald-300 to-teal-500 text-slate-900 shadow-[0_0_28px_rgba(16,185,129,0.45)]'
+                              : 'border-yellow-200 bg-gradient-to-br from-amber-300 to-orange-500 text-slate-900 shadow-[0_0_28px_rgba(251,191,36,0.65)]')
+                          : (isSecondSector
+                              ? 'border-emerald-100/80 bg-gradient-to-br from-emerald-300 to-cyan-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.35)]'
+                              : 'border-cyan-100/90 bg-gradient-to-br from-sky-300 to-blue-600 text-white shadow-[0_0_20px_rgba(56,189,248,0.45)]')
                     } ${isSelected ? 'scale-110 ring-2 ring-white/80 ring-offset-2 ring-offset-transparent' : 'scale-100'} ${isLocked ? '' : 'hover:scale-110 active:scale-95'}`}
                     style={{ width: NODE_SIZE, height: NODE_SIZE }}
                     aria-label={t.level(point.level)}
