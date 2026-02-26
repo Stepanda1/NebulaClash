@@ -374,6 +374,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                     >
                         <div className="relative w-9 h-9">
                             <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle_at_50%_50%, ${config.glow}, rgba(0,0,0,0))` }} />
+                            <div className="absolute inset-[14%] rounded-full border-2 bg-black/35 backdrop-blur-[1px]" style={{ borderColor: 'rgba(255,255,255,0.38)' }} />
                             <div className="absolute inset-[10%] rounded-full border" style={{ borderColor: 'rgba(255,255,255,0.22)' }} />
                             <svg viewBox="0 0 100 100" className="absolute inset-0" style={{ filter: `drop-shadow(0 0 12px ${config.glow})` }}>
                                 <defs>
@@ -384,7 +385,8 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                         <stop offset="100%" stopColor={specDark} />
                                     </linearGradient>
                                 </defs>
-                                <path d="M51 4 L31 47 L49 47 L38 69 L57 69 L28 96 L43 58 L27 58 L50 4 Z" fill={`url(#bolt-${tile.id})`} />
+                                <path d="M51 4 L31 47 L49 47 L38 69 L57 69 L28 96 L43 58 L27 58 L50 4 Z" fill="none" stroke="rgba(15,23,42,0.85)" strokeWidth="8" strokeLinejoin="round" strokeLinecap="round" />
+                                <path d="M51 4 L31 47 L49 47 L38 69 L57 69 L28 96 L43 58 L27 58 L50 4 Z" fill={`url(#bolt-${tile.id})`} stroke="rgba(255,255,255,0.65)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
                                 <path d="M57 12 L44 40 L58 40 L46 60 L64 60 L40 88 L52 54 L40 54 L57 12 Z" fill="white" fillOpacity="0.22" />
                             </svg>
                             {!lowFX && (
@@ -423,6 +425,7 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                     >
                         <div className="relative h-9 w-9">
                             <div className="absolute inset-0 rounded-full opacity-75" style={{ background: `radial-gradient(circle, ${config.glow} 0%, rgba(0,0,0,0) 72%)` }} />
+                            <div className="absolute inset-[12%] rounded-full border-2 bg-black/35 backdrop-blur-[1px]" style={{ borderColor: 'rgba(255,255,255,0.36)' }} />
                             <div className="absolute inset-[8%] rounded-full border" style={{ borderColor: 'rgba(255,255,255,0.24)' }} />
                             <svg viewBox="0 0 100 100" className="absolute inset-0" style={{ filter: `drop-shadow(0 0 10px ${config.glow})` }}>
                                 <defs>
@@ -432,10 +435,13 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                                         <stop offset="100%" stopColor={specMid} />
                                     </linearGradient>
                                 </defs>
+                                <line x1="24" y1="24" x2="76" y2="76" stroke="rgba(15,23,42,0.9)" strokeWidth="14" strokeLinecap="round" />
+                                <line x1="76" y1="24" x2="24" y2="76" stroke="rgba(15,23,42,0.9)" strokeWidth="14" strokeLinecap="round" />
                                 <line x1="24" y1="24" x2="76" y2="76" stroke={`url(#cross-${tile.id})`} strokeWidth="10" strokeLinecap="round" />
                                 <line x1="76" y1="24" x2="24" y2="76" stroke={`url(#cross-${tile.id})`} strokeWidth="10" strokeLinecap="round" />
                                 <line x1="50" y1="14" x2="50" y2="86" stroke="white" strokeOpacity="0.18" strokeWidth="3" />
                                 <line x1="14" y1="50" x2="86" y2="50" stroke="white" strokeOpacity="0.18" strokeWidth="3" />
+                                <circle cx="50" cy="50" r="12" fill="rgba(2,6,23,0.92)" stroke="white" strokeOpacity="0.35" strokeWidth="3" />
                                 <circle cx="50" cy="50" r="10" fill={specDark} stroke={specLight} strokeWidth="3.5" />
                                 <circle cx="50" cy="50" r="4" fill="white" fillOpacity="0.65" />
                             </svg>

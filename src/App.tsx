@@ -687,8 +687,8 @@ function App() {
     }
     setComboFlash(true);
     playCombo();
-    const t1 = window.setTimeout(() => setComboText(null), 900);
-    const t2 = window.setTimeout(() => setComboFlash(false), 400);
+    const t1 = window.setTimeout(() => setComboText(null), 1200);
+    const t2 = window.setTimeout(() => setComboFlash(false), 650);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -700,8 +700,8 @@ function App() {
     if (bigBlastId <= 0) return;
     setShakeActive(true);
     setPulseActive(true);
-    const t1 = window.setTimeout(() => setShakeActive(false), 350);
-    const t2 = window.setTimeout(() => setPulseActive(false), 600);
+    const t1 = window.setTimeout(() => setShakeActive(false), 500);
+    const t2 = window.setTimeout(() => setPulseActive(false), 820);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -714,8 +714,8 @@ function App() {
     setComboStyle({ color: 'text-cyan-200', size: 'text-xl sm:text-3xl' });
     setComboPos({ x: 50, y: 22 });
     setComboFlash(true);
-    const t1 = window.setTimeout(() => setComboText(null), 950);
-    const t2 = window.setTimeout(() => setComboFlash(false), 420);
+    const t1 = window.setTimeout(() => setComboText(null), 1350);
+    const t2 = window.setTimeout(() => setComboFlash(false), 700);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -727,8 +727,8 @@ function App() {
     setBossHitFlash(true);
     setBossHitText(`-${bossLastHitDamage}`);
     playBossHit(bossLastHitDamage);
-    const t1 = window.setTimeout(() => setBossHitFlash(false), 240);
-    const t2 = window.setTimeout(() => setBossHitText(null), 700);
+    const t1 = window.setTimeout(() => setBossHitFlash(false), 380);
+    const t2 = window.setTimeout(() => setBossHitText(null), 950);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);

@@ -370,6 +370,29 @@ export const useGame = () => {
         return newGrid;
     };
 
+    const placeRandomSpecialOnGrid = useCallback((baseGrid: Grid, type: 'bomb' | 'lightning' | 'cross' | 'nova' | 'pulse'): Grid => {
+        const newGrid = copyGrid(baseGrid);
+        const candidates: Tile[] = [];
+        for (let y = 1; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = newGrid[y][x];
+                if ((tile as { type?: unknown }).type == null || tile.hasTrash) continue;
+                candidates.push(tile);
+            }
+        }
+        if (candidates.length === 0) return baseGrid;
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        const gemType = (pick.type === 'bomb' || pick.type === 'lightning' || pick.type === 'cross' || pick.type === 'nova' || pick.type === 'pulse')
+            ? pick.gemType
+            : (pick.type as GemType);
+        newGrid[pick.y][pick.x] = {
+            ...pick,
+            type,
+            gemType,
+        };
+        return newGrid;
+    }, []);
+
     const processBoard = useCallback(async (currentGrid: Grid) => {
         setIsProcessing(true);
         let activeGrid = currentGrid;
@@ -428,7 +451,7 @@ export const useGame = () => {
             setScore(prev => prev + scoreGain);
 
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 320));
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
@@ -436,14 +459,14 @@ export const useGame = () => {
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 320));
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
             const { grid: gravityGrid } = applyGravity(activeGrid);
             activeGrid = gravityGrid;
             setGrid(activeGrid);
 
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 460));
             while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
 
             matchMap = findMatches(activeGrid);
@@ -457,9 +480,11 @@ export const useGame = () => {
         if (comboCount >= 7) {
             const specials: Array<'bomb' | 'lightning' | 'cross' | 'nova' | 'pulse'> = ['bomb', 'lightning', 'cross', 'nova', 'pulse'];
             for (let i = 0; i < 3; i++) {
-                spawnSpecial(specials[Math.floor(Math.random() * specials.length)]);
+                activeGrid = placeRandomSpecialOnGrid(activeGrid, specials[Math.floor(Math.random() * specials.length)]);
             }
+            setGrid(activeGrid);
             setSmashId((id) => id + 1);
+            await new Promise(r => setTimeout(r, 260));
         }
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
@@ -467,7 +492,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval, spawnSpecial]);
+    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval, placeRandomSpecialOnGrid]);
 
     useEffect(() => {
         const goalReached = (() => {
@@ -567,7 +592,7 @@ export const useGame = () => {
         explodeTimeoutRef.current = window.setTimeout(() => {
             setExplodingIds(new Set());
             explodeTimeoutRef.current = null;
-        }, 250);
+        }, 380);
 
         if (toRemove.size >= 10) {
             setBigBlastId(id => id + 1);
@@ -578,19 +603,19 @@ export const useGame = () => {
 
         setScore(prev => prev + toRemove.size * 10);
 
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 180));
 
         clearTrashByImpact(activeGrid, toRemove);
         activeGrid = removeMatches(activeGrid, toRemove);
         setGrid(activeGrid);
 
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 320));
 
         const { grid: gravityGrid } = applyGravity(activeGrid);
         activeGrid = gravityGrid;
         setGrid(activeGrid);
 
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 460));
 
         let matchMap = findMatches(activeGrid);
         let iteration = 0;
@@ -626,7 +651,7 @@ export const useGame = () => {
             }
             setScore(prev => prev + scoreGain);
 
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 320));
 
             const allRegularMatches = new Set<string>();
             matchMap.forEach((type, tileId) => {
@@ -640,13 +665,13 @@ export const useGame = () => {
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 320));
 
             const { grid: gravityGrid2 } = applyGravity(activeGrid);
             activeGrid = gravityGrid2;
             setGrid(activeGrid);
 
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 460));
 
             matchMap = findMatches(activeGrid);
             iteration++;
@@ -694,7 +719,7 @@ export const useGame = () => {
         explodeTimeoutRef.current = window.setTimeout(() => {
             setExplodingIds(new Set());
             explodeTimeoutRef.current = null;
-        }, 250);
+        }, 380);
 
         if (toRemove.size >= 10) {
             setBigBlastId(id => id + 1);
@@ -705,19 +730,19 @@ export const useGame = () => {
 
         setScore(prev => prev + toRemove.size * 10);
 
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 180));
 
         clearTrashByImpact(activeGrid, toRemove);
         activeGrid = removeMatches(activeGrid, toRemove);
         setGrid(activeGrid);
 
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 320));
 
         const { grid: gravityGrid } = applyGravity(activeGrid);
         activeGrid = gravityGrid;
         setGrid(activeGrid);
 
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 460));
 
         let matchMap = findMatches(activeGrid);
         let iteration = 0;
@@ -753,7 +778,7 @@ export const useGame = () => {
             }
             setScore(prev => prev + scoreGain);
 
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 320));
 
             const allRegularMatches = new Set<string>();
             matchMap.forEach((type, tileId) => {
@@ -767,13 +792,13 @@ export const useGame = () => {
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 320));
 
             const { grid: gravityGrid2 } = applyGravity(activeGrid);
             activeGrid = gravityGrid2;
             setGrid(activeGrid);
 
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 460));
 
             matchMap = findMatches(activeGrid);
             iteration++;
@@ -799,8 +824,8 @@ export const useGame = () => {
         if (!isAdjacent) return;
         if (firstTile.hasTrash || secondTile.hasTrash) return;
 
-        const selectedWasSpecial = firstTile.type === 'bomb' || firstTile.type === 'lightning' || firstTile.type === 'cross' || firstTile.type === 'nova';
-        const clickedWasSpecial = secondTile.type === 'bomb' || secondTile.type === 'lightning' || secondTile.type === 'cross' || secondTile.type === 'nova';
+        const selectedWasSpecial = firstTile.type === 'bomb' || firstTile.type === 'lightning' || firstTile.type === 'cross' || firstTile.type === 'nova' || firstTile.type === 'pulse';
+        const clickedWasSpecial = secondTile.type === 'bomb' || secondTile.type === 'lightning' || secondTile.type === 'cross' || secondTile.type === 'nova' || secondTile.type === 'pulse';
         const nextGrid = swapTiles(grid, firstTile, secondTile);
         setGrid(nextGrid);
         setSelectedTile(null);
