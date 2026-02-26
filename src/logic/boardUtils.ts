@@ -349,7 +349,7 @@ export const convertToSpecialPieces = (grid: Grid, matchMap: Map<string, 'match'
 
     const specialIds = new Set<string>();
     matchMap.forEach((type, tileId) => {
-        if (type === 'bomb' || type === 'lightning' || type === 'cross' || type === 'nova') {
+        if (type === 'bomb' || type === 'lightning' || type === 'cross' || type === 'nova' || type === 'pulse') {
             specialIds.add(tileId);
         }
     });
@@ -406,7 +406,7 @@ export const convertToSpecialPieces = (grid: Grid, matchMap: Map<string, 'match'
             });
 
             const specialTile = sorted[0];
-            const gemType = (specialTile.type === 'bomb' || specialTile.type === 'lightning' || specialTile.type === 'cross' || specialTile.type === 'nova')
+            const gemType = (specialTile.type === 'bomb' || specialTile.type === 'lightning' || specialTile.type === 'cross' || specialTile.type === 'nova' || specialTile.type === 'pulse')
                 ? specialTile.gemType
                 : specialTile.type as GemType;
 

@@ -700,7 +700,8 @@ export const useGame = () => {
             if (tile.type === 'bomb') {
                 getBombAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
             } else if (tile.type === 'lightning') {
-                getLightningAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
+                const direction = Math.random() < 0.5 ? 'horizontal' as const : 'vertical' as const;
+                getLightningAffectedTiles(activeGrid, tile.x, tile.y, direction).forEach(id => toRemove.add(id));
             } else if (tile.type === 'cross') {
                 getCrossAffectedTiles(activeGrid, tile.x, tile.y).forEach(id => toRemove.add(id));
             } else if (tile.type === 'pulse') {
@@ -884,7 +885,7 @@ export const useGame = () => {
 
         if (selectedTile && selectedTile.id === clickedTile.id) {
             const tile = grid[clickedTile.y][clickedTile.x];
-            if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova') {
+            if (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova' || tile.type === 'pulse') {
                 setIsProcessing(true);
                 setSelectedTile(null);
                 if (tile.type === 'bomb') {
