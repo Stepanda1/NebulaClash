@@ -650,7 +650,7 @@ export const useGame = () => {
             iteration++;
         }
 
-        activeGrid = await applyComboRewards(activeGrid, comboCount, true);
+        activeGrid = await applyComboRewards(activeGrid, comboCount, false);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
