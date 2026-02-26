@@ -489,16 +489,17 @@ export const useGame = () => {
         return newGrid;
     }, []);
 
-    const applyComboRewards = useCallback(async (baseGrid: Grid, comboCount: number): Promise<Grid> => {
+    const applyComboRewards = useCallback(async (baseGrid: Grid, comboCount: number, includePlayerMove: boolean = true): Promise<Grid> => {
         let activeGrid = baseGrid;
-        if (comboCount >= 2) {
-            setComboLevel(comboCount);
+        const effectiveCombo = comboCount + (includePlayerMove ? 1 : 0);
+        if (effectiveCombo >= 2) {
+            setComboLevel(effectiveCombo);
             setComboId(id => id + 1);
         }
-        if (comboCount >= 5) {
+        if (effectiveCombo >= 5) {
             setComboX5Count(prev => prev + 1);
         }
-        if (comboCount >= 7) {
+        if (effectiveCombo >= 7) {
             const specials: Array<'bomb' | 'lightning' | 'cross' | 'nova' | 'pulse'> = ['bomb', 'lightning', 'cross', 'nova', 'pulse'];
             for (let i = 0; i < 3; i++) {
                 activeGrid = placeRandomSpecialOnGrid(activeGrid, specials[Math.floor(Math.random() * specials.length)]);
@@ -574,7 +575,7 @@ export const useGame = () => {
         let activeGrid = currentGrid;
         let matchMap = findMatches(activeGrid);
         let iteration = 0;
-        let comboCount = 1;
+        let comboCount = 0;
 
         while (matchMap.size > 0 && iteration < 10) {
             const regularMatches = new Set<string>();
@@ -649,7 +650,7 @@ export const useGame = () => {
             iteration++;
         }
 
-        activeGrid = await applyComboRewards(activeGrid, comboCount);
+        activeGrid = await applyComboRewards(activeGrid, comboCount, true);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
@@ -755,7 +756,7 @@ export const useGame = () => {
         const x = tile.x;
         const y = tile.y;
         let toRemove = new Set<string>();
-        let comboCount = 1;
+        let comboCount = 0;
 
         if (tile.type === 'bomb') {
             toRemove = getBombAffectedTiles(activeGrid, x, y);
@@ -863,7 +864,7 @@ export const useGame = () => {
             iteration++;
         }
 
-        activeGrid = await applyComboRewards(activeGrid, comboCount);
+        activeGrid = await applyComboRewards(activeGrid, comboCount, true);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
@@ -988,7 +989,7 @@ export const useGame = () => {
             iteration++;
         }
 
-        activeGrid = await applyComboRewards(activeGrid, comboCount);
+        activeGrid = await applyComboRewards(activeGrid, comboCount, true);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
