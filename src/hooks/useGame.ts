@@ -27,7 +27,7 @@ type LevelStateSnapshot = {
 };
 
 const GEM_ROTATION: GemType[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
-const SPECIAL_GOAL_ROTATION: SpecialGoalType[] = ['bomb', 'lightning', 'cross', 'pulse', 'nova', 'smash'];
+const SPECIAL_GOAL_ROTATION: SpecialGoalType[] = ['bomb', 'lightning', 'cross', 'pulse', 'nova'];
 
 function buildLevelConfigs(): LevelConfig[] {
     const levels: LevelConfig[] = [];
