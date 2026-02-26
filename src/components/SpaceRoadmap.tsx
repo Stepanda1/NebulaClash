@@ -133,7 +133,7 @@ export function SpaceRoadmap({
   const currentPoint = useMemo(() => points.find((point) => point.level === unlockedLevel), [points, unlockedLevel]);
 
   useEffect(() => {
-    setSelectedLevel((prev) => (prev > unlockedLevel ? unlockedLevel : prev));
+    setSelectedLevel(Math.max(1, unlockedLevel));
   }, [unlockedLevel]);
 
   const mapHeight = points[0].y + 64;
