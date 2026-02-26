@@ -698,13 +698,16 @@ export const useGame = () => {
         void (async () => {
             setIsProcessing(true);
             setGoalClearId((id) => id + 1);
-            await new Promise(r => setTimeout(r, 720));
-            if (levelConfig.mode === 'moves' && moves > 0) {
-                await runVictoryMoveBonus(gridRef.current, moves);
+            await new Promise(r => setTimeout(r, 900));
+            const bonusBursts = levelConfig.mode === 'moves'
+                ? Math.max(0, moves)
+                : Math.max(0, Math.floor(timeLeft / 5));
+            if (bonusBursts > 0) {
+                await runVictoryMoveBonus(gridRef.current, bonusBursts);
             }
             setIsLevelUp(true);
         })();
-    }, [bossHp, collected, comboX5Count, goal, isLevelUp, isProcessing, levelBombActivations, levelCrossActivations, levelLightningActivations, levelNovaActivations, levelPulseActivations, levelSmashEvents, levelConfig.mode, moves, runVictoryMoveBonus, trashDestroyed]);
+    }, [bossHp, collected, comboX5Count, goal, isLevelUp, isProcessing, levelBombActivations, levelCrossActivations, levelLightningActivations, levelNovaActivations, levelPulseActivations, levelSmashEvents, levelConfig.mode, moves, runVictoryMoveBonus, timeLeft, trashDestroyed]);
 
     useEffect(() => {
         if (!isTimeMode || isPaused || isProcessing || isLevelUp) return;

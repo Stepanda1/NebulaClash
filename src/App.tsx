@@ -778,10 +778,10 @@ function App() {
     if (goalClearId <= 0) return;
     const phrases = language === 'ru'
       ? ['Отлично!', 'Великолепно!', 'Невероятно!', 'Идеально!', 'Космос!']
-      : ['Great!', 'Amazing!', 'Unbelievable!', 'Excellent!', 'Spectacular!'];
+      : ['Great!', 'Super!', 'Unbelievable!', 'Excellent!', 'Spectacular!'];
     const picked = phrases[(goalClearId - 1) % phrases.length];
     setGoalClearText(picked);
-    const t1 = window.setTimeout(() => setGoalClearText(null), 760);
+    const t1 = window.setTimeout(() => setGoalClearText(null), 900);
     return () => clearTimeout(t1);
   }, [goalClearId, language]);
 
@@ -906,6 +906,22 @@ function App() {
       {tutorialActive && (
         <TutorialHint step={tutorialStep} onSkip={onSkipTutorial} language={language} />
       )}
+      {goalClearText && (
+        <div className="pointer-events-none absolute inset-0 z-[95] flex items-center justify-center bg-[radial-gradient(circle_at_50%_45%,rgba(251,191,36,0.12),rgba(2,6,23,0.82)_45%,rgba(2,6,23,0.92)_100%)]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.78, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="mx-4 w-[min(92%,560px)] rounded-3xl border border-amber-200/35 bg-slate-950/70 px-6 py-6 text-center shadow-[0_0_40px_rgba(251,191,36,0.2)]"
+          >
+            <div className="text-xs sm:text-sm uppercase tracking-[0.35em] text-amber-100/80">
+              {language === 'ru' ? 'Цель выполнена' : 'Goal Complete'}
+            </div>
+            <div className="mt-2 text-4xl sm:text-6xl font-black text-amber-100 drop-shadow-[0_0_18px_rgba(251,191,36,0.45)]">
+              {goalClearText}
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Top Bar: Progress & Settings */}
       <div className="w-full shrink-0 flex flex-col gap-1 sm:gap-2 z-10">
@@ -1020,25 +1036,6 @@ function App() {
               exit={{ opacity: 0 }}
             >
               {comboText}
-            </motion.div>
-          )}
-          {!lowPerfMode && goalClearText && (
-            <motion.div
-              className="pointer-events-none absolute inset-0 z-[60] flex items-center justify-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div
-                initial={{ scale: 0.72, y: 8 }}
-                animate={{ scale: 1, y: 0 }}
-                className="rounded-2xl border border-amber-200/50 bg-[radial-gradient(circle_at_50%_30%,rgba(253,224,71,0.35),rgba(245,158,11,0.18)_55%,rgba(2,6,23,0.8)_100%)] px-4 py-2 text-center shadow-[0_0_28px_rgba(251,191,36,0.35)]"
-              >
-                <div className="text-[10px] uppercase tracking-[0.28em] text-amber-100/80">{language === 'ru' ? 'Цель выполнена' : 'Goal Complete'}</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-amber-100 drop-shadow-[0_0_10px_rgba(251,191,36,0.45)]">
-                  {goalClearText}
-                </div>
-              </motion.div>
             </motion.div>
           )}
           <GameBoard
