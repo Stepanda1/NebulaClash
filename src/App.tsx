@@ -40,6 +40,11 @@ function GoalGemIcon({ color }: { color: GemType }) {
 type LevelStarsMap = Record<number, number>;
 const TUTORIAL_SEEN_KEY = 'match3_tutorial_seen';
 
+function getHasSeenTutorial(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(TUTORIAL_SEEN_KEY) === '1';
+}
+
 function getStarsFromScore(score: number): number {
   if (score >= 2200) return 3;
   if (score >= 1400) return 2;
@@ -81,7 +86,7 @@ function App() {
   const [comboStyle, setComboStyle] = useState<{ color: string; size: string }>({ color: 'text-amber-300', size: 'text-lg sm:text-2xl' });
   const [lowPerfMode, setLowPerfMode] = useState(false);
   const [language, setLanguage] = useState<Language>(getDefaultLanguage);
-  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isMapOpen, setIsMapOpen] = useState(getHasSeenTutorial);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [legalSection, setLegalSection] = useState<'offer' | 'privacy' | 'refunds' | 'contacts'>('offer');
@@ -91,10 +96,7 @@ function App() {
   const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
   const [isLaunchingLevel, setIsLaunchingLevel] = useState(false);
-  const [hasSeenTutorial, setHasSeenTutorial] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(TUTORIAL_SEEN_KEY) === '1';
-  });
+  const [hasSeenTutorial, setHasSeenTutorial] = useState(getHasSeenTutorial);
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
@@ -474,7 +476,7 @@ function App() {
     setShowTutorial(false);
     setTutorialStep(0);
     setPendingSpawn(null);
-  }, [level, hasSeenTutorial, match3Moves, bombDoubleActivations, lightningSwaps]);
+  }, [level, hasSeenTutorial]);
 
   useEffect(() => {
     if (!shopNotice) return;
