@@ -7,23 +7,6 @@ type GameGuideModalProps = {
   onClose: () => void;
 };
 
-type GemPreviewProps = {
-  gradient: string;
-  glow: string;
-  label: string;
-};
-
-function GemPreview({ gradient, glow, label }: GemPreviewProps) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-2 text-center">
-      <div className={`mx-auto flex h-14 w-14 rotate-45 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} shadow-[0_0_18px_rgba(0,0,0,0.24)]`}>
-        <div className={`h-7 w-7 rounded-lg border border-white/35 ${glow}`} />
-      </div>
-      <div className="mt-2 text-[11px] text-white/85">{label}</div>
-    </div>
-  );
-}
-
 type PatternDot = {
   x: number;
   y: number;
@@ -126,26 +109,11 @@ export function GameGuideModal({ language, onClose }: GameGuideModalProps) {
           <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
             <div className="mb-2 flex items-center gap-2 text-cyan-100">
               <Hand size={16} />
-              <span className="text-sm font-bold">{isRu ? 'Каскад' : 'Cascade'}</span>
+              <span className="text-sm font-bold">{isRu ? 'Цепочка' : 'Chain'}</span>
             </div>
             <p className="text-xs text-white/80">
               {isRu ? 'После взрыва новые совпадения могут собраться сами и дать дополнительный урон/очки.' : 'After a clear, new automatic matches can chain for extra damage and score.'}
             </p>
-          </div>
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3">
-          <div className="text-sm font-bold text-cyan-100">{isRu ? 'Элементы поля' : 'Board Elements'}</div>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <GemPreview gradient="from-rose-300 via-rose-500 to-red-900" glow="bg-white/20" label={isRu ? 'Красный кристалл' : 'Red Gem'} />
-            <GemPreview gradient="from-sky-300 via-blue-500 to-blue-900" glow="bg-white/20" label={isRu ? 'Синий кристалл' : 'Blue Gem'} />
-            <GemPreview gradient="from-emerald-300 via-emerald-500 to-emerald-900" glow="bg-white/20" label={isRu ? 'Зелёный кристалл' : 'Green Gem'} />
-            <GemPreview gradient="from-yellow-200 via-amber-400 to-amber-800" glow="bg-white/20" label={isRu ? 'Жёлтый кристалл' : 'Yellow Gem'} />
-          </div>
-          <div className="mt-3 text-xs text-white/75">
-            {isRu
-              ? 'Ниже показаны реальные комбинации из логики игры и какие спец-элементы они создают.'
-              : 'The combinations below match the actual in-game logic and show which special piece they create.'}
           </div>
         </div>
 
@@ -175,19 +143,19 @@ export function GameGuideModal({ language, onClose }: GameGuideModalProps) {
             />
             <ComboCard
               language={language}
-              titleRu="5-6 в линию: Молния"
-              titleEn="5-6 in a line: Lightning"
-              descRu="Длинная прямая линия из 5 или 6 создаёт Молнию. Она очищает целую строку или колонку."
-              descEn="A straight line of 5 or 6 creates Lightning. It clears a full row or column."
+              titleRu="5 в линию: Молния"
+              titleEn="5 in a line: Lightning"
+              descRu="Только ровно 5 одинаковых в прямой линии создают Молнию. Она очищает целую строку или колонку."
+              descEn="Only exactly 5 matching gems in one straight line create Lightning. It clears a full row or column."
               pattern={[{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }, { x: 4, y: 1 }]}
               accent="from-sky-300 to-indigo-500"
             />
             <ComboCard
               language={language}
-              titleRu="L-форма или 7+ в линию: Крест"
-              titleEn="L-shape or 7+ in a line: Cross"
-              descRu="L-образная форма из 5 или очень длинная линия 7+ создаёт Крест. Он бьёт по строке и колонке."
-              descEn="An L-shape of 5 or a very long line of 7+ creates Cross. It clears both row and column."
+              titleRu="L-форма из 5: Крест"
+              titleEn="L-shape of 5: Cross"
+              descRu="Только L-образная форма из 5 элементов создаёт Крест. Он бьёт по строке и колонке."
+              descEn="Only an L-shape of 5 creates Cross. It clears both row and column."
               pattern={[{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }]}
               accent="from-fuchsia-300 to-violet-500"
             />
@@ -204,10 +172,12 @@ export function GameGuideModal({ language, onClose }: GameGuideModalProps) {
               language={language}
               titleRu="Расширенная T-форма (6-7): Нова"
               titleEn="Extended T-shape (6-7): Nova"
-              descRu="Удлинённая T-форма создаёт Нову. Это самый сильный спец-элемент из базовых комбинаций."
-              descEn="An extended T-shape creates Nova. It is the strongest special piece from standard matches."
-              pattern={[{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }, { x: 4, y: 1 }, { x: 1, y: 2 }]}
+              descRu="Нова собирается из удлинённой T-формы: длинная линия из 4-5 и боковая ветка из 2 клеток от третьего элемента. Примеры: 2,6,10,11,12,14 и 1,6,11,12,13,16,21."
+              descEn="Nova is created from an extended T-shape: a 4-5 long stem with a 2-cell side branch from the third tile. Examples: 2,6,10,11,12,14 and 1,6,11,12,13,16,21."
+              pattern={[{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 0, y: 3 }]}
               accent="from-yellow-300 to-rose-500"
+              cols={3}
+              rows={4}
             />
           </div>
         </div>

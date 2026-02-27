@@ -217,64 +217,85 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
     }
 
     // 1b) Extended T-shapes (6-7) -> nova
-    for (let y = 0; y < ROWS; y++) {
-        for (let x = 1; x < COLS - 1; x++) {
+    // Supported forms:
+    // - Vertical stem of 4/5 with a 2-cell arm branching from the 3rd cell
+    // - Horizontal stem of 4/5 with a 2-cell arm branching from the 3rd cell
+    for (let x = 0; x < COLS; x++) {
+        for (let y = 0; y < ROWS; y++) {
             const center = grid[y][x];
-            const left = grid[y][x - 1];
-            const right = grid[y][x + 1];
-            if (!isSameType(center, left) || !isSameType(center, right)) continue;
 
-            // Stem down, length 3/4 below center (total 6/7)
-            for (const stemLen of [3, 4]) {
-                const ids = [center.id, left.id, right.id];
-                let ok = true;
-                for (let i = 1; i <= stemLen; i++) {
-                    const ny = y + i;
-                    if (ny >= ROWS || !isSameType(center, grid[ny][x])) { ok = false; break; }
-                    ids.push(grid[ny][x].id);
-                }
-                if (ok) addGroup(ids, 'nova');
-            }
+            for (const stemLen of [4, 5]) {
+                if (y + stemLen > ROWS) continue;
 
-            // Stem up, length 3/4 above center
-            for (const stemLen of [3, 4]) {
-                const ids = [center.id, left.id, right.id];
-                let ok = true;
-                for (let i = 1; i <= stemLen; i++) {
-                    const ny = y - i;
-                    if (ny < 0 || !isSameType(center, grid[ny][x])) { ok = false; break; }
-                    ids.push(grid[ny][x].id);
+                const stemIds = [center.id];
+                let stemOk = true;
+                for (let i = 1; i < stemLen; i++) {
+                    const next = grid[y + i][x];
+                    if (!isSameType(center, next)) {
+                        stemOk = false;
+                        break;
+                    }
+                    stemIds.push(next.id);
                 }
-                if (ok) addGroup(ids, 'nova');
+                if (!stemOk) continue;
+
+                const branchY = y + 2;
+
+                if (x + 2 < COLS) {
+                    const right1 = grid[branchY][x + 1];
+                    const right2 = grid[branchY][x + 2];
+                    if (isSameType(center, right1) && isSameType(center, right2)) {
+                        addGroup([...stemIds, right1.id, right2.id], 'nova');
+                    }
+                }
+
+                if (x - 2 >= 0) {
+                    const left1 = grid[branchY][x - 1];
+                    const left2 = grid[branchY][x - 2];
+                    if (isSameType(center, left1) && isSameType(center, left2)) {
+                        addGroup([...stemIds, left1.id, left2.id], 'nova');
+                    }
+                }
             }
         }
     }
-    for (let x = 0; x < COLS; x++) {
-        for (let y = 1; y < ROWS - 1; y++) {
-            const center = grid[y][x];
-            const up = grid[y - 1][x];
-            const down = grid[y + 1][x];
-            if (!isSameType(center, up) || !isSameType(center, down)) continue;
 
-            for (const armLen of [3, 4]) {
-                const ids = [center.id, up.id, down.id];
-                let ok = true;
-                for (let i = 1; i <= armLen; i++) {
-                    const nx = x + i;
-                    if (nx >= COLS || !isSameType(center, grid[y][nx])) { ok = false; break; }
-                    ids.push(grid[y][nx].id);
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            const center = grid[y][x];
+
+            for (const stemLen of [4, 5]) {
+                if (x + stemLen > COLS) continue;
+
+                const stemIds = [center.id];
+                let stemOk = true;
+                for (let i = 1; i < stemLen; i++) {
+                    const next = grid[y][x + i];
+                    if (!isSameType(center, next)) {
+                        stemOk = false;
+                        break;
+                    }
+                    stemIds.push(next.id);
                 }
-                if (ok) addGroup(ids, 'nova');
-            }
-            for (const armLen of [3, 4]) {
-                const ids = [center.id, up.id, down.id];
-                let ok = true;
-                for (let i = 1; i <= armLen; i++) {
-                    const nx = x - i;
-                    if (nx < 0 || !isSameType(center, grid[y][nx])) { ok = false; break; }
-                    ids.push(grid[y][nx].id);
+                if (!stemOk) continue;
+
+                const branchX = x + 2;
+
+                if (y + 2 < ROWS) {
+                    const down1 = grid[y + 1][branchX];
+                    const down2 = grid[y + 2][branchX];
+                    if (isSameType(center, down1) && isSameType(center, down2)) {
+                        addGroup([...stemIds, down1.id, down2.id], 'nova');
+                    }
                 }
-                if (ok) addGroup(ids, 'nova');
+
+                if (y - 2 >= 0) {
+                    const up1 = grid[y - 1][branchX];
+                    const up2 = grid[y - 2][branchX];
+                    if (isSameType(center, up1) && isSameType(center, up2)) {
+                        addGroup([...stemIds, up1.id, up2.id], 'nova');
+                    }
+                }
             }
         }
     }
@@ -377,7 +398,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
         }
     }
 
-    // 3) Line matches: 7+ -> cross, 5-6 -> lightning, 4 -> bomb, 3 -> match
+    // 3) Line matches: 5 -> lightning, 4 -> bomb, 3+ otherwise -> match
     for (let y = 0; y < ROWS; y++) {
         let x = 0;
         while (x < COLS) {
@@ -391,8 +412,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             if (len >= 3) {
                 const ids = [];
                 for (let i = start; i <= end; i++) ids.push(grid[y][i].id);
-                if (len >= 7) addGroup(ids, 'cross');
-                else if (len >= 5) addGroup(ids, 'lightning');
+                if (len === 5) addGroup(ids, 'lightning');
                 else if (len === 4) addGroup(ids, 'bomb');
                 else addGroup(ids, 'match');
             }
@@ -413,8 +433,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             if (len >= 3) {
                 const ids = [];
                 for (let i = start; i <= end; i++) ids.push(grid[i][x].id);
-                if (len >= 7) addGroup(ids, 'cross');
-                else if (len >= 5) addGroup(ids, 'lightning');
+                if (len === 5) addGroup(ids, 'lightning');
                 else if (len === 4) addGroup(ids, 'bomb');
                 else addGroup(ids, 'match');
             }
