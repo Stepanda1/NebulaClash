@@ -29,8 +29,11 @@ function ComboCard({ language, titleRu, titleEn, descRu, descEn, pattern, accent
 
   return (
     <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
-      <div className="flex items-start gap-3">
-        <div className="grid gap-1 rounded-xl border border-white/10 bg-black/20 p-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div
+          className="grid shrink-0 gap-1.5 rounded-xl border border-white/10 bg-black/20 p-2.5"
+          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+        >
           {Array.from({ length: cols * rows }, (_, index) => {
             const x = index % cols;
             const y = Math.floor(index / cols);
@@ -38,7 +41,7 @@ function ComboCard({ language, titleRu, titleEn, descRu, descEn, pattern, accent
             return (
               <div
                 key={index}
-                className={`h-4 w-4 rounded-[4px] border rotate-45 ${
+                className={`h-3.5 w-3.5 rounded-[4px] border rotate-45 sm:h-4 sm:w-4 ${
                   active
                     ? `border-white/35 bg-gradient-to-br ${accent}`
                     : 'border-white/10 bg-white/5'
@@ -174,7 +177,7 @@ export function GameGuideModal({ language, onClose }: GameGuideModalProps) {
               titleEn="Extended T-shape (6-7): Nova"
               descRu="Нова собирается из удлинённой T-формы: длинный стержень и поперечная линия от его центральной части. Ниже показан вариант на 7 элементов."
               descEn="Nova is created from an extended T-shape: a long stem with a crossbar branching from its middle. The diagram below shows the 7-tile version."
-              pattern={[{ x: 2, y: 0 }, { x: 2, y: 1 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 }, { x: 2, y: 3 }, { x: 2, y: 4 }]}
+              pattern={[{ x: 2, y: 0 }, { x: 2, y: 1 }, { x: 2, y: 2 }, { x: 3, y: 2 }, { x: 4, y: 2 }, { x: 2, y: 3 }, { x: 2, y: 4 }]}
               accent="from-yellow-300 to-rose-500"
               cols={5}
               rows={5}
