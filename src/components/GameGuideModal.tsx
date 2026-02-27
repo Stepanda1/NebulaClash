@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Hand, MousePointer2, MoveHorizontal, X } from 'lucide-react';
+import { Hand, MousePointer2, MoveHorizontal, Sparkles, X } from 'lucide-react';
 import type { Language } from '../i18n';
 
 type GameGuideModalProps = {
@@ -7,12 +7,71 @@ type GameGuideModalProps = {
   onClose: () => void;
 };
 
-const GEM_ITEMS = [
-  { src: '/red.png', en: 'Red gem', ru: 'Красный кристалл' },
-  { src: '/blue.png', en: 'Blue gem', ru: 'Синий кристалл' },
-  { src: '/green.png', en: 'Green gem', ru: 'Зелёный кристалл' },
-  { src: '/yellow.png', en: 'Yellow gem', ru: 'Жёлтый кристалл' },
-];
+type GemPreviewProps = {
+  gradient: string;
+  glow: string;
+  label: string;
+};
+
+function GemPreview({ gradient, glow, label }: GemPreviewProps) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-2 text-center">
+      <div className={`mx-auto flex h-14 w-14 rotate-45 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} shadow-[0_0_18px_rgba(0,0,0,0.24)]`}>
+        <div className={`h-7 w-7 rounded-lg border border-white/35 ${glow}`} />
+      </div>
+      <div className="mt-2 text-[11px] text-white/85">{label}</div>
+    </div>
+  );
+}
+
+type PatternDot = {
+  x: number;
+  y: number;
+};
+
+type ComboCardProps = {
+  language: Language;
+  titleRu: string;
+  titleEn: string;
+  descRu: string;
+  descEn: string;
+  pattern: PatternDot[];
+  accent: string;
+  cols?: number;
+  rows?: number;
+};
+
+function ComboCard({ language, titleRu, titleEn, descRu, descEn, pattern, accent, cols = 5, rows = 3 }: ComboCardProps) {
+  const isRu = language === 'ru';
+
+  return (
+    <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
+      <div className="flex items-start gap-3">
+        <div className="grid gap-1 rounded-xl border border-white/10 bg-black/20 p-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+          {Array.from({ length: cols * rows }, (_, index) => {
+            const x = index % cols;
+            const y = Math.floor(index / cols);
+            const active = pattern.some((item) => item.x === x && item.y === y);
+            return (
+              <div
+                key={index}
+                className={`h-4 w-4 rounded-[4px] border rotate-45 ${
+                  active
+                    ? `border-white/35 bg-gradient-to-br ${accent}`
+                    : 'border-white/10 bg-white/5'
+                }`}
+              />
+            );
+          })}
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-cyan-100">{isRu ? titleRu : titleEn}</div>
+          <div className="mt-1 text-xs leading-relaxed text-white/75">{isRu ? descRu : descEn}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function GameGuideModal({ language, onClose }: GameGuideModalProps) {
   const isRu = language === 'ru';
@@ -41,7 +100,7 @@ export function GameGuideModal({ language, onClose }: GameGuideModalProps) {
         <div className="pr-10">
           <h2 className="text-xl font-black">{isRu ? 'Руководство по игре' : 'Game Guide'}</h2>
           <p className="mt-1 text-sm text-white/70">
-            {isRu ? 'Быстрые правила управления и описание элементов.' : 'Quick controls and element reference.'}
+            {isRu ? 'Управление, элементы поля и все основные комбинации.' : 'Controls, board elements, and all main combinations.'}
           </p>
         </div>
 
@@ -61,16 +120,16 @@ export function GameGuideModal({ language, onClose }: GameGuideModalProps) {
               <span className="text-sm font-bold">{isRu ? 'Тап' : 'Tap'}</span>
             </div>
             <p className="text-xs text-white/80">
-              {isRu ? 'Нажмите на спец-элемент (бомба, молния и др.), чтобы активировать эффект.' : 'Tap a special piece (bomb, lightning, etc.) to trigger its effect.'}
+              {isRu ? 'Нажмите на специальный элемент, чтобы активировать его эффект.' : 'Tap a special piece to trigger its effect.'}
             </p>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
             <div className="mb-2 flex items-center gap-2 text-cyan-100">
               <Hand size={16} />
-              <span className="text-sm font-bold">{isRu ? 'Комбо' : 'Combo'}</span>
+              <span className="text-sm font-bold">{isRu ? 'Каскад' : 'Cascade'}</span>
             </div>
             <p className="text-xs text-white/80">
-              {isRu ? 'Цепочки и каскады дают больше очков и быстрее закрывают цель.' : 'Chains and cascades grant more score and complete goals faster.'}
+              {isRu ? 'После взрыва новые совпадения могут собраться сами и дать дополнительный урон/очки.' : 'After a clear, new automatic matches can chain for extra damage and score.'}
             </p>
           </div>
         </div>
@@ -78,17 +137,78 @@ export function GameGuideModal({ language, onClose }: GameGuideModalProps) {
         <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3">
           <div className="text-sm font-bold text-cyan-100">{isRu ? 'Элементы поля' : 'Board Elements'}</div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {GEM_ITEMS.map((item) => (
-              <div key={item.src} className="rounded-xl border border-white/10 bg-black/20 p-2 text-center">
-                <img src={item.src} alt={isRu ? item.ru : item.en} className="mx-auto h-14 w-14 object-contain" />
-                <div className="mt-1 text-[11px] text-white/85">{isRu ? item.ru : item.en}</div>
-              </div>
-            ))}
+            <GemPreview gradient="from-rose-300 via-rose-500 to-red-900" glow="bg-white/20" label={isRu ? 'Красный кристалл' : 'Red Gem'} />
+            <GemPreview gradient="from-sky-300 via-blue-500 to-blue-900" glow="bg-white/20" label={isRu ? 'Синий кристалл' : 'Blue Gem'} />
+            <GemPreview gradient="from-emerald-300 via-emerald-500 to-emerald-900" glow="bg-white/20" label={isRu ? 'Зелёный кристалл' : 'Green Gem'} />
+            <GemPreview gradient="from-yellow-200 via-amber-400 to-amber-800" glow="bg-white/20" label={isRu ? 'Жёлтый кристалл' : 'Yellow Gem'} />
           </div>
           <div className="mt-3 text-xs text-white/75">
             {isRu
-              ? 'Собирайте 4-5 в ряд, чтобы создавать специальные элементы: бомбу, молнию, крест, импульс и нову.'
-              : 'Match 4-5 gems to create special pieces: bomb, lightning, cross, pulse, and nova.'}
+              ? 'Ниже показаны реальные комбинации из логики игры и какие спец-элементы они создают.'
+              : 'The combinations below match the actual in-game logic and show which special piece they create.'}
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3">
+          <div className="mb-3 flex items-center gap-2 text-sm font-bold text-cyan-100">
+            <Sparkles size={16} />
+            {isRu ? 'Комбинации и специальные элементы' : 'Combinations and Special Pieces'}
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            <ComboCard
+              language={language}
+              titleRu="3 в ряд: обычное совпадение"
+              titleEn="3 in a row: Normal Match"
+              descRu="Три одинаковых кристалла подряд просто очищаются и продвигают цель."
+              descEn="Three matching gems in a row simply clear and progress the level goal."
+              pattern={[{ x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }]}
+              accent="from-cyan-300 to-blue-500"
+            />
+            <ComboCard
+              language={language}
+              titleRu="4 в ряд или квадрат 2x2: Бомба"
+              titleEn="4 in a row or 2x2 square: Bomb"
+              descRu="Линия из 4 или квадрат 2x2 создаёт Бомбу. Она взрывает центр и соседние клетки."
+              descEn="A line of 4 or a 2x2 square creates a Bomb. It clears the center and adjacent tiles."
+              pattern={[{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }]}
+              accent="from-amber-300 to-orange-500"
+            />
+            <ComboCard
+              language={language}
+              titleRu="5-6 в линию: Молния"
+              titleEn="5-6 in a line: Lightning"
+              descRu="Длинная прямая линия из 5 или 6 создаёт Молнию. Она очищает целую строку или колонку."
+              descEn="A straight line of 5 or 6 creates Lightning. It clears a full row or column."
+              pattern={[{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }, { x: 4, y: 1 }]}
+              accent="from-sky-300 to-indigo-500"
+            />
+            <ComboCard
+              language={language}
+              titleRu="L-форма или 7+ в линию: Крест"
+              titleEn="L-shape or 7+ in a line: Cross"
+              descRu="L-образная форма из 5 или очень длинная линия 7+ создаёт Крест. Он бьёт по строке и колонке."
+              descEn="An L-shape of 5 or a very long line of 7+ creates Cross. It clears both row and column."
+              pattern={[{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }]}
+              accent="from-fuchsia-300 to-violet-500"
+            />
+            <ComboCard
+              language={language}
+              titleRu="T-форма из 5: Импульс"
+              titleEn="T-shape of 5: Pulse"
+              descRu="Классическая T-форма создаёт Импульс. Он бьёт по зоне вокруг себя."
+              descEn="A classic T-shape creates Pulse. It clears an area around itself."
+              pattern={[{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }, { x: 1, y: 2 }]}
+              accent="from-emerald-300 to-cyan-500"
+            />
+            <ComboCard
+              language={language}
+              titleRu="Расширенная T-форма (6-7): Нова"
+              titleEn="Extended T-shape (6-7): Nova"
+              descRu="Удлинённая T-форма создаёт Нову. Это самый сильный спец-элемент из базовых комбинаций."
+              descEn="An extended T-shape creates Nova. It is the strongest special piece from standard matches."
+              pattern={[{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }, { x: 4, y: 1 }, { x: 1, y: 2 }]}
+              accent="from-yellow-300 to-rose-500"
+            />
           </div>
         </div>
       </motion.div>
