@@ -174,9 +174,9 @@ export function GameGuideModal({ language, onClose }: GameGuideModalProps) {
               titleEn="Extended T-shape (6-7): Nova"
               descRu="Нова собирается из удлинённой T-формы: длинный стержень и поперечная линия от его центральной части. Ниже показан вариант на 7 элементов."
               descEn="Nova is created from an extended T-shape: a long stem with a crossbar branching from its middle. The diagram below shows the 7-tile version."
-              pattern={[{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 0, y: 3 }, { x: 0, y: 4 }]}
+              pattern={[{ x: 2, y: 0 }, { x: 2, y: 1 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 }, { x: 2, y: 3 }, { x: 2, y: 4 }]}
               accent="from-yellow-300 to-rose-500"
-              cols={3}
+              cols={5}
               rows={5}
             />
           </div>
