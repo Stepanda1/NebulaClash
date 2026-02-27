@@ -40,8 +40,8 @@ export function ShopModal({
   const t = COPY[language];
   const coinLabel = language === 'ru' ? 'Космический магазин' : 'Space Shop';
   const boostersLabel = language === 'ru' ? 'Бустеры за монеты' : 'Boosters for coins';
-  const paymentsHintLine1 = language === 'ru' ? 'Онлайн-оплата временно отключена в игре' : 'In-game online payments are temporarily disabled';
-  const paymentsHintLine2 = language === 'ru' ? 'Позже можно подключить другой платежный провайдер.' : 'You can connect another payment provider later.';
+  const paymentsHintLine1 = language === 'ru' ? 'Оплата проходит на защищенной странице провайдера' : 'Payments are processed on a secure provider page';
+  const paymentsHintLine2 = language === 'ru' ? 'После подтверждения монеты начисляются автоматически.' : 'Coins are credited automatically after payment confirmation.';
   const maxPackCoins = Math.max(...packs.map((p) => p.coins), 0);
 
   return (

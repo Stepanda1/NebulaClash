@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Facebook, Instagram, Mail, Send, X } from 'lucide-react';
+import { Facebook, Instagram, Mail, Phone, Send, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
@@ -7,9 +7,14 @@ export type LegalSection = 'offer' | 'privacy' | 'refunds' | 'contacts';
 
 type Contacts = {
   email: string;
+  phone: string;
   telegram: string;
   facebook: string;
   instagram: string;
+  sellerName: string;
+  sellerInn: string;
+  sellerOgrn: string;
+  sellerAddress: string;
 };
 
 type LegalModalProps = {
@@ -37,6 +42,15 @@ export function LegalModal({
       icon: Mail,
       style: 'from-cyan-300 via-sky-400 to-blue-600',
       glow: 'shadow-[0_0_20px_rgba(56,189,248,0.45)]',
+    },
+    {
+      id: 'phone',
+      label: language === 'ru' ? 'Телефон' : 'Phone',
+      href: `tel:${contacts.phone}`,
+      value: contacts.phone,
+      icon: Phone,
+      style: 'from-emerald-300 via-green-500 to-teal-700',
+      glow: 'shadow-[0_0_20px_rgba(16,185,129,0.45)]',
     },
     {
       id: 'telegram',
@@ -89,6 +103,12 @@ export function LegalModal({
               ? 'Космические монеты не являются электронными денежными средствами, не подлежат обмену на рубли и используются только внутри игры.'
               : 'Space Coins are not electronic money, cannot be exchanged for fiat, and are used only in-game.'}
           </p>
+          <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-relaxed text-white/85">
+            <p>{language === 'ru' ? 'Продавец:' : 'Seller:'} {contacts.sellerName}</p>
+            <p>{language === 'ru' ? 'ИНН:' : 'TIN:'} {contacts.sellerInn}</p>
+            <p>{language === 'ru' ? 'ОГРН/ОГРНИП:' : 'OGRN/OGRNIP:'} {contacts.sellerOgrn}</p>
+            <p>{language === 'ru' ? 'Адрес:' : 'Address:'} {contacts.sellerAddress}</p>
+          </div>
         </div>
       );
     }
@@ -142,7 +162,7 @@ export function LegalModal({
     return (
       <div className="space-y-4 text-sm text-white/90">
         <p>{language === 'ru' ? 'Контакты' : 'Contacts'}</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {contactItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -162,6 +182,12 @@ export function LegalModal({
               </a>
             );
           })}
+        </div>
+        <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-relaxed text-white/85">
+          <p>{language === 'ru' ? 'Продавец:' : 'Seller:'} {contacts.sellerName}</p>
+          <p>{language === 'ru' ? 'ИНН:' : 'TIN:'} {contacts.sellerInn}</p>
+          <p>{language === 'ru' ? 'ОГРН/ОГРНИП:' : 'OGRN/OGRNIP:'} {contacts.sellerOgrn}</p>
+          <p>{language === 'ru' ? 'Адрес:' : 'Address:'} {contacts.sellerAddress}</p>
         </div>
       </div>
     );
