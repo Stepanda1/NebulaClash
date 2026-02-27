@@ -91,7 +91,6 @@ function App() {
   const [isMapOpen, setIsMapOpen] = useState(getHasSeenTutorial);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
-  const [legalSection, setLegalSection] = useState<'offer' | 'privacy' | 'refunds' | 'contacts'>('offer');
   const [spaceCoins, setSpaceCoins] = useState(120);
   const [shopNotice, setShopNotice] = useState<string | null>(null);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
@@ -124,8 +123,6 @@ function App() {
   const contactInstagram = import.meta.env.VITE_CONTACT_INSTAGRAM || 'https://instagram.com/your.profile';
   const sellerName = import.meta.env.VITE_SELLER_NAME || 'Козлов Степан Александрович';
   const sellerInn = import.meta.env.VITE_SELLER_INN || '591608402468';
-  const sellerOgrn = import.meta.env.VITE_SELLER_OGRN || 'не применяется (самозанятый)';
-  const sellerAddress = import.meta.env.VITE_SELLER_ADDRESS || 'Пермский край, г Краснокамск, ул Карла Либкнехта, д 3';
   const coinPacks = [
     {
       id: 'pack-120',
@@ -267,8 +264,7 @@ function App() {
     trackEvent('shop_open', { level, coins_balance: spaceCoins, mode: levelConfig.mode });
   };
 
-  const openLegal = (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => {
-    setLegalSection(section);
+  const openLegal = (_section: 'offer' | 'privacy' | 'refunds' | 'contacts') => {
     setIsLegalOpen(true);
   };
 
@@ -951,7 +947,6 @@ function App() {
           {isLegalOpen && (
             <LegalModal
               language={language}
-              section={legalSection}
               contacts={{
                 email: contactEmail,
                 phone: contactPhone,
@@ -960,11 +955,8 @@ function App() {
                 instagram: contactInstagram,
                 sellerName,
                 sellerInn,
-                sellerOgrn,
-                sellerAddress,
               }}
               onClose={() => setIsLegalOpen(false)}
-              onSelectSection={setLegalSection}
             />
           )}
         </AnimatePresence>
@@ -1015,7 +1007,6 @@ function App() {
         {isLegalOpen && (
           <LegalModal
             language={language}
-            section={legalSection}
             contacts={{
               email: contactEmail,
               phone: contactPhone,
@@ -1024,11 +1015,8 @@ function App() {
               instagram: contactInstagram,
               sellerName,
               sellerInn,
-              sellerOgrn,
-              sellerAddress,
             }}
             onClose={() => setIsLegalOpen(false)}
-            onSelectSection={setLegalSection}
           />
         )}
         {isShopOpen && (
