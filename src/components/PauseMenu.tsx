@@ -2,13 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, RotateCcw, Volume2, VolumeX, X, Sparkles, PauseCircle } from 'lucide-react';
 import type { Language } from '../i18n';
+import type { LegalSection } from '../types/legal';
 import { COPY } from '../i18n';
 
 interface PauseMenuProps {
     onResume: () => void;
     onRestart: () => void;
     onClose: () => void;
-    onOpenLegal: (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => void;
+    onOpenLegal: (section: LegalSection) => void;
     isMuted: boolean;
     onToggleMute: () => void;
     volume: number;

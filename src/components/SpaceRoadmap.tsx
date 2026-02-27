@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, Lock, LogOut, Settings, Sparkles, Star, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
+import type { LegalSection } from '../types/legal';
 import { COPY } from '../i18n';
 
 type SpaceRoadmapProps = {
@@ -9,7 +10,7 @@ type SpaceRoadmapProps = {
   onLanguageChange: (language: Language) => void;
   onStartLevel: (level: number) => void;
   onExitGame: () => void;
-  onOpenLegal: (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => void;
+  onOpenLegal: (section: LegalSection) => void;
   levelStars: Record<number, number>;
   isMuted: boolean;
   onToggleMute: () => void;
@@ -327,7 +328,7 @@ export function SpaceRoadmap({
   const endPoint = points[points.length - 1];
   const secondSectorStart = points.find((p) => p.level === 31);
   const secondSectorLabel = language === 'ru' ? 'Локация 2: Квантовый Пояс' : 'Location 2: Quantum Belt';
-  const openLegalFromSettings = (section: 'offer' | 'privacy' | 'refunds' | 'contacts') => {
+  const openLegalFromSettings = (section: LegalSection) => {
     setIsSettingsOpen(false);
     onOpenLegal(section);
   };

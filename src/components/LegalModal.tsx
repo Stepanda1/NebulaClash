@@ -1,23 +1,12 @@
 import { motion } from 'framer-motion';
 import { Facebook, Instagram, Mail, Phone, Send, X } from 'lucide-react';
 import type { Language } from '../i18n';
+import type { LegalContacts } from '../types/legal';
 import { COPY } from '../i18n';
-
-export type LegalSection = 'offer' | 'privacy' | 'refunds' | 'contacts';
-
-type Contacts = {
-  email: string;
-  phone: string;
-  telegram: string;
-  facebook: string;
-  instagram: string;
-  sellerName: string;
-  sellerInn: string;
-};
 
 type LegalModalProps = {
   language: Language;
-  contacts: Contacts;
+  contacts: LegalContacts;
   onClose: () => void;
 };
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { useGame } from './hooks/useGame';
 import { PauseMenu } from './components/PauseMenu';
@@ -15,8 +15,18 @@ import { ShopModal } from './components/ShopModal';
 import { LegalModal } from './components/LegalModal';
 import type { GemType } from './types';
 import type { Language } from './i18n';
+import type { LegalSection } from './types/legal';
 import { COPY } from './i18n';
 import { initAnalytics, trackEvent } from './analytics';
+import { useWallet } from './hooks/useWallet';
+import {
+  BOOSTER_COST,
+  MOVE_BOOST_AMOUNT,
+  TIME_BOOST_SECONDS,
+  TUTORIAL_SEEN_KEY,
+  getCoinPacksFromEnv,
+  getLegalContactsFromEnv,
+} from './config/appConfig';
 
 const GOAL_GEM_STYLE: Record<GemType, string> = {
   red: 'from-rose-300 via-rose-500 to-red-900',
@@ -38,8 +48,6 @@ function GoalGemIcon({ color }: { color: GemType }) {
 
 
 type LevelStarsMap = Record<number, number>;
-const TUTORIAL_SEEN_KEY = 'match3_tutorial_seen';
-const WALLET_TOKEN_KEY = 'match3_wallet_token';
 
 function getHasSeenTutorial(): boolean {
   if (typeof window === 'undefined') return false;
@@ -69,9 +77,6 @@ function getDefaultLanguage(): Language {
 
 function App() {
   const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, levelCrossActivations, levelPulseActivations, levelNovaActivations, levelSmashEvents, comboX5Count, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, goalClearId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
-  const BOOSTER_COST = 30;
-  const MOVE_BOOST_AMOUNT = 5;
-  const TIME_BOOST_SECONDS = 30;
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -91,15 +96,11 @@ function App() {
   const [isMapOpen, setIsMapOpen] = useState(getHasSeenTutorial);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
-  const [spaceCoins, setSpaceCoins] = useState(120);
-  const [shopNotice, setShopNotice] = useState<string | null>(null);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
   const [isLaunchingLevel, setIsLaunchingLevel] = useState(false);
   const [hasSeenTutorial, setHasSeenTutorial] = useState(getHasSeenTutorial);
-  const [walletToken, setWalletToken] = useState('');
-  const [walletReady, setWalletReady] = useState(false);
   const match3Ref = useRef(0);
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
@@ -113,36 +114,10 @@ function App() {
   const analyticsLightningCountRef = useRef(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
-  const walletInitInFlightRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
   const t = COPY[language];
-  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'stepanda3@yandex.ru';
-  const contactPhone = import.meta.env.VITE_CONTACT_PHONE || '+79124869347';
-  const contactTelegram = import.meta.env.VITE_CONTACT_TELEGRAM || 'https://t.me/your_username';
-  const contactFacebook = import.meta.env.VITE_CONTACT_FACEBOOK || 'https://facebook.com/your.profile';
-  const contactInstagram = import.meta.env.VITE_CONTACT_INSTAGRAM || 'https://instagram.com/your.profile';
-  const sellerName = import.meta.env.VITE_SELLER_NAME || 'Козлов Степан Александрович';
-  const sellerInn = import.meta.env.VITE_SELLER_INN || '591608402468';
-  const coinPacks = [
-    {
-      id: 'pack-120',
-      coins: 120,
-      priceLabel: '99 ₽ / $1.19',
-      url: import.meta.env.VITE_SHOP_PACK_SMALL_URL || undefined,
-    },
-    {
-      id: 'pack-300',
-      coins: 300,
-      priceLabel: '199 ₽ / $2.39',
-      url: import.meta.env.VITE_SHOP_PACK_MEDIUM_URL || undefined,
-    },
-    {
-      id: 'pack-800',
-      coins: 800,
-      priceLabel: '499 ₽ / $5.99',
-      url: import.meta.env.VITE_SHOP_PACK_LARGE_URL || undefined,
-    },
-  ];
+  const legalContacts = useMemo(() => getLegalContactsFromEnv(), []);
+  const coinPacks = useMemo(() => getCoinPacksFromEnv(), []);
   const goalAnalyticsValue = levelConfig.goal.type === 'collect_multi'
     ? Object.values(levelConfig.goal.targets).reduce((sum, value) => sum + (value ?? 0), 0)
     : levelConfig.goal.value;
@@ -264,7 +239,7 @@ function App() {
     trackEvent('shop_open', { level, coins_balance: spaceCoins, mode: levelConfig.mode });
   };
 
-  const openLegal = (_section: 'offer' | 'privacy' | 'refunds' | 'contacts') => {
+  const openLegal = (_section: LegalSection) => {
     setIsLegalOpen(true);
   };
 
@@ -272,75 +247,26 @@ function App() {
     ? 'Сервис кошелька временно недоступен'
     : 'Wallet service is temporarily unavailable';
 
-  const syncWalletBalance = async (): Promise<boolean> => {
-    if (!walletToken) return false;
-    try {
-      const response = await fetch('/api/wallet', {
-        headers: {
-          Authorization: `Bearer ${walletToken}`,
-        },
-      });
-      if (!response.ok) return false;
-      const payload = await response.json() as { balance?: number };
-      if (typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
-        setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
-      }
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const spendCoins = async (cost: number): Promise<boolean> => {
-    if (!walletReady || !walletToken) {
-      setShopNotice(walletUnavailableMessage);
-      return false;
-    }
-
-    if (spaceCoins < cost) {
-      setShopNotice(t.notEnoughCoins);
-      return false;
-    }
-
-    try {
-      const response = await fetch('/api/wallet/spend', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${walletToken}`,
-        },
-        body: JSON.stringify({ amount: cost }),
-      });
-
-      const payload = await response.json().catch(() => ({})) as { balance?: number };
-
-      if (response.status === 409) {
-        if (typeof payload.balance === 'number') {
-          setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
-        }
-        setShopNotice(t.notEnoughCoins);
-        return false;
-      }
-
-      if (!response.ok) {
-        setShopNotice(walletUnavailableMessage);
-        await syncWalletBalance();
-        return false;
-      }
-
-      if (typeof payload.balance === 'number') {
-        setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
-      } else {
-        await syncWalletBalance();
-      }
-
-      return true;
-    } catch {
-      setShopNotice(walletUnavailableMessage);
-      await syncWalletBalance();
-      return false;
-    }
-  };
+  const {
+    buyCoinsPack,
+    setShopNotice,
+    shopNotice,
+    spaceCoins,
+    spendCoins,
+    syncWalletBalance,
+  } = useWallet({
+    language,
+    coinPacks,
+    notEnoughCoinsMessage: t.notEnoughCoins,
+    walletUnavailableMessage,
+    shopPackUnavailableMessage: t.shopPackUnavailable,
+    onPaymentStatus: (status) => {
+      trackEvent('shop_payment_status', { status });
+    },
+    onPackCheckout: (packId) => {
+      trackEvent('shop_real_money_click', { pack_id: packId, level, mode: levelConfig.mode });
+    },
+  });
 
   const buyExtraMoves = async () => {
     if (levelConfig.mode !== 'moves' || isLevelUp) return;
@@ -368,44 +294,6 @@ function App() {
     const notice = t.boughtExtraTime(TIME_BOOST_SECONDS);
     setShopNotice(notice);
     trackEvent('shop_spend_coins', { item: 'extra_time', cost: BOOSTER_COST, value: TIME_BOOST_SECONDS, level, mode: levelConfig.mode });
-  };
-
-  const buyCoinsPack = async (packId: string) => {
-    const pack = coinPacks.find((item) => item.id === packId);
-    if (!pack) return;
-
-    if (!walletReady || !walletToken) {
-      setShopNotice(walletUnavailableMessage);
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/payments/robokassa/create-invoice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${walletToken}`,
-        },
-        body: JSON.stringify({ packId }),
-      });
-
-      const payload = await response.json().catch(() => ({})) as { paymentUrl?: string };
-      if (response.ok && payload.paymentUrl) {
-        trackEvent('shop_real_money_click', { pack_id: packId, level, mode: levelConfig.mode });
-        window.location.assign(payload.paymentUrl);
-        return;
-      }
-    } catch {
-      // Fallback to direct provider link if backend invoice is temporarily unavailable.
-    }
-
-    if (pack.url) {
-      window.open(pack.url, '_blank', 'noopener,noreferrer');
-      trackEvent('shop_real_money_click', { pack_id: packId, level, mode: levelConfig.mode });
-      return;
-    }
-
-    setShopNotice(t.shopPackUnavailable);
   };
 
   const onToggleMute = () => {
@@ -455,76 +343,6 @@ function App() {
     setIsMapOpen(true);
   };
 
-
-  useEffect(() => {
-    let isDisposed = false;
-    if (walletInitInFlightRef.current) return;
-
-    walletInitInFlightRef.current = true;
-
-    const initWallet = async () => {
-      try {
-        const savedToken = localStorage.getItem(WALLET_TOKEN_KEY) || '';
-        const response = await fetch('/api/session/init', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(savedToken ? { token: savedToken } : {}),
-        });
-
-        if (!response.ok) {
-          throw new Error('wallet_init_failed');
-        }
-
-        const payload = await response.json() as { token?: string; balance?: number };
-        if (isDisposed) return;
-
-        if (payload.token) {
-          setWalletToken(payload.token);
-          localStorage.setItem(WALLET_TOKEN_KEY, payload.token);
-        }
-
-        if (typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
-          setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
-        }
-
-        setWalletReady(Boolean(payload.token));
-      } catch {
-        if (isDisposed) return;
-        setWalletReady(false);
-        setShopNotice(walletUnavailableMessage);
-      } finally {
-        walletInitInFlightRef.current = false;
-      }
-    };
-
-    void initWallet();
-
-    return () => {
-      isDisposed = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const paymentState = url.searchParams.get('payment');
-    if (!paymentState) return;
-    if (paymentState === 'success' && !walletToken) return;
-
-    if (paymentState === 'success') {
-      setShopNotice(language === 'ru' ? 'Платеж принят, зачисляем монеты...' : 'Payment received, crediting coins...');
-      void syncWalletBalance();
-      trackEvent('shop_payment_status', { status: 'success' });
-    } else if (paymentState === 'fail') {
-      setShopNotice(language === 'ru' ? 'Платеж не завершен' : 'Payment was not completed');
-      trackEvent('shop_payment_status', { status: 'fail' });
-    }
-
-    url.searchParams.delete('payment');
-    url.searchParams.delete('orderId');
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-  }, [language, walletToken]);
 
   useEffect(() => {
     const raw = localStorage.getItem('match3_level_stars');
@@ -947,15 +765,7 @@ function App() {
           {isLegalOpen && (
             <LegalModal
               language={language}
-              contacts={{
-                email: contactEmail,
-                phone: contactPhone,
-                telegram: contactTelegram,
-                facebook: contactFacebook,
-                instagram: contactInstagram,
-                sellerName,
-                sellerInn,
-              }}
+              contacts={legalContacts}
               onClose={() => setIsLegalOpen(false)}
             />
           )}
@@ -1007,15 +817,7 @@ function App() {
         {isLegalOpen && (
           <LegalModal
             language={language}
-            contacts={{
-              email: contactEmail,
-              phone: contactPhone,
-              telegram: contactTelegram,
-              facebook: contactFacebook,
-              instagram: contactInstagram,
-              sellerName,
-              sellerInn,
-            }}
+            contacts={legalContacts}
             onClose={() => setIsLegalOpen(false)}
           />
         )}

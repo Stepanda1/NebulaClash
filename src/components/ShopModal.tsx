@@ -1,14 +1,8 @@
 import { motion } from 'framer-motion';
 import { Coins, Gift, Rocket, Sparkles, Timer, X, Zap } from 'lucide-react';
 import type { Language } from '../i18n';
+import type { ShopPack } from '../types/shop';
 import { COPY } from '../i18n';
-
-export type ShopPack = {
-  id: string;
-  coins: number;
-  priceLabel: string;
-  url?: string;
-};
 
 type ShopModalProps = {
   language: Language;
