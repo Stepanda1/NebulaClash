@@ -82,6 +82,12 @@ export function LegalModal({
   ] as const;
 
   const tabs: LegalSection[] = ['offer', 'privacy', 'refunds', 'contacts'];
+  const legalPdfLinks = [
+    { id: 'offer', label: language === 'ru' ? 'Оферта (PDF)' : 'Offer (PDF)', href: '/LegalDocsPDF/01_Oferta.pdf' },
+    { id: 'privacy', label: language === 'ru' ? 'Конфиденциальность (PDF)' : 'Privacy (PDF)', href: '/LegalDocsPDF/02_Privacy.pdf' },
+    { id: 'refunds', label: language === 'ru' ? 'Возврат (PDF)' : 'Refunds (PDF)', href: '/LegalDocsPDF/03_Refunds.pdf' },
+    { id: 'requisites', label: language === 'ru' ? 'Реквизиты (PDF)' : 'Requisites (PDF)', href: '/LegalDocsPDF/04_Requisites.pdf' },
+  ] as const;
 
   const renderContent = () => {
     if (section === 'offer') {
@@ -188,6 +194,19 @@ export function LegalModal({
           <p>{language === 'ru' ? 'ИНН:' : 'TIN:'} {contacts.sellerInn}</p>
           <p>{language === 'ru' ? 'ОГРН/ОГРНИП:' : 'OGRN/OGRNIP:'} {contacts.sellerOgrn}</p>
           <p>{language === 'ru' ? 'Адрес:' : 'Address:'} {contacts.sellerAddress}</p>
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {legalPdfLinks.map((item) => (
+            <a
+              key={item.id}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl border border-cyan-200/25 bg-cyan-300/10 px-3 py-2 text-center text-xs font-semibold text-cyan-100 transition hover:bg-cyan-300/20"
+            >
+              {item.label}
+            </a>
+          ))}
         </div>
       </div>
     );

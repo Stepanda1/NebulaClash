@@ -78,8 +78,30 @@ function saveState(state) {
 
 function isOriginAllowed(origin) {
   if (!origin) return true;
+  if (origin === 'null') return true;
   if (allowedOrigins.includes('*')) return true;
-  return allowedOrigins.includes(origin);
+  if (allowedOrigins.includes(origin)) return true;
+
+  try {
+    const originUrl = new URL(origin);
+    const host = originUrl.hostname.toLowerCase();
+
+    if (host === 'nebulaclash.com' || host === 'www.nebulaclash.com') {
+      return true;
+    }
+
+    if (host.endsWith('.nebulaclash.com')) {
+      return true;
+    }
+
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
 }
 
 function applyCors(req, res) {

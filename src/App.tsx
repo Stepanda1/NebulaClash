@@ -117,15 +117,15 @@ function App() {
   const walletInitInFlightRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
   const t = COPY[language];
-  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'your-email@example.com';
-  const contactPhone = import.meta.env.VITE_CONTACT_PHONE || '+7 (900) 000-00-00';
+  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'stepanda3@yandex.ru';
+  const contactPhone = import.meta.env.VITE_CONTACT_PHONE || '+79124869347';
   const contactTelegram = import.meta.env.VITE_CONTACT_TELEGRAM || 'https://t.me/your_username';
   const contactFacebook = import.meta.env.VITE_CONTACT_FACEBOOK || 'https://facebook.com/your.profile';
   const contactInstagram = import.meta.env.VITE_CONTACT_INSTAGRAM || 'https://instagram.com/your.profile';
-  const sellerName = import.meta.env.VITE_SELLER_NAME || 'ИП Иванов Иван Иванович';
-  const sellerInn = import.meta.env.VITE_SELLER_INN || '000000000000';
-  const sellerOgrn = import.meta.env.VITE_SELLER_OGRN || '000000000000000';
-  const sellerAddress = import.meta.env.VITE_SELLER_ADDRESS || 'г. Москва, ул. Пример, д. 1';
+  const sellerName = import.meta.env.VITE_SELLER_NAME || 'Козлов Степан Александрович';
+  const sellerInn = import.meta.env.VITE_SELLER_INN || '591608402468';
+  const sellerOgrn = import.meta.env.VITE_SELLER_OGRN || 'не применяется (самозанятый)';
+  const sellerAddress = import.meta.env.VITE_SELLER_ADDRESS || 'Пермский край, г Краснокамск, ул Карла Либкнехта, д 3';
   const coinPacks = [
     {
       id: 'pack-120',
