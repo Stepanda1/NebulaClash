@@ -10,6 +10,7 @@ interface PauseMenuProps {
     onRestart: () => void;
     onClose: () => void;
     onOpenLegal: (section: LegalSection) => void;
+    onOpenGuide: () => void;
     isMuted: boolean;
     onToggleMute: () => void;
     volume: number;
@@ -18,7 +19,7 @@ interface PauseMenuProps {
     onLanguageChange: (language: Language) => void;
 }
 
-export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClose, onOpenLegal, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
+export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClose, onOpenLegal, onOpenGuide, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
     const t = COPY[language];
 
     return (
@@ -124,6 +125,12 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
                 <div className="relative z-10 w-full p-3 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner shadow-black/20">
                     <div className="text-left text-white/80 text-sm font-bold tracking-wide mb-2">{t.legal}</div>
                     <div className="grid grid-cols-1 gap-2">
+                        <button
+                            onClick={onOpenGuide}
+                            className="rounded-xl px-2 py-2 border bg-cyan-300/15 border-cyan-200/25 text-cyan-100 hover:bg-cyan-300/25 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"
+                        >
+                            {language === 'ru' ? 'Руководство' : 'Guide'}
+                        </button>
                         <button
                             onClick={() => onOpenLegal('contacts')}
                             className="rounded-xl px-2 py-2 border bg-white/10 border-white/15 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"

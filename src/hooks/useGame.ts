@@ -29,6 +29,12 @@ type LevelStateSnapshot = {
 const GEM_ROTATION: GemType[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
 const SPECIAL_GOAL_ROTATION: SpecialGoalType[] = ['bomb', 'lightning', 'cross', 'pulse', 'nova'];
 
+function normalizeSpecialGoal(special: SpecialGoalType, value: number): SpecialGoalType {
+    // Product requirement: avoid "Pulse x3" goals.
+    if (special === 'pulse' && value === 3) return 'nova';
+    return special;
+}
+
 function buildLevelConfigs(): LevelConfig[] {
     const levels: LevelConfig[] = [];
 
@@ -80,7 +86,9 @@ function buildLevelConfigs(): LevelConfig[] {
         }
 
         if (phase === 6) {
-            levels.push({ mode: 'moves', limit: inSecondSector ? 23 : 24, goal: { type: 'special', special: SPECIAL_GOAL_ROTATION[(idx + 2) % SPECIAL_GOAL_ROTATION.length], value: inSecondSector ? 4 : 3 } });
+            const value = inSecondSector ? 4 : 3;
+            const special = normalizeSpecialGoal(SPECIAL_GOAL_ROTATION[(idx + 2) % SPECIAL_GOAL_ROTATION.length], value);
+            levels.push({ mode: 'moves', limit: inSecondSector ? 23 : 24, goal: { type: 'special', special, value } });
             continue;
         }
 

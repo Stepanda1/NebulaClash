@@ -11,6 +11,7 @@ type SpaceRoadmapProps = {
   onStartLevel: (level: number) => void;
   onExitGame: () => void;
   onOpenLegal: (section: LegalSection) => void;
+  onOpenGuide: () => void;
   levelStars: Record<number, number>;
   isMuted: boolean;
   onToggleMute: () => void;
@@ -181,6 +182,7 @@ export function SpaceRoadmap({
   onStartLevel,
   onExitGame,
   onOpenLegal,
+  onOpenGuide,
   levelStars,
   isMuted,
   onToggleMute,
@@ -751,6 +753,16 @@ export function SpaceRoadmap({
             </button>
 
             <div className="mt-4 grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSettingsOpen(false);
+                  onOpenGuide();
+                }}
+                className="rounded-xl py-2 border bg-cyan-300/15 border-cyan-200/25 text-cyan-100 hover:bg-cyan-300/25 transition-all active:scale-95 text-xs font-semibold"
+              >
+                {language === 'ru' ? 'Руководство' : 'Guide'}
+              </button>
               <button
                 type="button"
                 onClick={() => openLegalFromSettings('contacts')}

@@ -13,6 +13,7 @@ import { SpaceRoadmap } from './components/SpaceRoadmap';
 import { LevelStartModal } from './components/LevelStartModal';
 import { ShopModal } from './components/ShopModal';
 import { LegalModal } from './components/LegalModal';
+import { GameGuideModal } from './components/GameGuideModal';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import type { LegalSection } from './types/legal';
@@ -96,6 +97,7 @@ function App() {
   const [isMapOpen, setIsMapOpen] = useState(getHasSeenTutorial);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
@@ -241,6 +243,10 @@ function App() {
 
   const openLegal = (_section: LegalSection) => {
     setIsLegalOpen(true);
+  };
+
+  const openGuide = () => {
+    setIsGuideOpen(true);
   };
 
   const walletUnavailableMessage = language === 'ru'
@@ -769,6 +775,12 @@ function App() {
               onClose={() => setIsLegalOpen(false)}
             />
           )}
+          {isGuideOpen && (
+            <GameGuideModal
+              language={language}
+              onClose={() => setIsGuideOpen(false)}
+            />
+          )}
         </AnimatePresence>
         <SpaceRoadmap
           unlockedLevel={unlockedLevel}
@@ -777,6 +789,7 @@ function App() {
           onStartLevel={onStartFromMap}
           onExitGame={onExitGame}
           onOpenLegal={openLegal}
+          onOpenGuide={openGuide}
           levelStars={levelStars}
           isMuted={isMuted}
           onToggleMute={onToggleMute}
@@ -821,6 +834,12 @@ function App() {
             onClose={() => setIsLegalOpen(false)}
           />
         )}
+        {isGuideOpen && (
+          <GameGuideModal
+            language={language}
+            onClose={() => setIsGuideOpen(false)}
+          />
+        )}
         {isShopOpen && (
           <ShopModal
             language={language}
@@ -842,6 +861,7 @@ function App() {
             onRestart={onRestart}
             onClose={() => setIsPaused(false)}
             onOpenLegal={openLegal}
+            onOpenGuide={openGuide}
             isMuted={isMuted}
             onToggleMute={onToggleMute}
             volume={volume}
