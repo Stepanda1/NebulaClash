@@ -122,25 +122,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
 
                 <div className="relative z-10 w-full p-3 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner shadow-black/20">
                     <div className="text-left text-white/80 text-sm font-bold tracking-wide mb-2">{t.legal}</div>
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            onClick={() => onOpenLegal('offer')}
-                            className="rounded-xl px-2 py-2 border bg-white/10 border-white/15 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"
-                        >
-                            {t.offer}
-                        </button>
-                        <button
-                            onClick={() => onOpenLegal('privacy')}
-                            className="rounded-xl px-2 py-2 border bg-white/10 border-white/15 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"
-                        >
-                            {t.privacy}
-                        </button>
-                        <button
-                            onClick={() => onOpenLegal('refunds')}
-                            className="rounded-xl px-2 py-2 border bg-white/10 border-white/15 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"
-                        >
-                            {t.refunds}
-                        </button>
+                    <div className="grid grid-cols-1 gap-2">
                         <button
                             onClick={() => onOpenLegal('contacts')}
                             className="rounded-xl px-2 py-2 border bg-white/10 border-white/15 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"

@@ -749,28 +749,7 @@ export function SpaceRoadmap({
               {t.exitGame}
             </button>
 
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => openLegalFromSettings('offer')}
-                className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs font-semibold"
-              >
-                {t.offer}
-              </button>
-              <button
-                type="button"
-                onClick={() => openLegalFromSettings('privacy')}
-                className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs font-semibold"
-              >
-                {t.privacy}
-              </button>
-              <button
-                type="button"
-                onClick={() => openLegalFromSettings('refunds')}
-                className="rounded-xl py-2 border bg-white/10 border-white/20 text-white/85 hover:bg-white/20 transition-all active:scale-95 text-xs font-semibold"
-              >
-                {t.refunds}
-              </button>
+            <div className="mt-4 grid grid-cols-1 gap-2">
               <button
                 type="button"
                 onClick={() => openLegalFromSettings('contacts')}
