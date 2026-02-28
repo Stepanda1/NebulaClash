@@ -827,7 +827,7 @@ function App() {
             if (v > 0 && isMuted) setIsMuted(false);
           }}
         />
-        <AudioPlayer isMuted={isMuted} volume={volume} />
+        <AudioPlayer isMuted={isMuted} volume={volume} mode="lobby" />
         <AnimatePresence>
           {levelToLaunch !== null && (
             <LevelStartModal
@@ -909,7 +909,7 @@ function App() {
         )}
       </AnimatePresence>
 
-      <AudioPlayer isMuted={isMuted} volume={volume} />
+      <AudioPlayer isMuted={isMuted} volume={volume} mode={isBossLevel ? 'boss' : 'level'} />
       {tutorialActive && (
         <TutorialHint step={tutorialStep} onSkip={onSkipTutorial} language={language} />
       )}
