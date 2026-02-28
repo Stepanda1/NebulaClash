@@ -87,6 +87,8 @@ function App() {
   const [comboFlash, setComboFlash] = useState(false);
   const [bossHitFlash, setBossHitFlash] = useState(false);
   const [bossHitText, setBossHitText] = useState<string | null>(null);
+  const [bossAttackFxActive, setBossAttackFxActive] = useState(false);
+  const [bossAttackFxId, setBossAttackFxId] = useState(0);
   const [goalClearText, setGoalClearText] = useState<string | null>(null);
   const [shakeActive, setShakeActive] = useState(false);
   const [pulseActive, setPulseActive] = useState(false);
@@ -123,6 +125,9 @@ function App() {
   const goalAnalyticsValue = levelConfig.goal.type === 'collect_multi'
     ? Object.values(levelConfig.goal.targets).reduce((sum, value) => sum + (value ?? 0), 0)
     : levelConfig.goal.value;
+  const isBossLevel = levelConfig.goal.type === 'boss';
+  const bossShieldPercent = Math.max(0, Math.min(100, bossMaxHp > 0 ? (bossHp / bossMaxHp) * 100 : 0));
+  const bossAttackLabel = language === 'ru' ? 'Шторм обломков' : 'Debris Burst';
 
   const renderGoalContent = () => {
     if (levelConfig.goal.type === 'collect') {
@@ -183,7 +188,7 @@ function App() {
       return <span>{language === 'ru' ? 'Комбо x4+' : 'Combo x4+'}: {comboX5Count}/{levelConfig.goal.value}</span>;
     }
 
-    if (levelConfig.goal.type === 'boss') {
+    if (isBossLevel) {
       return <span>{language === 'ru' ? 'Босс' : 'Boss'}: {Math.max(0, bossHp)}/{Math.max(1, bossMaxHp)}</span>;
     }
 
@@ -754,6 +759,29 @@ function App() {
   }, [bossHitTick, bossLastHitDamage]);
 
   useEffect(() => {
+    if (!isBossLevel || isPaused || isLevelUp || isMapOpen || isGameOver) {
+      setBossAttackFxActive(false);
+      return;
+    }
+
+    const triggerAttackFx = () => {
+      setBossAttackFxActive(true);
+      setBossAttackFxId((prev) => prev + 1);
+      window.setTimeout(() => setBossAttackFxActive(false), lowPerfMode ? 520 : 1100);
+    };
+
+    const initialDelay = lowPerfMode ? 2600 : 1800;
+    const intervalMs = lowPerfMode ? 5200 : 4200;
+    const startTimer = window.setTimeout(triggerAttackFx, initialDelay);
+    const loopTimer = window.setInterval(triggerAttackFx, intervalMs);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearInterval(loopTimer);
+    };
+  }, [isBossLevel, isPaused, isLevelUp, isMapOpen, isGameOver, lowPerfMode]);
+
+  useEffect(() => {
     if (goalClearId <= 0) return;
     const phrases = language === 'ru'
       ? ['Отлично!', 'Великолепно!', 'Невероятно!', 'Идеально!', 'Космос!']
@@ -925,21 +953,37 @@ function App() {
               <div className="text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase">{t.goal}</div>
               <div className="text-xl sm:text-2xl font-extrabold leading-tight">{renderGoalContent()}</div>
             </div>
-            {levelConfig.goal.type === 'boss' && (
+            {isBossLevel && (
               <div className="relative mt-2 w-full max-w-xs sm:max-w-sm px-2">
                 <div className="relative overflow-hidden rounded-2xl border border-rose-200/60 bg-slate-950/80 px-2 py-2 shadow-[0_0_22px_rgba(244,63,94,0.28)]">
                   {bossHitFlash && !lowPerfMode && (
                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(251,113,133,0.45)_0%,rgba(244,63,94,0.12)_45%,rgba(0,0,0,0)_75%)] animate-[comboFlash_0.24s_ease-out]" />
                   )}
-                  <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-rose-100/85">
-                    <span>{language === 'ru' ? 'Щит босса' : 'Boss Shield'}</span>
-                    <span>{Math.max(0, bossHp)}/{Math.max(1, bossMaxHp)}</span>
-                  </div>
-                  <div className="h-3 rounded-full border border-white/10 bg-white/10 p-[2px]">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-rose-400 via-fuchsia-400 to-violet-400 shadow-[0_0_12px_rgba(244,63,94,0.55)] transition-[width] duration-300"
-                      style={{ width: `${Math.max(0, Math.min(100, bossMaxHp > 0 ? (bossHp / bossMaxHp) * 100 : 0))}%` }}
-                    />
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-11 w-11 shrink-0 rounded-2xl border border-rose-200/30 bg-[radial-gradient(circle_at_50%_35%,rgba(251,113,133,0.4)_0%,rgba(91,33,182,0.3)_35%,rgba(15,23,42,0.96)_100%)] shadow-[inset_0_0_12px_rgba(251,113,133,0.22),0_0_16px_rgba(251,113,133,0.2)]">
+                      <div className="absolute inset-[5px] rounded-xl border border-white/10 bg-black/25" />
+                      <div className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border border-fuchsia-200/30 bg-[radial-gradient(circle,rgba(244,114,182,0.28)_0%,rgba(91,33,182,0.08)_65%,rgba(0,0,0,0)_100%)]" />
+                      <div className={`absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-rose-200/50 bg-[radial-gradient(circle,#fda4af_0%,#fb7185_42%,#7c3aed_100%)] ${bossHitFlash && !lowPerfMode ? 'animate-ping' : ''}`} />
+                      <div className="absolute left-[11px] top-[17px] h-1.5 w-1.5 rounded-full bg-cyan-100 shadow-[0_0_6px_rgba(224,242,254,0.9)]" />
+                      <div className="absolute right-[11px] top-[17px] h-1.5 w-1.5 rounded-full bg-cyan-100 shadow-[0_0_6px_rgba(224,242,254,0.9)]" />
+                      <div className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border border-fuchsia-200/20 animate-[spin_6s_linear_infinite]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.2em] text-rose-100/85">
+                        <span>{language === 'ru' ? 'Щит босса' : 'Boss Shield'}</span>
+                        <span>{Math.max(0, bossHp)}/{Math.max(1, bossMaxHp)}</span>
+                      </div>
+                      <div className="h-3 rounded-full border border-white/10 bg-white/10 p-[2px]">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-rose-400 via-fuchsia-400 to-violet-400 shadow-[0_0_12px_rgba(244,63,94,0.55)] transition-[width] duration-300"
+                          style={{ width: `${bossShieldPercent}%` }}
+                        />
+                      </div>
+                      <div className="mt-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.18em] text-rose-100/60">
+                        <span>{language === 'ru' ? 'Секторная угроза' : 'Sector Threat'}</span>
+                        <span>{bossAttackLabel}</span>
+                      </div>
+                    </div>
                   </div>
                   {bossHitText && !lowPerfMode && (
                     <motion.div
@@ -1003,8 +1047,40 @@ function App() {
           {!lowPerfMode && comboFlash && (
             <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle,rgba(255,255,255,0.45)_0%,rgba(59,130,246,0.15)_40%,rgba(0,0,0,0)_70%)] animate-[comboFlash_0.4s_ease-out]" />
           )}
-          {!lowPerfMode && bossHitFlash && levelConfig.goal.type === 'boss' && (
+          {!lowPerfMode && bossHitFlash && isBossLevel && (
             <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_50%_12%,rgba(251,113,133,0.28)_0%,rgba(139,92,246,0.14)_35%,rgba(0,0,0,0)_70%)] animate-[comboFlash_0.3s_ease-out]" />
+          )}
+          {!lowPerfMode && isBossLevel && (
+            <div className="pointer-events-none absolute inset-x-10 top-0 h-10 rounded-b-[2rem] bg-[radial-gradient(circle_at_50%_0%,rgba(251,113,133,0.25)_0%,rgba(217,70,239,0.08)_40%,rgba(0,0,0,0)_75%)]" />
+          )}
+          {!lowPerfMode && isBossLevel && bossAttackFxActive && (
+            <div key={bossAttackFxId} className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+              <div className="absolute inset-x-8 top-2 rounded-full border border-rose-200/20 bg-rose-300/10 px-3 py-1 text-center text-[9px] font-black uppercase tracking-[0.25em] text-rose-100/80">
+                {bossAttackLabel}
+              </div>
+              {[
+                { left: 16, endX: -14, endY: 118, delay: 0 },
+                { left: 31, endX: 8, endY: 164, delay: 0.06 },
+                { left: 48, endX: -6, endY: 142, delay: 0.1 },
+                { left: 62, endX: 10, endY: 186, delay: 0.14 },
+                { left: 78, endX: -8, endY: 132, delay: 0.18 },
+              ].map((shard, index) => (
+                <motion.div
+                  key={`${bossAttackFxId}-${index}`}
+                  initial={{ x: 0, y: -28, rotate: -18, opacity: 0 }}
+                  animate={{ x: shard.endX, y: shard.endY, rotate: 34, opacity: [0, 0.92, 0.18] }}
+                  transition={{ duration: 0.9, ease: 'easeOut', delay: shard.delay }}
+                  className="absolute top-3 h-2.5 w-6 rounded-full border border-white/15 bg-gradient-to-r from-slate-200/70 via-slate-400/70 to-slate-700/85 shadow-[0_0_10px_rgba(226,232,240,0.18)]"
+                  style={{ left: `${shard.left}%` }}
+                />
+              ))}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.35, 0] }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(251,113,133,0.16)_0%,rgba(30,41,59,0.02)_30%,rgba(0,0,0,0)_60%)]"
+              />
+            </div>
           )}
           {!lowPerfMode && comboText && (
             <motion.div
