@@ -960,13 +960,15 @@ function App() {
                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(251,113,133,0.45)_0%,rgba(244,63,94,0.12)_45%,rgba(0,0,0,0)_75%)] animate-[comboFlash_0.24s_ease-out]" />
                   )}
                   <div className="flex items-center gap-3">
-                    <div className="relative h-11 w-11 shrink-0 rounded-2xl border border-rose-200/30 bg-[radial-gradient(circle_at_50%_35%,rgba(251,113,133,0.4)_0%,rgba(91,33,182,0.3)_35%,rgba(15,23,42,0.96)_100%)] shadow-[inset_0_0_12px_rgba(251,113,133,0.22),0_0_16px_rgba(251,113,133,0.2)]">
-                      <div className="absolute inset-[5px] rounded-xl border border-white/10 bg-black/25" />
-                      <div className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border border-fuchsia-200/30 bg-[radial-gradient(circle,rgba(244,114,182,0.28)_0%,rgba(91,33,182,0.08)_65%,rgba(0,0,0,0)_100%)]" />
-                      <div className={`absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-rose-200/50 bg-[radial-gradient(circle,#fda4af_0%,#fb7185_42%,#7c3aed_100%)] ${bossHitFlash && !lowPerfMode ? 'animate-ping' : ''}`} />
-                      <div className="absolute left-[11px] top-[17px] h-1.5 w-1.5 rounded-full bg-cyan-100 shadow-[0_0_6px_rgba(224,242,254,0.9)]" />
-                      <div className="absolute right-[11px] top-[17px] h-1.5 w-1.5 rounded-full bg-cyan-100 shadow-[0_0_6px_rgba(224,242,254,0.9)]" />
-                      <div className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border border-fuchsia-200/20 animate-[spin_6s_linear_infinite]" />
+                    <div className="relative h-11 w-11 shrink-0 rounded-2xl border border-rose-200/30 bg-[radial-gradient(circle_at_50%_30%,rgba(248,113,113,0.28)_0%,rgba(76,29,149,0.24)_38%,rgba(15,23,42,0.98)_100%)] shadow-[inset_0_0_12px_rgba(251,113,133,0.14),0_0_14px_rgba(251,113,133,0.14)]">
+                      <div className="absolute inset-[5px] rounded-xl border border-white/10 bg-black/30" />
+                      <div className="absolute left-1/2 top-[9px] h-2.5 w-5 -translate-x-1/2 rounded-full border border-rose-200/25 bg-rose-300/10" />
+                      <div className="absolute left-[11px] top-[16px] h-1.5 w-1.5 rounded-full bg-cyan-100 shadow-[0_0_6px_rgba(224,242,254,0.95)]" />
+                      <div className="absolute right-[11px] top-[16px] h-1.5 w-1.5 rounded-full bg-cyan-100 shadow-[0_0_6px_rgba(224,242,254,0.95)]" />
+                      <div className="absolute left-1/2 top-[23px] h-1.5 w-4.5 -translate-x-1/2 rounded-full bg-rose-300/70 shadow-[0_0_6px_rgba(251,113,133,0.5)]" />
+                      <div className="absolute left-[7px] top-[25px] h-2 w-1.5 rotate-[28deg] rounded-full bg-slate-400/70" />
+                      <div className="absolute right-[7px] top-[25px] h-2 w-1.5 -rotate-[28deg] rounded-full bg-slate-400/70" />
+                      <div className={`absolute left-1/2 top-[21px] h-3 w-3 -translate-x-1/2 rounded-full border border-rose-200/35 bg-[radial-gradient(circle,#fda4af_0%,#fb7185_42%,#7c3aed_100%)] ${bossHitFlash && !lowPerfMode ? 'animate-pulse' : ''}`} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.2em] text-rose-100/85">
@@ -1050,36 +1052,28 @@ function App() {
           {!lowPerfMode && bossHitFlash && isBossLevel && (
             <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_50%_12%,rgba(251,113,133,0.28)_0%,rgba(139,92,246,0.14)_35%,rgba(0,0,0,0)_70%)] animate-[comboFlash_0.3s_ease-out]" />
           )}
-          {!lowPerfMode && isBossLevel && (
-            <div className="pointer-events-none absolute inset-x-10 top-0 h-10 rounded-b-[2rem] bg-[radial-gradient(circle_at_50%_0%,rgba(251,113,133,0.25)_0%,rgba(217,70,239,0.08)_40%,rgba(0,0,0,0)_75%)]" />
-          )}
           {!lowPerfMode && isBossLevel && bossAttackFxActive && (
             <div key={bossAttackFxId} className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
               <div className="absolute inset-x-8 top-2 rounded-full border border-rose-200/20 bg-rose-300/10 px-3 py-1 text-center text-[9px] font-black uppercase tracking-[0.25em] text-rose-100/80">
                 {bossAttackLabel}
               </div>
               {[
-                { left: 16, endX: -14, endY: 118, delay: 0 },
-                { left: 31, endX: 8, endY: 164, delay: 0.06 },
-                { left: 48, endX: -6, endY: 142, delay: 0.1 },
-                { left: 62, endX: 10, endY: 186, delay: 0.14 },
-                { left: 78, endX: -8, endY: 132, delay: 0.18 },
+                { left: 18, endX: -18, endY: 122, delay: 0, rotateStart: -22, width: 'w-5' },
+                { left: 32, endX: 12, endY: 166, delay: 0.05, rotateStart: 14, width: 'w-4' },
+                { left: 48, endX: -10, endY: 146, delay: 0.1, rotateStart: -10, width: 'w-6' },
+                { left: 63, endX: 14, endY: 190, delay: 0.15, rotateStart: 22, width: 'w-4' },
+                { left: 79, endX: -12, endY: 136, delay: 0.2, rotateStart: -28, width: 'w-5' },
               ].map((shard, index) => (
                 <motion.div
                   key={`${bossAttackFxId}-${index}`}
-                  initial={{ x: 0, y: -28, rotate: -18, opacity: 0 }}
-                  animate={{ x: shard.endX, y: shard.endY, rotate: 34, opacity: [0, 0.92, 0.18] }}
+                  initial={{ x: 0, y: -24, rotate: shard.rotateStart, opacity: 0 }}
+                  animate={{ x: shard.endX, y: shard.endY, rotate: shard.rotateStart + 48, opacity: [0, 0.96, 0.16] }}
                   transition={{ duration: 0.9, ease: 'easeOut', delay: shard.delay }}
-                  className="absolute top-3 h-2.5 w-6 rounded-full border border-white/15 bg-gradient-to-r from-slate-200/70 via-slate-400/70 to-slate-700/85 shadow-[0_0_10px_rgba(226,232,240,0.18)]"
+                  className={`absolute top-3 h-2.5 ${shard.width} rounded-sm border border-white/15 bg-gradient-to-r from-slate-100/70 via-slate-400/75 to-slate-800/90 shadow-[0_0_10px_rgba(226,232,240,0.18)]`}
                   style={{ left: `${shard.left}%` }}
                 />
               ))}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 0.35, 0] }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-                className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(251,113,133,0.16)_0%,rgba(30,41,59,0.02)_30%,rgba(0,0,0,0)_60%)]"
-              />
+              <div className="absolute left-1/2 top-8 h-7 w-16 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(251,113,133,0.18)_0%,rgba(148,163,184,0.08)_45%,rgba(0,0,0,0)_75%)] blur-sm" />
             </div>
           )}
           {!lowPerfMode && comboText && (
