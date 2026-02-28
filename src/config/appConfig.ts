@@ -7,6 +7,11 @@ export const TIME_BOOST_SECONDS = 30;
 export const TUTORIAL_SEEN_KEY = 'match3_tutorial_seen';
 export const WALLET_TOKEN_KEY = 'match3_wallet_token';
 
+export type MarketingLinks = {
+  installUrl?: string;
+  telegramUrl: string;
+};
+
 export function getLegalContactsFromEnv(): LegalContacts {
   return {
     email: import.meta.env.VITE_CONTACT_EMAIL || 'stepanda3@yandex.ru',
@@ -40,4 +45,14 @@ export function getCoinPacksFromEnv(): ShopPack[] {
       url: import.meta.env.VITE_SHOP_PACK_LARGE_URL || undefined,
     },
   ];
+}
+
+export function getMarketingLinksFromEnv(fallbackTelegram: string): MarketingLinks {
+  const installUrl = (import.meta.env.VITE_INSTALL_URL as string | undefined)?.trim();
+  const telegramUrl = ((import.meta.env.VITE_MARKETING_TELEGRAM_URL as string | undefined)?.trim()) || fallbackTelegram;
+
+  return {
+    installUrl: installUrl || 'https://nebulaclash.com/',
+    telegramUrl,
+  };
 }

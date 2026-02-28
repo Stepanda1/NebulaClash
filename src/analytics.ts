@@ -24,6 +24,9 @@ const POSTHOG_HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?
 let initialized = false;
 let posthogInitialized = false;
 let sessionId: string | null = null;
+let attributionCache: AnalyticsPayload | null = null;
+const UTM_STORAGE_KEY = 'match3_utm_attribution';
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
 const isBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined';
 
@@ -104,6 +107,48 @@ function createSessionId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function readStoredAttribution(): AnalyticsPayload {
+  if (!isBrowser()) return {};
+
+  try {
+    const raw = window.sessionStorage.getItem(UTM_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as AnalyticsPayload;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function getAttributionPayload(): AnalyticsPayload {
+  if (attributionCache) return attributionCache;
+  if (!isBrowser()) {
+    attributionCache = {};
+    return attributionCache;
+  }
+
+  const fromStorage = readStoredAttribution();
+  const url = new URL(window.location.href);
+  const fromUrl: AnalyticsPayload = {};
+
+  UTM_KEYS.forEach((key) => {
+    const value = url.searchParams.get(key);
+    if (value) {
+      fromUrl[key] = value;
+    }
+  });
+
+  attributionCache = Object.keys(fromUrl).length > 0 ? { ...fromStorage, ...fromUrl } : fromStorage;
+
+  try {
+    window.sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(attributionCache));
+  } catch {
+    // Best-effort persistence only.
+  }
+
+  return attributionCache;
+}
+
 export function getSessionId() {
   if (sessionId) return sessionId;
 
@@ -127,6 +172,7 @@ export function getSessionId() {
 export function initAnalytics() {
   if (initialized) return;
 
+  getAttributionPayload();
   initGA4();
   initYandexMetrica();
   initPostHog();
@@ -138,6 +184,7 @@ export function trackEvent(eventName: string, payload: AnalyticsPayload = {}) {
 
   const withSession = {
     session_id: getSessionId(),
+    ...getAttributionPayload(),
     ...payload,
   };
 

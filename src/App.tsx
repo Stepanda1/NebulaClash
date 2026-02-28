@@ -10,10 +10,12 @@ import { Coins, Settings, ShoppingCart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
 import { SpaceRoadmap } from './components/SpaceRoadmap';
+import { MarketingLanding } from './components/MarketingLanding';
 import { LevelStartModal } from './components/LevelStartModal';
 import { ShopModal } from './components/ShopModal';
 import { LegalModal } from './components/LegalModal';
 import { GameGuideModal } from './components/GameGuideModal';
+import { FeedbackModal } from './components/FeedbackModal';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import type { LegalSection } from './types/legal';
@@ -27,6 +29,7 @@ import {
   TUTORIAL_SEEN_KEY,
   getCoinPacksFromEnv,
   getLegalContactsFromEnv,
+  getMarketingLinksFromEnv,
 } from './config/appConfig';
 
 const GOAL_GEM_STYLE: Record<GemType, string> = {
@@ -76,6 +79,17 @@ function getDefaultLanguage(): Language {
   return 'en';
 }
 
+function shouldOpenMarketingLanding(): boolean {
+  if (typeof window === 'undefined') return true;
+  return !window.location.pathname.startsWith('/play');
+}
+
+function replaceAppPath(pathname: string): void {
+  if (typeof window === 'undefined') return;
+  const { search, hash } = window.location;
+  window.history.replaceState(null, '', `${pathname}${search}${hash}`);
+}
+
 function App() {
   const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, levelCrossActivations, levelPulseActivations, levelNovaActivations, levelSmashEvents, comboX5Count, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, goalClearId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
   const [isMuted, setIsMuted] = useState(false);
@@ -96,10 +110,12 @@ function App() {
   const [comboStyle, setComboStyle] = useState<{ color: string; size: string }>({ color: 'text-amber-300', size: 'text-lg sm:text-2xl' });
   const [lowPerfMode, setLowPerfMode] = useState(false);
   const [language, setLanguage] = useState<Language>(getDefaultLanguage);
+  const [isMarketingLandingOpen, setIsMarketingLandingOpen] = useState(shouldOpenMarketingLanding);
   const [isMapOpen, setIsMapOpen] = useState(getHasSeenTutorial);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
@@ -121,6 +137,7 @@ function App() {
   const tutorialActive = showTutorial && level === 1;
   const t = COPY[language];
   const legalContacts = useMemo(() => getLegalContactsFromEnv(), []);
+  const marketingLinks = useMemo(() => getMarketingLinksFromEnv(legalContacts.telegram), [legalContacts]);
   const coinPacks = useMemo(() => getCoinPacksFromEnv(), []);
   const goalAnalyticsValue = levelConfig.goal.type === 'collect_multi'
     ? Object.values(levelConfig.goal.targets).reduce((sum, value) => sum + (value ?? 0), 0)
@@ -333,6 +350,14 @@ function App() {
     if (targetLevel > unlockedLevel) return;
     setLevelToLaunch(targetLevel);
     trackEvent('map_level_selected', { level: targetLevel });
+  };
+
+  const onEnterFromMarketingLanding = () => {
+    setIsMarketingLandingOpen(false);
+    replaceAppPath('/play');
+    if (hasSeenTutorial) {
+      setLevelToLaunch(unlockedLevel);
+    }
   };
 
   const onPlaySelectedLevel = () => {
@@ -792,6 +817,29 @@ function App() {
     return () => clearTimeout(t1);
   }, [goalClearId, language]);
 
+  if (isMarketingLandingOpen) {
+    return (
+      <div className="relative h-full w-full">
+        <AnimatePresence>
+          {isFeedbackOpen && (
+            <FeedbackModal
+              language={language}
+              feedbackEmail={legalContacts.email}
+              onClose={() => setIsFeedbackOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+        <MarketingLanding
+          language={language}
+          marketingLinks={marketingLinks}
+          onPlayNow={onEnterFromMarketingLanding}
+          onOpenFeedback={() => setIsFeedbackOpen(true)}
+        />
+        <AudioPlayer isMuted={isMuted} volume={volume} mode="lobby" />
+      </div>
+    );
+  }
+
   if (isMapOpen) {
     return (
       <div className="relative h-full w-full">
@@ -807,6 +855,13 @@ function App() {
             <GameGuideModal
               language={language}
               onClose={() => setIsGuideOpen(false)}
+            />
+          )}
+          {isFeedbackOpen && (
+            <FeedbackModal
+              language={language}
+              feedbackEmail={legalContacts.email}
+              onClose={() => setIsFeedbackOpen(false)}
             />
           )}
         </AnimatePresence>
@@ -866,6 +921,13 @@ function App() {
           <GameGuideModal
             language={language}
             onClose={() => setIsGuideOpen(false)}
+          />
+        )}
+        {isFeedbackOpen && (
+          <FeedbackModal
+            language={language}
+            feedbackEmail={legalContacts.email}
+            onClose={() => setIsFeedbackOpen(false)}
           />
         )}
         {isShopOpen && (
