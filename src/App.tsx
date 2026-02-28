@@ -127,7 +127,7 @@ function App() {
     : levelConfig.goal.value;
   const isBossLevel = levelConfig.goal.type === 'boss';
   const bossShieldPercent = Math.max(0, Math.min(100, bossMaxHp > 0 ? (bossHp / bossMaxHp) * 100 : 0));
-  const bossAttackLabel = language === 'ru' ? 'Шторм обломков' : 'Debris Burst';
+  const bossAttackLabel = language === 'ru' ? 'Мусор после хода' : 'Debris After Move';
 
   const renderGoalContent = () => {
     if (levelConfig.goal.type === 'collect') {

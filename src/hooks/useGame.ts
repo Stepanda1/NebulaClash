@@ -28,6 +28,7 @@ type LevelStateSnapshot = {
 
 const GEM_ROTATION: GemType[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
 const SPECIAL_GOAL_ROTATION: SpecialGoalType[] = ['bomb', 'lightning', 'cross', 'pulse', 'nova'];
+const BOSS_DEBRIS_CAP = 14;
 
 function normalizeSpecialGoal(special: SpecialGoalType, value: number): SpecialGoalType {
     // Product requirement: avoid "Pulse x3" goals.
@@ -46,10 +47,11 @@ function buildLevelConfigs(): LevelConfig[] {
         const inSecondSector = level > 30;
 
         if (phase === 9) {
+            const baseBossHp = inSecondSector ? 170 + Math.floor((level - 30) * 2) : 120 + idx * 2;
             levels.push({
                 mode: 'moves',
                 limit: inSecondSector ? 28 : 26,
-                goal: { type: 'boss', value: inSecondSector ? 170 + Math.floor((level - 30) * 2) : 120 + idx * 2 },
+                goal: { type: 'boss', value: Math.floor(baseBossHp * 1.2) },
             });
             continue;
         }
@@ -455,6 +457,7 @@ export const useGame = () => {
         damage += overflow;
         damage += Math.min(6, Math.floor(totalRemoved.size / 4));
         damage += Math.min(4, comboChainIndex);
+        damage = Math.max(1, Math.floor(damage * 0.85));
 
         if (damage <= 0) return;
 
@@ -496,6 +499,46 @@ export const useGame = () => {
         };
         return newGrid;
     }, []);
+
+    const applyBossDebrisPressure = useCallback((baseGrid: Grid): Grid => {
+        if (goal.type !== 'boss' || bossHp <= 0) return baseGrid;
+
+        let existingTrash = 0;
+        const candidates: Tile[] = [];
+        for (let y = 1; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = baseGrid[y][x];
+                if (tile.hasTrash) {
+                    existingTrash += 1;
+                    continue;
+                }
+                candidates.push(tile);
+            }
+        }
+
+        const freeSlots = Math.max(0, BOSS_DEBRIS_CAP - existingTrash);
+        if (freeSlots <= 0 || candidates.length === 0) return baseGrid;
+
+        const hpRatio = bossMaxHp > 0 ? bossHp / bossMaxHp : 0;
+        const desiredSpawn = hpRatio <= 0.35 ? 3 : hpRatio <= 0.7 ? 2 : 1;
+        const spawnCount = Math.min(desiredSpawn, freeSlots, candidates.length);
+        if (spawnCount <= 0) return baseGrid;
+
+        const shuffled = [...candidates];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+
+        const nextGrid = copyGrid(baseGrid);
+        for (let i = 0; i < spawnCount; i++) {
+            const pick = shuffled[i];
+            nextGrid[pick.y][pick.x] = { ...nextGrid[pick.y][pick.x], hasTrash: true };
+        }
+
+        if (hasPossibleMoves(nextGrid)) return nextGrid;
+        return reshuffleBoard(nextGrid);
+    }, [bossHp, bossMaxHp, goal.type]);
 
     const applyComboRewards = useCallback(async (baseGrid: Grid, comboCount: number, includePlayerMove: boolean = true): Promise<Grid> => {
         let activeGrid = baseGrid;
@@ -1034,6 +1077,10 @@ export const useGame = () => {
                 const t2 = findTileById(nextGrid, secondTile.id);
                 if (t1 && t2) {
                     await activateSpecialCombo(nextGrid, [t1, t2]);
+                    const pressuredGrid = applyBossDebrisPressure(gridRef.current);
+                    if (pressuredGrid !== gridRef.current) {
+                        setGrid(pressuredGrid);
+                    }
                 } else {
                     setIsProcessing(false);
                 }
@@ -1046,6 +1093,10 @@ export const useGame = () => {
                     setIsProcessing(false);
                     return;
                 }
+                const pressuredGrid = applyBossDebrisPressure(gridRef.current);
+                if (pressuredGrid !== gridRef.current) {
+                    setGrid(pressuredGrid);
+                }
                 setIsProcessing(false);
             }
             return;
@@ -1057,6 +1108,10 @@ export const useGame = () => {
             setValidMoves(v => v + 1);
             setIsProcessing(true);
             await processBoard(nextGrid);
+            const pressuredGrid = applyBossDebrisPressure(gridRef.current);
+            if (pressuredGrid !== gridRef.current) {
+                setGrid(pressuredGrid);
+            }
         } else {
             setIsProcessing(true);
             await new Promise(r => setTimeout(r, 300));
