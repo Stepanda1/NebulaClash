@@ -92,69 +92,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
         }
     };
 
-    // 0) Highest priority: extended T-shapes (6-7) -> nova
-    // Nova should win over any overlapping pulse/cross/bomb/line result.
-    for (let y = 0; y < ROWS; y++) {
-        for (let x = 1; x < COLS - 1; x++) {
-            const center = grid[y][x];
-            const left = grid[y][x - 1];
-            const right = grid[y][x + 1];
-            if (!isSameType(center, left) || !isSameType(center, right)) continue;
-
-            for (const stemLen of [3, 4]) {
-                const ids = [center.id, left.id, right.id];
-                let ok = true;
-                for (let i = 1; i <= stemLen; i++) {
-                    const ny = y + i;
-                    if (ny >= ROWS || !isSameType(center, grid[ny][x])) { ok = false; break; }
-                    ids.push(grid[ny][x].id);
-                }
-                if (ok) addGroup(ids, 'nova');
-            }
-
-            for (const stemLen of [3, 4]) {
-                const ids = [center.id, left.id, right.id];
-                let ok = true;
-                for (let i = 1; i <= stemLen; i++) {
-                    const ny = y - i;
-                    if (ny < 0 || !isSameType(center, grid[ny][x])) { ok = false; break; }
-                    ids.push(grid[ny][x].id);
-                }
-                if (ok) addGroup(ids, 'nova');
-            }
-        }
-    }
-    for (let x = 0; x < COLS; x++) {
-        for (let y = 1; y < ROWS - 1; y++) {
-            const center = grid[y][x];
-            const up = grid[y - 1][x];
-            const down = grid[y + 1][x];
-            if (!isSameType(center, up) || !isSameType(center, down)) continue;
-
-            for (const armLen of [3, 4]) {
-                const ids = [center.id, up.id, down.id];
-                let ok = true;
-                for (let i = 1; i <= armLen; i++) {
-                    const nx = x + i;
-                    if (nx >= COLS || !isSameType(center, grid[y][nx])) { ok = false; break; }
-                    ids.push(grid[y][nx].id);
-                }
-                if (ok) addGroup(ids, 'nova');
-            }
-            for (const armLen of [3, 4]) {
-                const ids = [center.id, up.id, down.id];
-                let ok = true;
-                for (let i = 1; i <= armLen; i++) {
-                    const nx = x - i;
-                    if (nx < 0 || !isSameType(center, grid[y][nx])) { ok = false; break; }
-                    ids.push(grid[y][nx].id);
-                }
-                if (ok) addGroup(ids, 'nova');
-            }
-        }
-    }
-
-    // 1) Strong shapes next: T/L patterns should win over weaker square/line bombs.
+    // 1) Strong shapes next: T/L/Nova patterns should win over weaker square/line bombs.
     // T-shapes (5) -> pulse
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS - 2; x++) {
@@ -216,7 +154,7 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
         }
     }
 
-    // 1b) Extended T-shapes (6-7) -> nova
+    // 1b) Guide-aligned extended T-shapes (6-7) -> nova
     // Supported forms:
     // - Vertical stem of 4/5 with a 2-cell arm branching from the 3rd cell
     // - Horizontal stem of 4/5 with a 2-cell arm branching from the 3rd cell
