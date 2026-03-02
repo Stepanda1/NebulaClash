@@ -53,6 +53,13 @@ function GoalGemIcon({ color }: { color: GemType }) {
 
 type LevelStarsMap = Record<number, number>;
 
+const PROGRESS_RESET_VERSION = 2;
+const UNLOCKED_LEVEL_STORAGE_KEY = `match3_unlocked_level_v${PROGRESS_RESET_VERSION}`;
+const LEVEL_STARS_STORAGE_KEY = `match3_level_stars_v${PROGRESS_RESET_VERSION}`;
+const LEGACY_UNLOCKED_LEVEL_STORAGE_KEY = 'match3_unlocked_level';
+const LEGACY_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars';
+const PROGRESS_RESET_MARKER_KEY = `match3_progress_reset_applied_v${PROGRESS_RESET_VERSION}`;
+
 function getHasSeenTutorial(): boolean {
   if (typeof window === 'undefined') return false;
   return window.localStorage.getItem(TUTORIAL_SEEN_KEY) === '1';
@@ -381,7 +388,12 @@ function App() {
 
 
   useEffect(() => {
-    const raw = localStorage.getItem('match3_level_stars');
+    if (localStorage.getItem(PROGRESS_RESET_MARKER_KEY) !== '1') {
+      localStorage.removeItem(LEGACY_UNLOCKED_LEVEL_STORAGE_KEY);
+      localStorage.removeItem(LEGACY_LEVEL_STARS_STORAGE_KEY);
+      localStorage.setItem(PROGRESS_RESET_MARKER_KEY, '1');
+    }
+    const raw = localStorage.getItem(LEVEL_STARS_STORAGE_KEY);
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw) as Record<string, number>;
@@ -399,7 +411,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const savedUnlocked = localStorage.getItem('match3_unlocked_level');
+    const savedUnlocked = localStorage.getItem(UNLOCKED_LEVEL_STORAGE_KEY);
     const parsed = Number(savedUnlocked);
     if (Number.isFinite(parsed) && parsed >= 1) {
       setUnlockedLevel(Math.floor(parsed));
@@ -407,10 +419,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('match3_unlocked_level', String(unlockedLevel));
+    localStorage.setItem(UNLOCKED_LEVEL_STORAGE_KEY, String(unlockedLevel));
   }, [unlockedLevel]);
   useEffect(() => {
-    localStorage.setItem('match3_level_stars', JSON.stringify(levelStars));
+    localStorage.setItem(LEVEL_STARS_STORAGE_KEY, JSON.stringify(levelStars));
   }, [levelStars]);
 
   useEffect(() => {
