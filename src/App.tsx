@@ -1086,8 +1086,11 @@ function App() {
             title={language === 'ru' ? 'Пополнить монеты' : 'Add coins'}
             aria-label={language === 'ru' ? 'Пополнить монеты' : 'Add coins'}
           >
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-emerald-200/40 bg-emerald-400 text-[10px] font-black leading-none text-emerald-950 shadow-[0_0_10px_rgba(74,222,128,0.35)]">
-              +
+            <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-emerald-200/50 bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.38)]">
+              <span className="relative block h-2.5 w-2.5">
+                <span className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 rounded-full bg-emerald-950" />
+                <span className="absolute left-0 top-1/2 h-[2px] w-full -translate-y-1/2 rounded-full bg-emerald-950" />
+              </span>
             </span>
             <span className="relative inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#fde68a_0%,#fbbf24_42%,#f59e0b_72%,#d97706_100%)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.45),inset_0_-1px_2px_rgba(146,64,14,0.28),0_1px_6px_rgba(251,146,60,0.35)]">
               <span className="absolute left-[3px] top-[2px] h-1 w-1.5 rounded-full bg-white/35 blur-[0.4px]" />
