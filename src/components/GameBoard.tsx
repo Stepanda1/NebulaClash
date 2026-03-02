@@ -98,6 +98,153 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         return null;
     }, [grid, showTutorial, isProcessing, isLevelTransition, tutorialStep]);
 
+    const boardContent = (
+        <>
+            {!lowPerfMode && (
+                <div
+                    className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                    style={{
+                        backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+                        backgroundSize: `${ITEM_SIZE}px ${ITEM_SIZE}px`
+                    }}
+                />
+            )}
+            <AnimatePresence mode={lowPerfMode ? "sync" : "popLayout"}>
+                {tiles.filter(t => t.type).map(tile => (
+                    <TileComponent
+                        key={tile.id}
+                        tile={tile}
+                        isSelected={selectedTile?.id === tile.id}
+                        isExploding={explodingIds.has(tile.id)}
+                        isMobile={isMobile}
+                        isLevelTransition={isLevelTransition}
+                        lowPerfMode={lowPerfMode}
+                        onClick={() => onTileClick(tile)}
+                        onPointerDown={(t) => {
+                            draggingRef.current = true;
+                            dragStartRef.current = t;
+                        }}
+                        onPointerEnter={(t) => {
+                            if (!draggingRef.current) return;
+                            const start = dragStartRef.current;
+                            if (!start || start.id === t.id) return;
+                            const dx = Math.abs(t.x - start.x);
+                            const dy = Math.abs(t.y - start.y);
+                            if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+                                draggingRef.current = false;
+                                dragStartRef.current = null;
+                                onTileSwipe(start, t);
+                            }
+                        }}
+                        onPointerUp={() => {
+                            draggingRef.current = false;
+                            dragStartRef.current = null;
+                        }}
+                        size={ITEM_SIZE}
+                    />
+                ))}
+            </AnimatePresence>
+            {!lowPerfMode && hint && (
+                <div className="absolute inset-0 pointer-events-none">
+                    <motion.div
+                        className="absolute rounded-2xl border-2 border-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.8)]"
+                        style={{
+                            left: hint.from.x * ITEM_SIZE,
+                            top: hint.from.y * ITEM_SIZE,
+                            width: ITEM_SIZE,
+                            height: ITEM_SIZE,
+                        }}
+                        animate={{ scale: [1, 1.08, 1] }}
+                        transition={{ duration: 1.2, repeat: Infinity }}
+                    />
+                    <motion.div
+                        className="absolute rounded-2xl border-2 border-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.8)]"
+                        style={{
+                            left: hint.to.x * ITEM_SIZE,
+                            top: hint.to.y * ITEM_SIZE,
+                            width: ITEM_SIZE,
+                            height: ITEM_SIZE,
+                        }}
+                        animate={{ scale: [1, 1.08, 1] }}
+                        transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
+                    />
+                    <motion.div
+                        className="absolute z-50 text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
+                        style={{
+                            left: Math.max(6, Math.min(BOARD_WIDTH - 60, (hint.from.x + hint.to.x) * ITEM_SIZE * 0.5 - 30)),
+                            top: Math.max(6, Math.min(BOARD_HEIGHT - 22, Math.min(hint.from.y, hint.to.y) * ITEM_SIZE - 18)),
+                        }}
+                        animate={{ opacity: [0.6, 1, 0.6] }}
+                        transition={{ duration: 1.2, repeat: Infinity }}
+                    >
+                        {t.swipe}
+                    </motion.div>
+                </div>
+            )}
+            {lowPerfMode && hint && (
+                <div className="absolute inset-0 pointer-events-none">
+                    <div
+                        className="absolute rounded-2xl border-2 border-yellow-300/85"
+                        style={{
+                            left: hint.from.x * ITEM_SIZE,
+                            top: hint.from.y * ITEM_SIZE,
+                            width: ITEM_SIZE,
+                            height: ITEM_SIZE,
+                        }}
+                    />
+                    <div
+                        className="absolute rounded-2xl border-2 border-cyan-300/85"
+                        style={{
+                            left: hint.to.x * ITEM_SIZE,
+                            top: hint.to.y * ITEM_SIZE,
+                            width: ITEM_SIZE,
+                            height: ITEM_SIZE,
+                        }}
+                    />
+                </div>
+            )}
+            {!lowPerfMode && bombHint && (
+                <div className="absolute inset-0 pointer-events-none">
+                    <motion.div
+                        className="absolute rounded-2xl border-2 border-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.8)]"
+                        style={{
+                            left: bombHint.x * ITEM_SIZE,
+                            top: bombHint.y * ITEM_SIZE,
+                            width: ITEM_SIZE,
+                            height: ITEM_SIZE,
+                        }}
+                        animate={{ scale: [1, 1.08, 1] }}
+                        transition={{ duration: 1.2, repeat: Infinity }}
+                    />
+                    <motion.div
+                        className="absolute z-50 text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
+                        style={{
+                            left: Math.max(6, Math.min(BOARD_WIDTH - 80, bombHint.x * ITEM_SIZE - 10)),
+                            top: Math.max(6, Math.min(BOARD_HEIGHT - 22, bombHint.y * ITEM_SIZE - 20)),
+                        }}
+                        animate={{ opacity: [0.6, 1, 0.6] }}
+                        transition={{ duration: 1.2, repeat: Infinity }}
+                    >
+                        {t.doubleTap}
+                    </motion.div>
+                </div>
+            )}
+            {lowPerfMode && bombHint && (
+                <div className="absolute inset-0 pointer-events-none">
+                    <div
+                        className="absolute rounded-2xl border-2 border-yellow-300/85"
+                        style={{
+                            left: bombHint.x * ITEM_SIZE,
+                            top: bombHint.y * ITEM_SIZE,
+                            width: ITEM_SIZE,
+                            height: ITEM_SIZE,
+                        }}
+                    />
+                </div>
+            )}
+        </>
+    );
+
     return (
         <div
             className={`relative bg-black/60 ${lowPerfMode ? '' : 'backdrop-blur-xl'} rounded-2xl border border-white/10 ${lowPerfMode ? 'shadow-lg' : 'shadow-2xl'} overflow-hidden touch-none`}
@@ -134,112 +281,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                 });
             }}
         >
-            {/* Very Subtle Checkered Pattern */}
-            <div
-                className="absolute inset-0 opacity-[0.02] pointer-events-none"
-                style={{
-                    backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                    backgroundSize: `${ITEM_SIZE}px ${ITEM_SIZE}px`
-                }}
-            />
-            <AnimatePresence mode={lowPerfMode ? "sync" : "popLayout"}>
-                {tiles.filter(t => t.type).map(tile => (
-                    <TileComponent
-                        key={tile.id}
-                        tile={tile}
-                        isSelected={selectedTile?.id === tile.id}
-                        isExploding={explodingIds.has(tile.id)}
-                        isMobile={isMobile}
-                        isLevelTransition={isLevelTransition}
-                        lowPerfMode={lowPerfMode}
-                        onClick={() => onTileClick(tile)}
-                        onPointerDown={(t) => {
-                            draggingRef.current = true;
-                            dragStartRef.current = t;
-                        }}
-                        onPointerEnter={(t) => {
-                            if (!draggingRef.current) return;
-                            const start = dragStartRef.current;
-                            if (!start || start.id === t.id) return;
-                            const dx = Math.abs(t.x - start.x);
-                            const dy = Math.abs(t.y - start.y);
-                            if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-                                draggingRef.current = false;
-                                dragStartRef.current = null;
-                                onTileSwipe(start, t);
-                            }
-                        }}
-                        onPointerUp={() => {
-                            draggingRef.current = false;
-                            dragStartRef.current = null;
-                        }}
-                        size={ITEM_SIZE}
-                    />
-                ))}
-            </AnimatePresence>
-            {hint && (
-                <div className="absolute inset-0 pointer-events-none">
-                    <motion.div
-                        className="absolute rounded-2xl border-2 border-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.8)]"
-                        style={{
-                            left: hint.from.x * ITEM_SIZE,
-                            top: hint.from.y * ITEM_SIZE,
-                            width: ITEM_SIZE,
-                            height: ITEM_SIZE,
-                        }}
-                        animate={lowPerfMode ? { opacity: 0.95 } : { scale: [1, 1.08, 1] }}
-                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
-                    />
-                    <motion.div
-                        className="absolute rounded-2xl border-2 border-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.8)]"
-                        style={{
-                            left: hint.to.x * ITEM_SIZE,
-                            top: hint.to.y * ITEM_SIZE,
-                            width: ITEM_SIZE,
-                            height: ITEM_SIZE,
-                        }}
-                        animate={lowPerfMode ? { opacity: 0.95 } : { scale: [1, 1.08, 1] }}
-                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity, delay: 0.2 }}
-                    />
-                    <motion.div
-                        className="absolute z-50 text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
-                        style={{
-                            left: Math.max(6, Math.min(BOARD_WIDTH - 60, (hint.from.x + hint.to.x) * ITEM_SIZE * 0.5 - 30)),
-                            top: Math.max(6, Math.min(BOARD_HEIGHT - 22, Math.min(hint.from.y, hint.to.y) * ITEM_SIZE - 18)),
-                        }}
-                        animate={lowPerfMode ? { opacity: 0.95 } : { opacity: [0.6, 1, 0.6] }}
-                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
-                    >
-                        {t.swipe}
-                    </motion.div>
-                </div>
-            )}
-            {bombHint && (
-                <div className="absolute inset-0 pointer-events-none">
-                    <motion.div
-                        className="absolute rounded-2xl border-2 border-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.8)]"
-                        style={{
-                            left: bombHint.x * ITEM_SIZE,
-                            top: bombHint.y * ITEM_SIZE,
-                            width: ITEM_SIZE,
-                            height: ITEM_SIZE,
-                        }}
-                        animate={lowPerfMode ? { opacity: 0.95 } : { scale: [1, 1.08, 1] }}
-                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
-                    />
-                    <motion.div
-                        className="absolute z-50 text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
-                        style={{
-                            left: Math.max(6, Math.min(BOARD_WIDTH - 80, bombHint.x * ITEM_SIZE - 10)),
-                            top: Math.max(6, Math.min(BOARD_HEIGHT - 22, bombHint.y * ITEM_SIZE - 20)),
-                        }}
-                        animate={lowPerfMode ? { opacity: 0.95 } : { opacity: [0.6, 1, 0.6] }}
-                        transition={lowPerfMode ? undefined : { duration: 1.2, repeat: Infinity }}
-                    >
-                        {t.doubleTap}
-                    </motion.div>
-                </div>
-            )}
+            {boardContent}
         </div>
     );
 };

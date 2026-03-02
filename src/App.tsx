@@ -560,9 +560,11 @@ function App() {
   useEffect(() => {
     const nav = navigator as Navigator & { deviceMemory?: number };
     const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+    const compactViewport = window.innerWidth <= 640;
     const lowMemory = (nav.deviceMemory ?? 8) <= 4;
     const lowCpu = (nav.hardwareConcurrency ?? 8) <= 4;
-    setLowPerfMode(prefersReduced || lowMemory || lowCpu);
+    setLowPerfMode(prefersReduced || lowMemory || lowCpu || coarsePointer || compactViewport);
   }, []);
 
   useEffect(() => {

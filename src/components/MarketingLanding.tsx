@@ -79,6 +79,17 @@ export function MarketingLanding({
               <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
               {language === 'ru' ? 'Boss Match-3' : 'Boss Match-3'}
             </div>
+            <div className="mb-4 flex items-center justify-center">
+              <div className="relative h-24 w-24">
+                <div className="absolute inset-0 rounded-full border border-cyan-200/25 bg-[radial-gradient(circle_at_35%_32%,rgba(255,255,255,0.2),rgba(56,189,248,0.12)_34%,rgba(8,47,73,0.08)_60%,rgba(0,0,0,0)_78%)]" />
+                <div className="absolute inset-[10px] rounded-full border border-fuchsia-200/20 bg-slate-950/35" />
+                <div className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-2xl border border-cyan-100/25 bg-[linear-gradient(135deg,rgba(34,211,238,0.35),rgba(59,130,246,0.15),rgba(168,85,247,0.28))] shadow-[0_0_22px_rgba(34,211,238,0.18)]" />
+                <div className="absolute left-1/2 top-1/2 h-[2px] w-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-transparent via-cyan-200/55 to-transparent" />
+                <div className="absolute left-1/2 top-1/2 h-14 w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-transparent via-fuchsia-200/45 to-transparent" />
+                <div className="absolute left-[16px] top-[18px] h-2.5 w-2.5 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.8)]" />
+                <div className="absolute bottom-[16px] right-[18px] h-2 w-2 rounded-full bg-fuchsia-300 shadow-[0_0_10px_rgba(244,114,182,0.75)]" />
+              </div>
+            </div>
             <div className="max-w-[84%] text-3xl font-black leading-tight text-white">
               {language === 'ru' ? 'Play Now' : 'Play Now'}
             </div>
