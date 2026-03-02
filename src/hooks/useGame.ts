@@ -513,6 +513,9 @@ export const useGame = () => {
     const runVictoryMoveBonus = useCallback(async (startGrid: Grid, blasts: number): Promise<Grid> => {
         let activeGrid = copyGrid(startGrid);
         const totalBlasts = Math.max(0, Math.floor(blasts));
+        let remainingCounter = levelConfig.mode === 'moves'
+            ? Math.max(0, moves)
+            : Math.max(0, timeLeft);
 
         for (let i = 0; i < totalBlasts; i++) {
             const candidates: Tile[] = [];
@@ -548,8 +551,24 @@ export const useGame = () => {
             countSpecialGoalActivations(activeGrid, affected);
             clearTrashByImpact(activeGrid, affected);
             setScore(prev => prev + affected.size * 14 + 40);
+            if (levelConfig.mode === 'moves') {
+                remainingCounter = Math.max(0, remainingCounter - 1);
+                setMoves(remainingCounter);
+            } else {
+                const blastsLeft = Math.max(1, totalBlasts - i);
+                const decrement = Math.max(1, Math.ceil(remainingCounter / blastsLeft));
+                remainingCounter = Math.max(0, remainingCounter - decrement);
+                setTimeLeft(remainingCounter);
+            }
 
             activeGrid = await runRemovalAndGravity(activeGrid, affected, { remove: 120, gravity: 150 });
+        }
+
+        if (levelConfig.mode === 'moves' && remainingCounter !== 0) {
+            setMoves(0);
+        }
+        if (levelConfig.mode === 'time' && remainingCounter !== 0) {
+            setTimeLeft(0);
         }
 
         setExplodingIds(new Set());
@@ -559,7 +578,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         return activeGrid;
-    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, runRemovalAndGravity]);
+    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, levelConfig.mode, moves, runRemovalAndGravity, timeLeft]);
 
     const processBoard = useCallback(async (currentGrid: Grid) => {
         setIsProcessing(true);
