@@ -832,6 +832,7 @@ function App() {
         <MarketingLanding
           language={language}
           marketingLinks={marketingLinks}
+          contacts={legalContacts}
           onPlayNow={onEnterFromMarketingLanding}
           onOpenFeedback={() => setIsFeedbackOpen(true)}
         />
