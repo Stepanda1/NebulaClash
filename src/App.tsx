@@ -996,7 +996,7 @@ function App() {
       )}
 
       {/* Top Bar: Progress & Settings */}
-      <div className="w-full shrink-0 flex flex-col gap-1 sm:gap-2 z-10">
+      <div className="w-full shrink-0 flex flex-col gap-1 sm:gap-2 z-20 relative">
         <div className="flex justify-between items-start px-1.5 sm:px-2.5">
           <div className="ml-0.5 sm:ml-1 flex items-center mt-1 sm:mt-2">
             <button
@@ -1082,8 +1082,13 @@ function App() {
           <button
             type="button"
             onClick={openShop}
-            className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/35 bg-gradient-to-r from-amber-300/20 via-yellow-300/15 to-orange-300/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.14)] transition-all hover:from-amber-300/30 hover:via-yellow-300/22 hover:to-orange-300/30"
+            className="relative z-30 pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-amber-200/35 bg-gradient-to-r from-amber-300/20 via-yellow-300/15 to-orange-300/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.14)] transition-all hover:from-amber-300/30 hover:via-yellow-300/22 hover:to-orange-300/30"
+            title={language === 'ru' ? 'Пополнить монеты' : 'Add coins'}
+            aria-label={language === 'ru' ? 'Пополнить монеты' : 'Add coins'}
           >
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-emerald-200/40 bg-emerald-400 text-[10px] font-black leading-none text-emerald-950 shadow-[0_0_10px_rgba(74,222,128,0.35)]">
+              +
+            </span>
             <span className="relative inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#fde68a_0%,#fbbf24_42%,#f59e0b_72%,#d97706_100%)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.45),inset_0_-1px_2px_rgba(146,64,14,0.28),0_1px_6px_rgba(251,146,60,0.35)]">
               <span className="absolute left-[3px] top-[2px] h-1 w-1.5 rounded-full bg-white/35 blur-[0.4px]" />
               <Coins className="relative h-2.5 w-2.5 text-amber-950/95" />
@@ -1094,7 +1099,7 @@ function App() {
       </div>
 
       {/* Main Game Area */}
-      <div className="flex-1 min-h-0 flex flex-col justify-center items-center w-full relative">
+      <div className="flex-1 min-h-0 flex flex-col justify-center items-center w-full relative z-0">
         {/* Score Popup Placeholder */}
         <div className="flex justify-center items-center h-8 sm:h-14 w-full z-10 shrink-0 -mt-1 sm:-mt-2 relative">
           <motion.span
