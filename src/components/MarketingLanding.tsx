@@ -143,33 +143,31 @@ export function MarketingLanding({
           </div>
         </div>
 
-        <div className="mt-4 rounded-[1.8rem] border border-white/10 bg-slate-950/55 p-4 shadow-[0_0_30px_rgba(0,0,0,0.22)] backdrop-blur-md">
-          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
-              {language === 'ru' ? 'Пакеты монет: 99 / 199 / 499 ₽' : 'Coin packs: 99 / 199 / 499 RUB'}
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
-              {language === 'ru' ? 'Начисление: сразу после оплаты' : 'Delivery: instant after payment'}
-            </span>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-white/72">
-            <a href={`mailto:${contacts.email}`} className="hover:text-white">Email</a>
-            <a href={`tel:${contacts.phone}`} className="hover:text-white">{language === 'ru' ? 'Телефон' : 'Phone'}</a>
-            <a href={contacts.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-white">Telegram</a>
-            <span className="text-white/45">|</span>
+        <div className="mt-4 rounded-[1.4rem] border border-white/8 bg-slate-950/42 px-3 py-3 shadow-[0_0_24px_rgba(0,0,0,0.16)] backdrop-blur-md">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] leading-none text-white/62">
+            <span>{language === 'ru' ? '99 / 199 / 499 ₽' : '99 / 199 / 499 RUB'}</span>
+            <span className="text-white/28">•</span>
+            <span>{language === 'ru' ? 'сразу после оплаты' : 'instant delivery'}</span>
+            <span className="text-white/28">•</span>
+            <a href={`mailto:${contacts.email}`} className="transition hover:text-white">Email</a>
+            <span className="text-white/28">•</span>
+            <a href={`tel:${contacts.phone}`} className="transition hover:text-white">{language === 'ru' ? 'Телефон' : 'Phone'}</a>
+            <span className="text-white/28">•</span>
+            <a href={contacts.telegram} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">Telegram</a>
+            <span className="text-white/28">•</span>
             <span>{contacts.sellerName}</span>
+            <span className="text-white/28">•</span>
             <span>{language === 'ru' ? 'ИНН' : 'TIN'} {contacts.sellerInn}</span>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {legalLinks.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-cyan-200/16 bg-cyan-300/[0.06] px-3 py-1.5 text-[11px] font-semibold text-cyan-100/90 transition hover:bg-cyan-300/[0.1]"
+                className="rounded-full border border-cyan-200/14 bg-cyan-300/[0.05] px-2.5 py-1 text-[10px] font-medium text-cyan-100/80 transition hover:bg-cyan-300/[0.1] hover:text-cyan-50"
               >
                 {item.label}
               </a>
