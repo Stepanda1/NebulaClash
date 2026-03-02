@@ -6,6 +6,8 @@ import { COLS, ROWS, findHintMove, findLightningSwap } from '../logic/boardUtils
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
+const IDLE_HINT_DELAY_MS = 6000;
+
 interface GameBoardProps {
     grid: Grid;
     selectedTile: Tile | null;
@@ -24,6 +26,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
     const t = COPY[language];
     const [itemSize, setItemSize] = useState(52);
     const [isMobile, setIsMobile] = useState(false);
+    const [showIdleHint, setShowIdleHint] = useState(false);
     const GRID_GAP = 4;
     const dragStartRef = React.useRef<Tile | null>(null);
     const draggingRef = React.useRef(false);
@@ -62,6 +65,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         };
     }, []);
 
+    useEffect(() => {
+        setShowIdleHint(false);
+        if (showTutorial || isProcessing || isLevelTransition) return;
+
+        const timeoutId = window.setTimeout(() => {
+            setShowIdleHint(true);
+        }, IDLE_HINT_DELAY_MS);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [grid, showTutorial, isProcessing, isLevelTransition]);
+
     const ITEM_SIZE = itemSize;
     const BOARD_WIDTH = COLS * ITEM_SIZE;
     const BOARD_HEIGHT = ROWS * ITEM_SIZE;
@@ -73,7 +87,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         return t;
     }, [grid]);
 
-    const hint = useMemo(() => {
+    const tutorialHint = useMemo(() => {
         if (!showTutorial || isProcessing || isLevelTransition) return null;
         if (tutorialStep === 0) {
             return findHintMove(grid, 'match');
@@ -83,6 +97,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         }
         return null;
     }, [grid, showTutorial, isProcessing, isLevelTransition, tutorialStep]);
+
+    const idleHint = useMemo(() => {
+        if (showTutorial || !showIdleHint || isProcessing || isLevelTransition) return null;
+        return findHintMove(grid, 'match');
+    }, [grid, showTutorial, showIdleHint, isProcessing, isLevelTransition]);
 
     const bombHint = useMemo(() => {
         if (!showTutorial || isProcessing || isLevelTransition) return null;
@@ -97,6 +116,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         }
         return null;
     }, [grid, showTutorial, isProcessing, isLevelTransition, tutorialStep]);
+
+    const activeHint = tutorialHint ?? idleHint;
+
+    const resetIdleHint = () => {
+        if (!showIdleHint) return;
+        setShowIdleHint(false);
+    };
 
     const boardContent = (
         <>
@@ -119,8 +145,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         isMobile={isMobile}
                         isLevelTransition={isLevelTransition}
                         lowPerfMode={lowPerfMode}
-                        onClick={() => onTileClick(tile)}
+                        onClick={() => {
+                            resetIdleHint();
+                            onTileClick(tile);
+                        }}
                         onPointerDown={(t) => {
+                            resetIdleHint();
                             draggingRef.current = true;
                             dragStartRef.current = t;
                         }}
@@ -137,6 +167,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                             }
                         }}
                         onPointerUp={() => {
+                            resetIdleHint();
                             draggingRef.current = false;
                             dragStartRef.current = null;
                         }}
@@ -144,13 +175,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     />
                 ))}
             </AnimatePresence>
-            {!lowPerfMode && hint && (
+            {!lowPerfMode && activeHint && (
                 <div className="absolute inset-0 pointer-events-none">
                     <motion.div
                         className="absolute rounded-2xl border-2 border-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.8)]"
                         style={{
-                            left: hint.from.x * ITEM_SIZE,
-                            top: hint.from.y * ITEM_SIZE,
+                            left: activeHint.from.x * ITEM_SIZE,
+                            top: activeHint.from.y * ITEM_SIZE,
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
@@ -160,8 +191,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     <motion.div
                         className="absolute rounded-2xl border-2 border-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.8)]"
                         style={{
-                            left: hint.to.x * ITEM_SIZE,
-                            top: hint.to.y * ITEM_SIZE,
+                            left: activeHint.to.x * ITEM_SIZE,
+                            top: activeHint.to.y * ITEM_SIZE,
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
@@ -171,8 +202,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     <motion.div
                         className="absolute z-50 text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
                         style={{
-                            left: Math.max(6, Math.min(BOARD_WIDTH - 60, (hint.from.x + hint.to.x) * ITEM_SIZE * 0.5 - 30)),
-                            top: Math.max(6, Math.min(BOARD_HEIGHT - 22, Math.min(hint.from.y, hint.to.y) * ITEM_SIZE - 18)),
+                            left: Math.max(6, Math.min(BOARD_WIDTH - 60, (activeHint.from.x + activeHint.to.x) * ITEM_SIZE * 0.5 - 30)),
+                            top: Math.max(6, Math.min(BOARD_HEIGHT - 22, Math.min(activeHint.from.y, activeHint.to.y) * ITEM_SIZE - 18)),
                         }}
                         animate={{ opacity: [0.6, 1, 0.6] }}
                         transition={{ duration: 1.2, repeat: Infinity }}
@@ -181,13 +212,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     </motion.div>
                 </div>
             )}
-            {lowPerfMode && hint && (
+            {lowPerfMode && activeHint && (
                 <div className="absolute inset-0 pointer-events-none">
                     <div
                         className="absolute rounded-2xl border-2 border-yellow-300/85"
                         style={{
-                            left: hint.from.x * ITEM_SIZE,
-                            top: hint.from.y * ITEM_SIZE,
+                            left: activeHint.from.x * ITEM_SIZE,
+                            top: activeHint.from.y * ITEM_SIZE,
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
@@ -195,8 +226,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     <div
                         className="absolute rounded-2xl border-2 border-cyan-300/85"
                         style={{
-                            left: hint.to.x * ITEM_SIZE,
-                            top: hint.to.y * ITEM_SIZE,
+                            left: activeHint.to.x * ITEM_SIZE,
+                            top: activeHint.to.y * ITEM_SIZE,
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
@@ -252,10 +283,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                 width: BOARD_WIDTH,
                 height: BOARD_HEIGHT,
             }}
-            onPointerUp={() => { draggingRef.current = false; dragStartRef.current = null; }}
+            onPointerUp={() => {
+                resetIdleHint();
+                draggingRef.current = false;
+                dragStartRef.current = null;
+            }}
             onPointerLeave={() => { draggingRef.current = false; dragStartRef.current = null; }}
             onPointerMove={(e) => {
                 if (!draggingRef.current) return;
+                resetIdleHint();
                 pendingPointerRef.current = { x: e.clientX, y: e.clientY };
                 if (dragRafRef.current !== null) return;
                 dragRafRef.current = window.requestAnimationFrame(() => {
