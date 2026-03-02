@@ -7,6 +7,7 @@ interface TileProps {
     tile: TileType;
     isSelected: boolean;
     isExploding: boolean;
+    isHinted: boolean;
     isMobile: boolean;
     isLevelTransition: boolean;
     lowPerfMode: boolean;
@@ -108,7 +109,7 @@ const getGemConfig = (type: TType) => {
     }
 };
 
-export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMobile, isLevelTransition, lowPerfMode, onClick, onPointerDown, onPointerEnter, onPointerUp, size }) => {
+export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isHinted, isMobile, isLevelTransition, lowPerfMode, onClick, onPointerDown, onPointerEnter, onPointerUp, size }) => {
     // For special pieces, use gemType for visual rendering, type for special effect
     const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova' || tile.type === 'pulse') 
         ? tile.gemType 
@@ -255,6 +256,20 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isMob
                             }}
                         />
                     </motion.div>
+                )}
+
+                {isHinted && !isSelected && (
+                    <motion.div
+                        className="absolute inset-[10%] z-[15] rounded-2xl pointer-events-none"
+                        style={{
+                            background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18), rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.02) 75%, transparent 100%)',
+                            boxShadow: lowFX
+                                ? 'inset 0 0 0 1px rgba(255,255,255,0.14)'
+                                : '0 0 12px rgba(255,255,255,0.18), inset 0 0 18px rgba(255,255,255,0.08)',
+                        }}
+                        animate={lowFX ? { opacity: 0.8 } : { opacity: [0.45, 0.8, 0.45] }}
+                        transition={lowFX ? undefined : { duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                    />
                 )}
 
                 {tile.hasTrash && (

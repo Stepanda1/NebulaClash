@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Tile as TileComponent } from './Tile';
 import type { Grid, Tile } from '../types';
-import { COLS, ROWS, findHintMove, findLightningSwap } from '../logic/boardUtils';
+import { COLS, ROWS, findHintMatchPreview, findHintMove, findLightningSwap } from '../logic/boardUtils';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
@@ -100,7 +100,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
 
     const idleHint = useMemo(() => {
         if (showTutorial || !showIdleHint || isProcessing || isLevelTransition) return null;
-        return findHintMove(grid, 'match');
+        return findHintMatchPreview(grid);
     }, [grid, showTutorial, showIdleHint, isProcessing, isLevelTransition]);
 
     const bombHint = useMemo(() => {
@@ -116,8 +116,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         }
         return null;
     }, [grid, showTutorial, isProcessing, isLevelTransition, tutorialStep]);
-
-    const activeHint = tutorialHint ?? idleHint;
 
     const resetIdleHint = () => {
         if (!showIdleHint) return;
@@ -142,6 +140,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         tile={tile}
                         isSelected={selectedTile?.id === tile.id}
                         isExploding={explodingIds.has(tile.id)}
+                        isHinted={!!idleHint?.matchedIds.has(tile.id)}
                         isMobile={isMobile}
                         isLevelTransition={isLevelTransition}
                         lowPerfMode={lowPerfMode}
@@ -175,13 +174,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     />
                 ))}
             </AnimatePresence>
-            {!lowPerfMode && activeHint && (
+            {!lowPerfMode && tutorialHint && (
                 <div className="absolute inset-0 pointer-events-none">
                     <motion.div
                         className="absolute rounded-2xl border-2 border-yellow-300 shadow-[0_0_20px_rgba(253,224,71,0.8)]"
                         style={{
-                            left: activeHint.from.x * ITEM_SIZE,
-                            top: activeHint.from.y * ITEM_SIZE,
+                            left: tutorialHint.from.x * ITEM_SIZE,
+                            top: tutorialHint.from.y * ITEM_SIZE,
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
@@ -191,8 +190,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     <motion.div
                         className="absolute rounded-2xl border-2 border-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.8)]"
                         style={{
-                            left: activeHint.to.x * ITEM_SIZE,
-                            top: activeHint.to.y * ITEM_SIZE,
+                            left: tutorialHint.to.x * ITEM_SIZE,
+                            top: tutorialHint.to.y * ITEM_SIZE,
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
@@ -202,8 +201,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     <motion.div
                         className="absolute z-50 text-white text-xs font-bold bg-black px-2 py-1 rounded-full"
                         style={{
-                            left: Math.max(6, Math.min(BOARD_WIDTH - 60, (activeHint.from.x + activeHint.to.x) * ITEM_SIZE * 0.5 - 30)),
-                            top: Math.max(6, Math.min(BOARD_HEIGHT - 22, Math.min(activeHint.from.y, activeHint.to.y) * ITEM_SIZE - 18)),
+                            left: Math.max(6, Math.min(BOARD_WIDTH - 60, (tutorialHint.from.x + tutorialHint.to.x) * ITEM_SIZE * 0.5 - 30)),
+                            top: Math.max(6, Math.min(BOARD_HEIGHT - 22, Math.min(tutorialHint.from.y, tutorialHint.to.y) * ITEM_SIZE - 18)),
                         }}
                         animate={{ opacity: [0.6, 1, 0.6] }}
                         transition={{ duration: 1.2, repeat: Infinity }}
@@ -212,13 +211,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     </motion.div>
                 </div>
             )}
-            {lowPerfMode && activeHint && (
+            {lowPerfMode && tutorialHint && (
                 <div className="absolute inset-0 pointer-events-none">
                     <div
                         className="absolute rounded-2xl border-2 border-yellow-300/85"
                         style={{
-                            left: activeHint.from.x * ITEM_SIZE,
-                            top: activeHint.from.y * ITEM_SIZE,
+                            left: tutorialHint.from.x * ITEM_SIZE,
+                            top: tutorialHint.from.y * ITEM_SIZE,
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
@@ -226,8 +225,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                     <div
                         className="absolute rounded-2xl border-2 border-cyan-300/85"
                         style={{
-                            left: activeHint.to.x * ITEM_SIZE,
-                            top: activeHint.to.y * ITEM_SIZE,
+                            left: tutorialHint.to.x * ITEM_SIZE,
+                            top: tutorialHint.to.y * ITEM_SIZE,
                             width: ITEM_SIZE,
                             height: ITEM_SIZE,
                         }}
