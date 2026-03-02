@@ -8,6 +8,7 @@ interface TileProps {
     isSelected: boolean;
     isExploding: boolean;
     isHinted: boolean;
+    hintOffset?: { x: number; y: number } | null;
     isMobile: boolean;
     isLevelTransition: boolean;
     lowPerfMode: boolean;
@@ -109,7 +110,7 @@ const getGemConfig = (type: TType) => {
     }
 };
 
-export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isHinted, isMobile, isLevelTransition, lowPerfMode, onClick, onPointerDown, onPointerEnter, onPointerUp, size }) => {
+export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isHinted, hintOffset = null, isMobile, isLevelTransition, lowPerfMode, onClick, onPointerDown, onPointerEnter, onPointerUp, size }) => {
     // For special pieces, use gemType for visual rendering, type for special effect
     const displayType = (tile.type === 'bomb' || tile.type === 'lightning' || tile.type === 'cross' || tile.type === 'nova' || tile.type === 'pulse') 
         ? tile.gemType 
@@ -123,14 +124,20 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isHin
 
     const lowFX = isMobile || isLevelTransition || lowPerfMode;
     const [specLight, specMid, specDark] = config.base;
+    const hintShiftX = hintOffset ? hintOffset.x * Math.max(2, size * 0.08) : 0;
+    const hintShiftY = hintOffset ? hintOffset.y * Math.max(2, size * 0.08) : 0;
 
     return (
         <motion.div
             layoutId={lowFX ? undefined : tile.id}
             initial={lowFX ? { opacity: 0, scale: 0.9 } : { y: -500, opacity: 0, scale: 0 }}
             animate={{
-                x: tile.x * size,
-                y: tile.y * size,
+                x: hintOffset && !isSelected
+                    ? [tile.x * size, tile.x * size + hintShiftX, tile.x * size]
+                    : tile.x * size,
+                y: hintOffset && !isSelected
+                    ? [tile.y * size, tile.y * size + hintShiftY, tile.y * size]
+                    : tile.y * size,
                 scale: isSelected ? 1.05 : 1,
                 opacity: 1,
                 zIndex: isSelected ? 50 : 10
@@ -139,7 +146,12 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isHin
                 layout: lowFX
                     ? { type: "tween", duration: 0.08 }
                     : { type: "spring", stiffness: 450, damping: 35 },
-                y: { type: "tween", ease: "easeOut", duration: lowFX ? 0.12 : 0.25 }
+                x: hintOffset && !isSelected
+                    ? { duration: 1.2, repeat: Infinity, ease: "easeInOut", times: [0, 0.45, 1] }
+                    : undefined,
+                y: hintOffset && !isSelected
+                    ? { duration: 1.2, repeat: Infinity, ease: "easeInOut", times: [0, 0.45, 1] }
+                    : { type: "tween", ease: "easeOut", duration: lowFX ? 0.12 : 0.25 }
             }}
             exit={{ scale: 0, opacity: 0, transition: { duration: 0.2 } }}
             style={{
@@ -262,12 +274,11 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isHin
                     <motion.div
                         className="absolute inset-[10%] z-[15] rounded-2xl pointer-events-none"
                         style={{
-                            background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18), rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.02) 75%, transparent 100%)',
                             boxShadow: lowFX
-                                ? 'inset 0 0 0 1px rgba(255,255,255,0.14)'
-                                : '0 0 12px rgba(255,255,255,0.18), inset 0 0 18px rgba(255,255,255,0.08)',
+                                ? 'inset 0 0 0 2px rgba(255,255,255,0.28)'
+                                : '0 0 18px rgba(255,255,255,0.34), 0 0 28px rgba(255,255,255,0.18), inset 0 0 0 2px rgba(255,255,255,0.24)',
                         }}
-                        animate={lowFX ? { opacity: 0.8 } : { opacity: [0.45, 0.8, 0.45] }}
+                        animate={lowFX ? { opacity: 0.95 } : { opacity: [0.7, 1, 0.7] }}
                         transition={lowFX ? undefined : { duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
                     />
                 )}

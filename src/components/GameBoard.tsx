@@ -122,6 +122,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
         setShowIdleHint(false);
     };
 
+    const hintedFromId = idleHint ? grid[idleHint.from.y][idleHint.from.x]?.id : null;
+    const hintDirection = idleHint
+        ? {
+            x: idleHint.to.x - idleHint.from.x,
+            y: idleHint.to.y - idleHint.from.y,
+        }
+        : null;
+
     const boardContent = (
         <>
             {!lowPerfMode && (
@@ -141,6 +149,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
                         isSelected={selectedTile?.id === tile.id}
                         isExploding={explodingIds.has(tile.id)}
                         isHinted={!!idleHint?.matchedIds.has(tile.id)}
+                        hintOffset={tile.id === hintedFromId ? hintDirection : null}
                         isMobile={isMobile}
                         isLevelTransition={isLevelTransition}
                         lowPerfMode={lowPerfMode}
