@@ -1,24 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import type { Grid, Tile, GemType, SpecialType } from '../types';
+import type { Grid, Tile, GemType } from '../types';
 import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, getNovaAffectedTiles, getPulseAffectedTiles, expandSpecialChain, hasPossibleMoves, reshuffleBoard, ROWS, COLS } from '../logic/boardUtils';
-
-type SpecialGoalType = SpecialType | 'smash';
-type Goal =
-    | { type: 'collect'; value: number; color: GemType }
-    | { type: 'collect_multi'; targets: Partial<Record<GemType, number>> }
-    | { type: 'bombs'; value: number }
-    | { type: 'lightning'; value: number }
-    | { type: 'special'; value: number; special: SpecialGoalType }
-    | { type: 'combo_x5'; value: number }
-    | { type: 'trash'; value: number }
-    | { type: 'boss'; value: number };
-
-type LevelConfig = {
-    mode: 'moves' | 'time';
-    limit: number;
-    goal: Goal;
-    trashCount?: number;
-};
+import { buildLevelConfigs, isGoalReached, type LevelConfig } from '../logic/levelProgress';
 
 type LevelStateSnapshot = {
     grid: Grid;
@@ -26,87 +9,7 @@ type LevelStateSnapshot = {
     timeLeft: number;
 };
 
-const GEM_ROTATION: GemType[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
-const SPECIAL_GOAL_ROTATION: SpecialGoalType[] = ['bomb', 'lightning'];
 const BOSS_DEBRIS_CAP = 14;
-
-function normalizeSpecialGoal(special: SpecialGoalType, value: number): SpecialGoalType {
-    // Product requirement: avoid "Pulse x3" goals.
-    if (special === 'pulse' && value === 3) return 'nova';
-    return special;
-}
-
-function buildLevelConfigs(): LevelConfig[] {
-    const levels: LevelConfig[] = [];
-
-    for (let idx = 0; idx < 60; idx++) {
-        const level = idx + 1;
-        const phase = idx % 10;
-        const paletteA = GEM_ROTATION[idx % GEM_ROTATION.length];
-        const paletteB = GEM_ROTATION[(idx + 2) % GEM_ROTATION.length];
-        const inSecondSector = level > 30;
-
-        if (phase === 9) {
-            const baseBossHp = inSecondSector ? 170 + Math.floor((level - 30) * 2) : 120 + idx * 2;
-            levels.push({
-                mode: 'moves',
-                limit: inSecondSector ? 28 : 26,
-                goal: { type: 'boss', value: Math.floor(baseBossHp * 1.2) },
-            });
-            continue;
-        }
-
-        if (phase === 0) {
-            levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 28, goal: { type: 'collect', value: inSecondSector ? 22 : 18, color: paletteA } });
-            continue;
-        }
-
-        if (phase === 1) {
-            levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 26, goal: { type: 'special', special: SPECIAL_GOAL_ROTATION[idx % SPECIAL_GOAL_ROTATION.length], value: inSecondSector ? 3 : 2 } });
-            continue;
-        }
-
-        if (phase === 2) {
-            levels.push({ mode: 'time', limit: inSecondSector ? 52 : 58, goal: { type: 'collect_multi', targets: { [paletteA]: inSecondSector ? 12 : 10, [paletteB]: inSecondSector ? 12 : 10 } } });
-            continue;
-        }
-
-        if (phase === 3) {
-            levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'combo_x5', value: inSecondSector ? 3 : 2 } });
-            continue;
-        }
-
-        if (phase === 4) {
-            const trashCount = inSecondSector ? 14 : 10;
-            levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 26, goal: { type: 'trash', value: trashCount }, trashCount });
-            continue;
-        }
-
-        if (phase === 5) {
-            levels.push({ mode: 'time', limit: inSecondSector ? 56 : 62, goal: { type: 'collect', value: inSecondSector ? 20 : 18, color: paletteB } });
-            continue;
-        }
-
-        if (phase === 6) {
-            const value = inSecondSector ? 4 : 3;
-            const special = normalizeSpecialGoal(SPECIAL_GOAL_ROTATION[(idx + 2) % SPECIAL_GOAL_ROTATION.length], value);
-            levels.push({ mode: 'moves', limit: inSecondSector ? 23 : 24, goal: { type: 'special', special, value } });
-            continue;
-        }
-
-        if (phase === 7) {
-            levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'collect_multi', targets: { [paletteA]: inSecondSector ? 14 : 12, [paletteB]: inSecondSector ? 14 : 12 } } });
-            continue;
-        }
-
-        levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'special', special: phase % 2 === 0 ? 'bomb' : 'lightning', value: inSecondSector ? 5 : 3 } });
-    }
-
-    levels[1] = { mode: 'moves', limit: 26, goal: { type: 'bombs', value: 4 } };
-    levels[3] = { mode: 'moves', limit: 24, goal: { type: 'lightning', value: 2 } };
-    return levels;
-}
-
 const LEVEL_CONFIGS: LevelConfig[] = buildLevelConfigs();
 
 export const useGame = () => {
@@ -540,6 +443,50 @@ export const useGame = () => {
         return reshuffleBoard(nextGrid);
     }, [bossHp, bossMaxHp, goal.type]);
 
+    const waitForBoardDelay = useCallback(async (ms: number) => {
+        while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, ms));
+        while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
+    }, []);
+
+    const runRemovalAndGravity = useCallback(async (
+        baseGrid: Grid,
+        removeSet: Set<string>,
+        timings: { remove: number; gravity: number } = { remove: 320, gravity: 460 },
+    ): Promise<Grid> => {
+        let nextGrid = removeMatches(baseGrid, removeSet);
+        setGrid(nextGrid);
+        await waitForBoardDelay(timings.remove);
+
+        const { grid: gravityGrid } = applyGravity(nextGrid);
+        nextGrid = gravityGrid;
+        setGrid(nextGrid);
+        await waitForBoardDelay(timings.gravity);
+
+        return nextGrid;
+    }, [waitForBoardDelay]);
+
+    const getMatchScoreGain = useCallback((
+        matchMap: Map<string, 'match' | 'bomb' | 'lightning' | 'cross' | 'nova' | 'pulse'>,
+        extraTriggeredCount: number,
+    ): number => {
+        let scoreGain = 0;
+
+        matchMap.forEach((type) => {
+            scoreGain += 10;
+            if (type === 'bomb' || type === 'lightning') scoreGain += 40;
+            else if (type === 'cross') scoreGain += 60;
+            else if (type === 'nova') scoreGain += 70;
+            else if (type === 'pulse') scoreGain += 55;
+        });
+
+        if (extraTriggeredCount > 0) {
+            scoreGain += extraTriggeredCount * 10;
+        }
+
+        return scoreGain;
+    }, []);
+
     const applyComboRewards = useCallback(async (baseGrid: Grid, comboCount: number, includePlayerMove: boolean = true): Promise<Grid> => {
         let activeGrid = baseGrid;
         const effectiveCombo = comboCount + (includePlayerMove ? 1 : 0);
@@ -602,14 +549,7 @@ export const useGame = () => {
             clearTrashByImpact(activeGrid, affected);
             setScore(prev => prev + affected.size * 14 + 40);
 
-            activeGrid = removeMatches(activeGrid, affected);
-            setGrid(activeGrid);
-            await new Promise(r => setTimeout(r, 120));
-
-            const { grid: gravityGrid } = applyGravity(activeGrid);
-            activeGrid = gravityGrid;
-            setGrid(activeGrid);
-            await new Promise(r => setTimeout(r, 150));
+            activeGrid = await runRemovalAndGravity(activeGrid, affected, { remove: 120, gravity: 150 });
         }
 
         setExplodingIds(new Set());
@@ -619,7 +559,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         return activeGrid;
-    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid]);
+    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, runRemovalAndGravity]);
 
     const processBoard = useCallback(async (currentGrid: Grid) => {
         setIsProcessing(true);
@@ -663,39 +603,14 @@ export const useGame = () => {
             activeGrid = convertToSpecialPieces(activeGrid, matchMap);
             setGrid(activeGrid);
 
-            let scoreGain = 0;
-            matchMap.forEach((type) => {
-                scoreGain += 10;
-                if (type === 'bomb') scoreGain += 40;
-                else if (type === 'lightning') scoreGain += 40;
-                else if (type === 'cross') scoreGain += 60;
-                else if (type === 'nova') scoreGain += 70;
-                else if (type === 'pulse') scoreGain += 55;
-            });
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
-            if (extraTriggeredCount > 0) {
-                scoreGain += extraTriggeredCount * 10;
-            }
-            setScore(prev => prev + scoreGain);
+            setScore(prev => prev + getMatchScoreGain(matchMap, extraTriggeredCount));
 
-            while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
-            await new Promise(r => setTimeout(r, 320));
-            while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
+            await waitForBoardDelay(320);
 
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
             clearTrashByImpact(activeGrid, removeSet, allMatched);
-            activeGrid = removeMatches(activeGrid, removeSet);
-            setGrid(activeGrid);
-
-            await new Promise(r => setTimeout(r, 320));
-            while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
-
-            const { grid: gravityGrid } = applyGravity(activeGrid);
-            activeGrid = gravityGrid;
-            setGrid(activeGrid);
-
-            await new Promise(r => setTimeout(r, 460));
-            while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
+            activeGrid = await runRemovalAndGravity(activeGrid, removeSet);
 
             matchMap = findMatches(activeGrid);
             iteration++;
@@ -708,41 +623,21 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getTriggeredSpecialRemoval]);
+    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getTriggeredSpecialRemoval, runRemovalAndGravity, waitForBoardDelay]);
 
     useEffect(() => {
-        const goalReached = (() => {
-            if (goal.type === 'collect') {
-                return collected[goal.color] >= goal.value;
-            }
-            if (goal.type === 'collect_multi') {
-                return Object.entries(goal.targets).every(([color, target]) => {
-                    if (!target) return true;
-                    return collected[color as GemType] >= target;
-                });
-            }
-            if (goal.type === 'bombs') {
-                return levelBombActivations >= goal.value;
-            }
-            if (goal.type === 'lightning') {
-                return levelLightningActivations >= goal.value;
-            }
-            if (goal.type === 'special') {
-                if (goal.special === 'bomb') return levelBombActivations >= goal.value;
-                if (goal.special === 'lightning') return levelLightningActivations >= goal.value;
-                if (goal.special === 'cross') return levelCrossActivations >= goal.value;
-                if (goal.special === 'pulse') return levelPulseActivations >= goal.value;
-                if (goal.special === 'nova') return levelNovaActivations >= goal.value;
-                return levelSmashEvents >= goal.value;
-            }
-            if (goal.type === 'combo_x5') {
-                return comboX5Count >= goal.value;
-            }
-            if (goal.type === 'trash') {
-                return trashDestroyed >= goal.value;
-            }
-            return bossHp <= 0;
-        })();
+        const goalReached = isGoalReached(goal, {
+            bossHp,
+            collected,
+            comboX5Count,
+            levelBombActivations,
+            levelCrossActivations,
+            levelLightningActivations,
+            levelNovaActivations,
+            levelPulseActivations,
+            levelSmashEvents,
+            trashDestroyed,
+        });
 
         if (!goalReached || isLevelUp || isProcessing || goalFinalizingRef.current) return;
 
@@ -841,19 +736,10 @@ export const useGame = () => {
 
         setScore(prev => prev + toRemove.size * 10);
 
-        await new Promise(r => setTimeout(r, 180));
+        await waitForBoardDelay(180);
 
         clearTrashByImpact(activeGrid, toRemove);
-        activeGrid = removeMatches(activeGrid, toRemove);
-        setGrid(activeGrid);
-
-        await new Promise(r => setTimeout(r, 320));
-
-        const { grid: gravityGrid } = applyGravity(activeGrid);
-        activeGrid = gravityGrid;
-        setGrid(activeGrid);
-
-        await new Promise(r => setTimeout(r, 460));
+        activeGrid = await runRemovalAndGravity(activeGrid, toRemove);
 
         let matchMap = findMatches(activeGrid);
         let iteration = 0;
@@ -874,22 +760,10 @@ export const useGame = () => {
             countSpecialGoalActivations(activeGrid, totalRemoved);
             applyBossDamage(matchMap, totalRemoved, comboCount);
 
-            let scoreGain = 0;
-            matchMap.forEach((type) => {
-                scoreGain += 10;
-                if (type === 'bomb') scoreGain += 40;
-                else if (type === 'lightning') scoreGain += 40;
-                else if (type === 'cross') scoreGain += 60;
-                else if (type === 'nova') scoreGain += 70;
-                else if (type === 'pulse') scoreGain += 55;
-            });
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
-            if (extraTriggeredCount > 0) {
-                scoreGain += extraTriggeredCount * 10;
-            }
-            setScore(prev => prev + scoreGain);
+            setScore(prev => prev + getMatchScoreGain(matchMap, extraTriggeredCount));
 
-            await new Promise(r => setTimeout(r, 320));
+            await waitForBoardDelay(320);
 
             const allRegularMatches = new Set<string>();
             matchMap.forEach((type, tileId) => {
@@ -900,16 +774,7 @@ export const useGame = () => {
 
             const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
             clearTrashByImpact(activeGrid, removeSet, allMatched);
-            activeGrid = removeMatches(activeGrid, removeSet);
-            setGrid(activeGrid);
-
-            await new Promise(r => setTimeout(r, 320));
-
-            const { grid: gravityGrid2 } = applyGravity(activeGrid);
-            activeGrid = gravityGrid2;
-            setGrid(activeGrid);
-
-            await new Promise(r => setTimeout(r, 460));
+            activeGrid = await runRemovalAndGravity(activeGrid, removeSet);
 
             matchMap = findMatches(activeGrid);
             iteration++;
@@ -924,7 +789,7 @@ export const useGame = () => {
         if (finalizeProcessing) {
             setIsProcessing(false);
         }
-    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getPulseAffectedTiles, getTriggeredSpecialRemoval]);
+    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getPulseAffectedTiles, getTriggeredSpecialRemoval, runRemovalAndGravity, waitForBoardDelay]);
 
     const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
         let activeGrid = copyGrid(currentGrid);
@@ -1114,7 +979,7 @@ export const useGame = () => {
             }
         } else {
             setIsProcessing(true);
-            await new Promise(r => setTimeout(r, 300));
+            await waitForBoardDelay(300);
             setGrid(grid);
             setIsProcessing(false);
         }
