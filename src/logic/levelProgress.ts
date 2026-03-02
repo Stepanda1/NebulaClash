@@ -40,6 +40,18 @@ function normalizeSpecialGoal(special: SpecialGoalType, value: number): SpecialG
   return special;
 }
 
+function clampLightningGoal(goal: Goal): Goal {
+  if (goal.type === 'lightning') {
+    return { ...goal, value: Math.min(goal.value, 2) };
+  }
+
+  if (goal.type === 'special' && goal.special === 'lightning') {
+    return { ...goal, value: Math.min(goal.value, 2) };
+  }
+
+  return goal;
+}
+
 export function buildLevelConfigs(): LevelConfig[] {
   const levels: LevelConfig[] = [];
 
@@ -137,7 +149,10 @@ export function buildLevelConfigs(): LevelConfig[] {
     levels[index] = config;
   });
 
-  return levels;
+  return levels.map((config) => ({
+    ...config,
+    goal: clampLightningGoal(config.goal),
+  }));
 }
 
 export function isGoalReached(goal: Goal, progress: GoalProgress): boolean {
