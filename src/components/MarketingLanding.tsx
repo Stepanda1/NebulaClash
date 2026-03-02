@@ -71,13 +71,13 @@ export function MarketingLanding({
           <div className="pointer-events-none absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-fuchsia-400/10 blur-2xl" />
           <div className="pointer-events-none absolute right-6 top-6 h-20 w-20 rounded-full border border-cyan-100/20 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.28)_0%,rgba(125,211,252,0.12)_34%,rgba(14,116,144,0.05)_60%,rgba(0,0,0,0)_72%)]" />
           <div className="pointer-events-none absolute left-6 top-6 text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200/80">
-            {language === 'ru' ? 'Nebula Clash' : 'Nebula Clash'}
+            Nebula Clash
           </div>
 
           <div className="relative mt-7 rounded-3xl border border-white/10 bg-black/18 p-5">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">
               <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
-              {language === 'ru' ? 'Boss Match-3' : 'Boss Match-3'}
+              {language === 'ru' ? 'Матч-3 с боссами' : 'Boss Match-3'}
             </div>
             <div className="mb-4 flex items-center justify-center">
               <div className="relative h-24 w-24">
@@ -91,18 +91,18 @@ export function MarketingLanding({
               </div>
             </div>
             <div className="max-w-[84%] text-3xl font-black leading-tight text-white">
-              {language === 'ru' ? 'Play Now' : 'Play Now'}
+              {language === 'ru' ? 'Играть' : 'Play Now'}
             </div>
             <p className="mt-3 text-sm leading-relaxed text-white/72">
               {language === 'ru'
-                ? 'Космический match-3 с боссами, щитами и особыми формами. Запускайте уровень сразу и проверяйте, цепляет ли игра с первых секунд.'
+                ? 'Космический матч-3 с боссами, щитами и особыми фигурами. Запускайте уровень сразу и проверяйте, цепляет ли игра с первых секунд.'
                 : 'A sci-fi match-3 with bosses, shields, and shape-based specials. Jump straight into the level flow and see if the game hooks on first contact.'}
             </p>
 
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
                 <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{language === 'ru' ? 'Формы' : 'Shapes'}</div>
-                <div className="mt-1 text-sm font-black text-cyan-100">Nova</div>
+                <div className="mt-1 text-sm font-black text-cyan-100">{language === 'ru' ? 'Нова' : 'Nova'}</div>
               </div>
               <div className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
                 <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{language === 'ru' ? 'Бои' : 'Bosses'}</div>
@@ -110,7 +110,7 @@ export function MarketingLanding({
               </div>
               <div className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
                 <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{language === 'ru' ? 'Стиль' : 'Mode'}</div>
-                <div className="mt-1 text-sm font-black text-cyan-100">{language === 'ru' ? 'Sci-Fi' : 'Sci-Fi'}</div>
+                <div className="mt-1 text-sm font-black text-cyan-100">{language === 'ru' ? 'Космос' : 'Sci-Fi'}</div>
               </div>
             </div>
 
@@ -160,11 +160,11 @@ export function MarketingLanding({
             <span className="text-white/28">•</span>
             <span>{language === 'ru' ? 'сразу после оплаты' : 'instant delivery'}</span>
             <span className="text-white/28">•</span>
-            <a href={`mailto:${contacts.email}`} className="transition hover:text-white">Email</a>
+            <a href={`mailto:${contacts.email}`} className="transition hover:text-white">{language === 'ru' ? 'Почта' : 'Email'}</a>
             <span className="text-white/28">•</span>
             <a href={`tel:${contacts.phone}`} className="transition hover:text-white">{language === 'ru' ? 'Телефон' : 'Phone'}</a>
             <span className="text-white/28">•</span>
-            <a href={contacts.telegram} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">Telegram</a>
+            <a href={contacts.telegram} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">{language === 'ru' ? 'Телеграм' : 'Telegram'}</a>
             <span className="text-white/28">•</span>
             <span>{contacts.sellerName}</span>
             <span className="text-white/28">•</span>

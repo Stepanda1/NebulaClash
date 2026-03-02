@@ -27,7 +27,7 @@ type LevelStateSnapshot = {
 };
 
 const GEM_ROTATION: GemType[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
-const SPECIAL_GOAL_ROTATION: SpecialGoalType[] = ['bomb', 'lightning', 'cross', 'pulse', 'nova'];
+const SPECIAL_GOAL_ROTATION: SpecialGoalType[] = ['bomb', 'lightning'];
 const BOSS_DEBRIS_CAP = 14;
 
 function normalizeSpecialGoal(special: SpecialGoalType, value: number): SpecialGoalType {
