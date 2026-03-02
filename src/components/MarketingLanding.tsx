@@ -58,15 +58,14 @@ export function MarketingLanding({
   ] as const;
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[radial-gradient(130%_140%_at_18%_14%,#421a86_0%,#1a1046_34%,#09051c_70%,#03010c_100%)] text-white">
+    <div className="relative h-full w-full overflow-x-hidden overflow-y-auto bg-[radial-gradient(130%_140%_at_18%_14%,#421a86_0%,#1a1046_34%,#09051c_70%,#03010c_100%)] text-white">
       <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(circle_at_22%_18%,rgba(255,255,255,0.72)_1px,transparent_1px),radial-gradient(circle_at_74%_28%,rgba(125,211,252,0.58)_1px,transparent_1px),radial-gradient(circle_at_65%_72%,rgba(196,181,253,0.52)_1px,transparent_1px)] [background-size:170px_170px,240px_240px,300px_300px]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_34%,rgba(217,70,239,0.18),transparent_34%),radial-gradient(circle_at_78%_74%,rgba(56,189,248,0.18),transparent_30%),radial-gradient(circle_at_60%_16%,rgba(251,191,36,0.1),transparent_26%)]" />
       <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-fuchsia-500/18 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 bottom-16 h-72 w-72 rounded-full bg-cyan-400/14 blur-3xl" />
 
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col justify-between px-5 py-6">
-        <div className="flex-1" />
-        <div className="relative overflow-hidden rounded-[2.2rem] border border-cyan-200/20 bg-[linear-gradient(145deg,rgba(8,14,34,0.92)_0%,rgba(14,23,52,0.86)_38%,rgba(21,15,56,0.82)_72%,rgba(6,10,28,0.94)_100%)] p-5 shadow-[0_0_44px_rgba(34,211,238,0.14)] backdrop-blur-md">
+      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-md flex-col justify-center gap-4 px-5 py-4 sm:py-6">
+        <div className="relative mt-4 overflow-hidden rounded-[2.2rem] border border-cyan-200/20 bg-[linear-gradient(145deg,rgba(8,14,34,0.92)_0%,rgba(14,23,52,0.86)_38%,rgba(21,15,56,0.82)_72%,rgba(6,10,28,0.94)_100%)] p-4 sm:p-5 shadow-[0_0_44px_rgba(34,211,238,0.14)] backdrop-blur-md">
           <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-cyan-300/10 blur-2xl" />
           <div className="pointer-events-none absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-fuchsia-400/10 blur-2xl" />
           <div className="pointer-events-none absolute right-6 top-6 h-20 w-20 rounded-full border border-cyan-100/20 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.28)_0%,rgba(125,211,252,0.12)_34%,rgba(14,116,144,0.05)_60%,rgba(0,0,0,0)_72%)]" />
@@ -74,7 +73,7 @@ export function MarketingLanding({
             Nebula Clash
           </div>
 
-          <div className="relative mt-7 rounded-3xl border border-white/10 bg-black/18 p-5">
+          <div className="relative mt-6 rounded-3xl border border-white/10 bg-black/18 p-4 sm:p-5">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">
               <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
               {language === 'ru' ? 'Матч-3 с боссами' : 'Boss Match-3'}
@@ -90,7 +89,7 @@ export function MarketingLanding({
                 <div className="absolute bottom-[16px] right-[18px] h-2 w-2 rounded-full bg-fuchsia-300 shadow-[0_0_10px_rgba(244,114,182,0.75)]" />
               </div>
             </div>
-            <div className="max-w-[84%] text-3xl font-black leading-tight text-white">
+            <div className="max-w-[84%] text-2xl font-black leading-tight text-white sm:text-3xl">
               {language === 'ru' ? 'Играть' : 'Play Now'}
             </div>
             <p className="mt-3 text-sm leading-relaxed text-white/72">
@@ -114,14 +113,14 @@ export function MarketingLanding({
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3">
+            <div className="mt-4 grid gap-3">
               <button
                 type="button"
                 onClick={() => {
                   trackEvent('landing_play_click', { entry: 'marketing_landing' });
                   onPlayNow();
                 }}
-                className="inline-flex w-full items-center justify-center gap-3 rounded-3xl border border-cyan-100/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.28)_0%,rgba(59,130,246,0.24)_46%,rgba(16,185,129,0.2)_100%)] px-5 py-4 text-sm font-black uppercase tracking-[0.22em] text-cyan-50 shadow-[0_0_26px_rgba(34,211,238,0.18)] transition-all hover:scale-[1.01]"
+                className="inline-flex w-full items-center justify-center gap-3 rounded-3xl border border-cyan-100/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.28)_0%,rgba(59,130,246,0.24)_46%,rgba(16,185,129,0.2)_100%)] px-5 py-3.5 text-sm font-black uppercase tracking-[0.22em] text-cyan-50 shadow-[0_0_26px_rgba(34,211,238,0.18)] transition-all hover:scale-[1.01]"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
                   <Play className="ml-0.5 h-5 w-5" />
@@ -154,7 +153,7 @@ export function MarketingLanding({
           </div>
         </div>
 
-        <div className="mt-4 rounded-[1.4rem] border border-white/8 bg-slate-950/42 px-3 py-3 shadow-[0_0_24px_rgba(0,0,0,0.16)] backdrop-blur-md">
+        <div className="mb-2 rounded-[1.4rem] border border-white/8 bg-slate-950/42 px-3 py-3 shadow-[0_0_24px_rgba(0,0,0,0.16)] backdrop-blur-md">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] leading-none text-white/62">
             <span>{language === 'ru' ? '99 / 199 / 499 ₽' : '99 / 199 / 499 RUB'}</span>
             <span className="text-white/28">•</span>
