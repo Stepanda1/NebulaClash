@@ -64,7 +64,8 @@ export function MarketingLanding({
       <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-fuchsia-500/18 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 bottom-16 h-72 w-72 rounded-full bg-cyan-400/14 blur-3xl" />
 
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col justify-center px-5 py-6">
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col justify-between px-5 py-6">
+        <div className="flex-1" />
         <div className="relative overflow-hidden rounded-[2.2rem] border border-cyan-200/20 bg-[linear-gradient(145deg,rgba(8,14,34,0.92)_0%,rgba(14,23,52,0.86)_38%,rgba(21,15,56,0.82)_72%,rgba(6,10,28,0.94)_100%)] p-5 shadow-[0_0_44px_rgba(34,211,238,0.14)] backdrop-blur-md">
           <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-cyan-300/10 blur-2xl" />
           <div className="pointer-events-none absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-fuchsia-400/10 blur-2xl" />
@@ -74,6 +75,10 @@ export function MarketingLanding({
           </div>
 
           <div className="relative mt-7 rounded-3xl border border-white/10 bg-black/18 p-5">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">
+              <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
+              {language === 'ru' ? 'Boss Match-3' : 'Boss Match-3'}
+            </div>
             <div className="max-w-[84%] text-3xl font-black leading-tight text-white">
               {language === 'ru' ? 'Play Now' : 'Play Now'}
             </div>
@@ -82,6 +87,21 @@ export function MarketingLanding({
                 ? 'Космический match-3 с боссами, щитами и особыми формами. Запускайте уровень сразу и проверяйте, цепляет ли игра с первых секунд.'
                 : 'A sci-fi match-3 with bosses, shields, and shape-based specials. Jump straight into the level flow and see if the game hooks on first contact.'}
             </p>
+
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{language === 'ru' ? 'Формы' : 'Shapes'}</div>
+                <div className="mt-1 text-sm font-black text-cyan-100">Nova</div>
+              </div>
+              <div className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{language === 'ru' ? 'Бои' : 'Bosses'}</div>
+                <div className="mt-1 text-sm font-black text-cyan-100">60</div>
+              </div>
+              <div className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{language === 'ru' ? 'Стиль' : 'Mode'}</div>
+                <div className="mt-1 text-sm font-black text-cyan-100">{language === 'ru' ? 'Sci-Fi' : 'Sci-Fi'}</div>
+              </div>
+            </div>
 
             <div className="mt-5 grid gap-3">
               <button
@@ -121,67 +141,39 @@ export function MarketingLanding({
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="relative mt-4 rounded-3xl border border-white/10 bg-black/18 p-4">
-            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200/80">
-              {language === 'ru' ? 'Товары и услуги' : 'Goods and Services'}
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-white/75">
-              {language === 'ru'
-                ? 'В игре доступны пакеты внутриигровой валюты (космические монеты) для покупки бустеров и ускорения прогресса. После подтверждения оплаты монеты начисляются автоматически.'
-                : 'The game offers packs of in-game currency (space coins) used for boosters and progression. Coins are credited automatically after payment confirmation.'}
-            </p>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-2xl border border-emerald-200/20 bg-emerald-300/[0.08] px-2 py-3">
-                <div className="text-xs font-black text-white">120</div>
-                <div className="mt-1 text-[11px] text-white/70">{language === 'ru' ? 'монет' : 'coins'}</div>
-                <div className="mt-1 text-xs font-bold text-emerald-100">99 ₽</div>
-              </div>
-              <div className="rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.08] px-2 py-3">
-                <div className="text-xs font-black text-white">300</div>
-                <div className="mt-1 text-[11px] text-white/70">{language === 'ru' ? 'монет' : 'coins'}</div>
-                <div className="mt-1 text-xs font-bold text-cyan-100">199 ₽</div>
-              </div>
-              <div className="rounded-2xl border border-fuchsia-200/20 bg-fuchsia-300/[0.08] px-2 py-3">
-                <div className="text-xs font-black text-white">800</div>
-                <div className="mt-1 text-[11px] text-white/70">{language === 'ru' ? 'монет' : 'coins'}</div>
-                <div className="mt-1 text-xs font-bold text-fuchsia-100">499 ₽</div>
-              </div>
-            </div>
+        <div className="mt-4 rounded-[1.8rem] border border-white/10 bg-slate-950/55 p-4 shadow-[0_0_30px_rgba(0,0,0,0.22)] backdrop-blur-md">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
+              {language === 'ru' ? 'Пакеты монет: 99 / 199 / 499 ₽' : 'Coin packs: 99 / 199 / 499 RUB'}
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
+              {language === 'ru' ? 'Начисление: сразу после оплаты' : 'Delivery: instant after payment'}
+            </span>
           </div>
 
-          <div className="relative mt-4 rounded-3xl border border-white/10 bg-black/18 p-4">
-            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200/80">
-              {language === 'ru' ? 'Контакты и документы' : 'Contacts and Legal'}
-            </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-white/80">
-              <a href={`mailto:${contacts.email}`} className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 hover:bg-white/[0.08]">
-                Email: {contacts.email}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-white/72">
+            <a href={`mailto:${contacts.email}`} className="hover:text-white">Email</a>
+            <a href={`tel:${contacts.phone}`} className="hover:text-white">{language === 'ru' ? 'Телефон' : 'Phone'}</a>
+            <a href={contacts.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-white">Telegram</a>
+            <span className="text-white/45">|</span>
+            <span>{contacts.sellerName}</span>
+            <span>{language === 'ru' ? 'ИНН' : 'TIN'} {contacts.sellerInn}</span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {legalLinks.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-cyan-200/16 bg-cyan-300/[0.06] px-3 py-1.5 text-[11px] font-semibold text-cyan-100/90 transition hover:bg-cyan-300/[0.1]"
+              >
+                {item.label}
               </a>
-              <a href={`tel:${contacts.phone}`} className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 hover:bg-white/[0.08]">
-                {language === 'ru' ? 'Телефон' : 'Phone'}: {contacts.phone}
-              </a>
-              <a href={contacts.telegram} target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 hover:bg-white/[0.08]">
-                Telegram: {contacts.telegram}
-              </a>
-            </div>
-            <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-xs leading-relaxed text-white/75">
-              <div>{language === 'ru' ? 'Самозанятый' : 'Self-employed'}: {contacts.sellerName}</div>
-              <div>{language === 'ru' ? 'ИНН' : 'TIN'}: {contacts.sellerInn}</div>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {legalLinks.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.08] px-3 py-2 text-center text-[11px] font-bold text-cyan-100 hover:bg-cyan-300/[0.12]"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
       </div>
