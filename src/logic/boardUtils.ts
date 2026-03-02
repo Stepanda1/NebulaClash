@@ -101,6 +101,9 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             const c = grid[y][x + 2];
 
             if (!isSameType(a, b) || !isSameType(a, c)) continue;
+            const noLeftExtension = x === 0 || !isSameType(a, grid[y][x - 1]);
+            const noRightExtension = x + 3 >= COLS || !isSameType(a, grid[y][x + 3]);
+            if (!noLeftExtension || !noRightExtension) continue;
 
             // Two above the center
             if (y >= 2) {
@@ -131,6 +134,9 @@ export const findMatches = (grid: Grid): Map<string, 'match' | 'bomb' | 'lightni
             const c = grid[y + 2][x];
 
             if (!isSameType(a, b) || !isSameType(a, c)) continue;
+            const noTopExtension = y === 0 || !isSameType(a, grid[y - 1][x]);
+            const noBottomExtension = y + 3 >= ROWS || !isSameType(a, grid[y + 3][x]);
+            if (!noTopExtension || !noBottomExtension) continue;
 
             // Two left of center
             if (x >= 2) {
