@@ -109,6 +109,34 @@ export function buildLevelConfigs(): LevelConfig[] {
   levels[1] = { mode: 'moves', limit: 26, goal: { type: 'bombs', value: 4 } };
   levels[3] = { mode: 'moves', limit: 24, goal: { type: 'lightning', value: 2 } };
 
+  // Smooth the first levels so each new pattern is introduced in isolation.
+  const onboardingLevels: LevelConfig[] = [
+    { mode: 'moves', limit: 28, goal: { type: 'collect', value: 16, color: 'red' } },
+    { mode: 'moves', limit: 28, goal: { type: 'collect', value: 18, color: 'blue' } },
+    { mode: 'moves', limit: 26, goal: { type: 'bombs', value: 3 } },
+    { mode: 'moves', limit: 26, goal: { type: 'collect_multi', targets: { red: 8, green: 8 } } },
+    { mode: 'moves', limit: 24, goal: { type: 'lightning', value: 2 } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 18, color: 'yellow' } },
+    { mode: 'moves', limit: 26, goal: { type: 'trash', value: 8 }, trashCount: 8 },
+    { mode: 'moves', limit: 24, goal: { type: 'bombs', value: 4 } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect_multi', targets: { blue: 10, purple: 10 } } },
+    { mode: 'moves', limit: 26, goal: { type: 'boss', value: Math.floor(120 * 1.2) } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'green' } },
+    { mode: 'moves', limit: 24, goal: { type: 'lightning', value: 3 } },
+    { mode: 'time', limit: 62, goal: { type: 'collect_multi', targets: { yellow: 10, orange: 10 } } },
+    { mode: 'moves', limit: 24, goal: { type: 'bombs', value: 4 } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'purple' } },
+    { mode: 'moves', limit: 24, goal: { type: 'trash', value: 10 }, trashCount: 10 },
+    { mode: 'moves', limit: 24, goal: { type: 'collect_multi', targets: { green: 11, yellow: 11 } } },
+    { mode: 'moves', limit: 23, goal: { type: 'lightning', value: 4 } },
+    { mode: 'moves', limit: 23, goal: { type: 'bombs', value: 5 } },
+    { mode: 'moves', limit: 25, goal: { type: 'boss', value: Math.floor(130 * 1.2) } },
+  ];
+
+  onboardingLevels.forEach((config, index) => {
+    levels[index] = config;
+  });
+
   return levels;
 }
 
