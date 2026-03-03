@@ -1,7 +1,7 @@
 import type { LegalContacts } from '../types/legal';
 import type { ShopPack } from '../types/shop';
 
-export const BOOSTER_COST = 30;
+export const BOOSTER_COST = 15;
 export const MOVE_BOOST_AMOUNT = 5;
 export const TIME_BOOST_SECONDS = 30;
 export const TUTORIAL_SEEN_KEY = 'match3_tutorial_seen';
@@ -29,19 +29,19 @@ export function getCoinPacksFromEnv(): ShopPack[] {
   return [
     {
       id: 'pack-120',
-      coins: 120,
+      coins: 60,
       priceLabel: '99 ₽ / $1.19',
       url: import.meta.env.VITE_SHOP_PACK_SMALL_URL || undefined,
     },
     {
       id: 'pack-300',
-      coins: 300,
+      coins: 150,
       priceLabel: '199 ₽ / $2.39',
       url: import.meta.env.VITE_SHOP_PACK_MEDIUM_URL || undefined,
     },
     {
       id: 'pack-800',
-      coins: 800,
+      coins: 420,
       priceLabel: '499 ₽ / $5.99',
       url: import.meta.env.VITE_SHOP_PACK_LARGE_URL || undefined,
     },

@@ -11,7 +11,7 @@ const statePath = join(dataDir, 'wallet-state.json');
 const port = Number(process.env.PORT || 8787);
 const authSecret = String(process.env.API_AUTH_SECRET || '');
 const sessionTtlSeconds = Number(process.env.SESSION_TTL_SECONDS || 60 * 60 * 24 * 30);
-const initialCoins = Math.max(0, Math.floor(Number(process.env.INITIAL_COINS || 120)));
+const initialCoins = Math.max(0, Math.floor(Number(process.env.INITIAL_COINS || 40)));
 const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
   .map((origin) => origin.trim())
@@ -23,9 +23,9 @@ const RATE_LIMIT_STORE = new Map();
 const JSON_CONTENT_TYPES = ['application/json', 'application/json; charset=utf-8'];
 
 const DEFAULT_PACKS = [
-  { id: 'pack-120', coins: 120, amountRub: 99 },
-  { id: 'pack-300', coins: 300, amountRub: 199 },
-  { id: 'pack-800', coins: 800, amountRub: 499 },
+  { id: 'pack-120', coins: 60, amountRub: 99 },
+  { id: 'pack-300', coins: 150, amountRub: 199 },
+  { id: 'pack-800', coins: 420, amountRub: 499 },
 ];
 
 function readPacks() {
