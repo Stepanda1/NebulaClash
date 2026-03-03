@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { useGame } from './hooks/useGame';
 import { PauseMenu } from './components/PauseMenu';
@@ -70,6 +70,7 @@ const PROGRESS_RESET_MARKER_KEY = `match3_progress_reset_applied_v${PROGRESS_RES
 const GAME_STATE_SNAPSHOT_STORAGE_KEY = 'match3_game_state_snapshot';
 const MAX_ADMIN_UNLOCK_LEVEL = 60;
 const ADMIN_ACCESS_TOKEN_KEY = 'match3_admin_access_token';
+const ADMIN_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 
 function getHasSeenTutorial(): boolean {
   if (typeof window === 'undefined') return false;
@@ -396,6 +397,14 @@ function App() {
     setIsAdminOpen(true);
   };
 
+  const clearAdminAccess = useCallback(() => {
+    setAdminAccessToken('');
+    setIsAdminOpen(false);
+    setAdminAuthError(null);
+    localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
+    replaceAppPath('/admin');
+  }, []);
+
   const grantCoinsAsAdmin = async (amount: number) => {
     if (adminAccessToken && playerId) {
       try {
@@ -548,6 +557,29 @@ function App() {
     setIsMarketingLandingOpen(false);
     setIsMapOpen(false);
   }, [adminAccessToken]);
+
+  useEffect(() => {
+    if (!isAdminPath() || !adminAccessToken) return;
+
+    let timeoutId = window.setTimeout(() => {
+      clearAdminAccess();
+    }, ADMIN_IDLE_TIMEOUT_MS);
+
+    const refreshTimeout = () => {
+      clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        clearAdminAccess();
+      }, ADMIN_IDLE_TIMEOUT_MS);
+    };
+
+    const events: Array<keyof WindowEventMap> = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touchstart'];
+    events.forEach((eventName) => window.addEventListener(eventName, refreshTimeout, { passive: true }));
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach((eventName) => window.removeEventListener(eventName, refreshTimeout));
+    };
+  }, [adminAccessToken, clearAdminAccess]);
 
   useEffect(() => {
     if (localStorage.getItem(PROGRESS_RESET_MARKER_KEY) !== '1') {
