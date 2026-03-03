@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Language } from '../i18n';
-import { WALLET_TOKEN_KEY } from '../config/appConfig';
+import { PAYMENT_RETURN_TO_GAME_KEY, WALLET_TOKEN_KEY } from '../config/appConfig';
 import type { ShopPack } from '../types/shop';
 
 type UseWalletOptions = {
@@ -114,12 +114,13 @@ export function useWallet({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${walletToken}`,
         },
-        body: JSON.stringify({ packId }),
+        body: JSON.stringify({ packId, returnUrl: window.location.href }),
       });
 
       const payload = await response.json().catch(() => ({})) as { paymentUrl?: string };
       if (response.ok && payload.paymentUrl) {
         onPackCheckout(packId);
+        window.localStorage.setItem(PAYMENT_RETURN_TO_GAME_KEY, '1');
         window.location.assign(payload.paymentUrl);
         return;
       }
@@ -203,6 +204,7 @@ export function useWallet({
 
     url.searchParams.delete('payment');
     url.searchParams.delete('orderId');
+    window.localStorage.removeItem(PAYMENT_RETURN_TO_GAME_KEY);
     window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   }, [language, onPaymentStatus, syncWalletBalance, walletToken]);
 

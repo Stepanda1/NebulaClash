@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Grid, Tile, GemType } from '../types';
 import { createBoard, findMatches, removeMatches, applyGravity, copyGrid, convertToSpecialPieces, getBombAffectedTiles, getLightningAffectedTiles, getCrossAffectedTiles, getNovaAffectedTiles, getPulseAffectedTiles, expandSpecialChain, hasPossibleMoves, reshuffleBoard, ROWS, COLS } from '../logic/boardUtils';
 import { buildLevelConfigs, isGoalReached, type LevelConfig } from '../logic/levelProgress';
+import { PAYMENT_RETURN_TO_GAME_KEY } from '../config/appConfig';
 
 type LevelStateSnapshot = {
     grid: Grid;
@@ -9,8 +10,41 @@ type LevelStateSnapshot = {
     timeLeft: number;
 };
 
+type PersistedGameState = {
+    grid: Grid;
+    score: number;
+    level: number;
+    moves: number;
+    timeLeft: number;
+    collected: Record<GemType, number>;
+    validMoves: number;
+    match3Moves: number;
+    bombDoubleActivations: number;
+    lightningSwaps: number;
+    levelBombActivations: number;
+    levelLightningActivations: number;
+    levelCrossActivations: number;
+    levelPulseActivations: number;
+    levelNovaActivations: number;
+    levelSmashEvents: number;
+    comboX5Count: number;
+    trashDestroyed: number;
+    trashTotal: number;
+    matchTick: number;
+    comboLevel: number;
+    comboId: number;
+    bigBlastId: number;
+    smashId: number;
+    bossHp: number;
+    bossMaxHp: number;
+    bossHitTick: number;
+    bossLastHitDamage: number;
+    goalClearId: number;
+};
+
 const BOSS_DEBRIS_CAP = 14;
 const LEVEL_CONFIGS: LevelConfig[] = buildLevelConfigs();
+const GAME_STATE_STORAGE_KEY = 'match3_game_state_snapshot';
 
 export const useGame = () => {
     const [grid, setGrid] = useState<Grid>(createBoard());
@@ -80,6 +114,11 @@ export const useGame = () => {
 
     const getLevelConfig = useCallback((targetLevel: number): LevelConfig => {
         return LEVEL_CONFIGS[(targetLevel - 1) % LEVEL_CONFIGS.length];
+    }, []);
+
+    const shouldRestoreAfterPayment = useCallback(() => {
+        if (typeof window === 'undefined') return false;
+        return window.localStorage.getItem(PAYMENT_RETURN_TO_GAME_KEY) === '1';
     }, []);
 
     const addTrashToGrid = useCallback((baseGrid: Grid, count: number): Grid => {
@@ -159,6 +198,134 @@ export const useGame = () => {
     useEffect(() => {
         prepareLevel(level + 1);
     }, [level, prepareLevel]);
+
+    useEffect(() => {
+        if (!shouldRestoreAfterPayment()) return;
+        if (typeof window === 'undefined') return;
+
+        const raw = window.localStorage.getItem(GAME_STATE_STORAGE_KEY);
+        if (!raw) return;
+
+        try {
+            const parsed = JSON.parse(raw) as Partial<PersistedGameState>;
+            if (!parsed || !Array.isArray(parsed.grid) || !Number.isFinite(parsed.level)) return;
+
+            const restoredLevel = Math.max(1, Math.floor(Number(parsed.level)));
+            setLevel(restoredLevel);
+            setGrid(parsed.grid as Grid);
+            setScore(Math.max(0, Math.floor(Number(parsed.score) || 0)));
+            setMoves(Math.max(0, Math.floor(Number(parsed.moves) || 0)));
+            setTimeLeft(Math.max(0, Math.floor(Number(parsed.timeLeft) || 0)));
+            setCollected({
+                red: Math.max(0, Math.floor(Number(parsed.collected?.red) || 0)),
+                blue: Math.max(0, Math.floor(Number(parsed.collected?.blue) || 0)),
+                green: Math.max(0, Math.floor(Number(parsed.collected?.green) || 0)),
+                yellow: Math.max(0, Math.floor(Number(parsed.collected?.yellow) || 0)),
+                purple: Math.max(0, Math.floor(Number(parsed.collected?.purple) || 0)),
+                orange: Math.max(0, Math.floor(Number(parsed.collected?.orange) || 0)),
+            });
+            setValidMoves(Math.max(0, Math.floor(Number(parsed.validMoves) || 0)));
+            setMatch3Moves(Math.max(0, Math.floor(Number(parsed.match3Moves) || 0)));
+            setBombDoubleActivations(Math.max(0, Math.floor(Number(parsed.bombDoubleActivations) || 0)));
+            setLightningSwaps(Math.max(0, Math.floor(Number(parsed.lightningSwaps) || 0)));
+            setLevelBombActivations(Math.max(0, Math.floor(Number(parsed.levelBombActivations) || 0)));
+            setLevelLightningActivations(Math.max(0, Math.floor(Number(parsed.levelLightningActivations) || 0)));
+            setLevelCrossActivations(Math.max(0, Math.floor(Number(parsed.levelCrossActivations) || 0)));
+            setLevelPulseActivations(Math.max(0, Math.floor(Number(parsed.levelPulseActivations) || 0)));
+            setLevelNovaActivations(Math.max(0, Math.floor(Number(parsed.levelNovaActivations) || 0)));
+            setLevelSmashEvents(Math.max(0, Math.floor(Number(parsed.levelSmashEvents) || 0)));
+            setComboX5Count(Math.max(0, Math.floor(Number(parsed.comboX5Count) || 0)));
+            setTrashDestroyed(Math.max(0, Math.floor(Number(parsed.trashDestroyed) || 0)));
+            setTrashTotal(Math.max(0, Math.floor(Number(parsed.trashTotal) || 0)));
+            setMatchTick(Math.max(0, Math.floor(Number(parsed.matchTick) || 0)));
+            setComboLevel(Math.max(0, Math.floor(Number(parsed.comboLevel) || 0)));
+            setComboId(Math.max(0, Math.floor(Number(parsed.comboId) || 0)));
+            setBigBlastId(Math.max(0, Math.floor(Number(parsed.bigBlastId) || 0)));
+            setSmashId(Math.max(0, Math.floor(Number(parsed.smashId) || 0)));
+            setBossHp(Math.max(0, Math.floor(Number(parsed.bossHp) || 0)));
+            setBossMaxHp(Math.max(0, Math.floor(Number(parsed.bossMaxHp) || 0)));
+            setBossHitTick(Math.max(0, Math.floor(Number(parsed.bossHitTick) || 0)));
+            setBossLastHitDamage(Math.max(0, Math.floor(Number(parsed.bossLastHitDamage) || 0)));
+            setGoalClearId(Math.max(0, Math.floor(Number(parsed.goalClearId) || 0)));
+            setSelectedTile(null);
+            setIsProcessing(false);
+            setIsLevelUp(false);
+            setIsPaused(false);
+            setExplodingIds(new Set());
+            setIsLevelTransition(false);
+            prepareLevel(restoredLevel + 1);
+        } catch {
+            // Ignore malformed snapshots and fall back to a fresh level.
+        }
+    }, [prepareLevel, shouldRestoreAfterPayment]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const snapshot: PersistedGameState = {
+            grid,
+            score,
+            level,
+            moves,
+            timeLeft,
+            collected,
+            validMoves,
+            match3Moves,
+            bombDoubleActivations,
+            lightningSwaps,
+            levelBombActivations,
+            levelLightningActivations,
+            levelCrossActivations,
+            levelPulseActivations,
+            levelNovaActivations,
+            levelSmashEvents,
+            comboX5Count,
+            trashDestroyed,
+            trashTotal,
+            matchTick,
+            comboLevel,
+            comboId,
+            bigBlastId,
+            smashId,
+            bossHp,
+            bossMaxHp,
+            bossHitTick,
+            bossLastHitDamage,
+            goalClearId,
+        };
+
+        window.localStorage.setItem(GAME_STATE_STORAGE_KEY, JSON.stringify(snapshot));
+    }, [
+        grid,
+        score,
+        level,
+        moves,
+        timeLeft,
+        collected,
+        validMoves,
+        match3Moves,
+        bombDoubleActivations,
+        lightningSwaps,
+        levelBombActivations,
+        levelLightningActivations,
+        levelCrossActivations,
+        levelPulseActivations,
+        levelNovaActivations,
+        levelSmashEvents,
+        comboX5Count,
+        trashDestroyed,
+        trashTotal,
+        matchTick,
+        comboLevel,
+        comboId,
+        bigBlastId,
+        smashId,
+        bossHp,
+        bossMaxHp,
+        bossHitTick,
+        bossLastHitDamage,
+        goalClearId,
+    ]);
 
     const ensurePlayableGrid = useCallback((candidate: Grid): Grid => {
         if (hasPossibleMoves(candidate)) return candidate;

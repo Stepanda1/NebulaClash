@@ -25,6 +25,7 @@ import { useWallet } from './hooks/useWallet';
 import {
   BOOSTER_COST,
   MOVE_BOOST_AMOUNT,
+  PAYMENT_RETURN_TO_GAME_KEY,
   TIME_BOOST_SECONDS,
   TUTORIAL_SEEN_KEY,
   getCoinPacksFromEnv,
@@ -88,7 +89,14 @@ function getDefaultLanguage(): Language {
 
 function shouldOpenMarketingLanding(): boolean {
   if (typeof window === 'undefined') return true;
+  if (window.localStorage.getItem(PAYMENT_RETURN_TO_GAME_KEY) === '1') return false;
   return !window.location.pathname.startsWith('/play');
+}
+
+function shouldOpenMapByDefault(): boolean {
+  if (typeof window === 'undefined') return getHasSeenTutorial();
+  if (window.localStorage.getItem(PAYMENT_RETURN_TO_GAME_KEY) === '1') return false;
+  return getHasSeenTutorial();
 }
 
 function replaceAppPath(pathname: string): void {
@@ -118,7 +126,7 @@ function App() {
   const [lowPerfMode, setLowPerfMode] = useState(false);
   const [language, setLanguage] = useState<Language>(getDefaultLanguage);
   const [isMarketingLandingOpen, setIsMarketingLandingOpen] = useState(shouldOpenMarketingLanding);
-  const [isMapOpen, setIsMapOpen] = useState(getHasSeenTutorial);
+  const [isMapOpen, setIsMapOpen] = useState(shouldOpenMapByDefault);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);

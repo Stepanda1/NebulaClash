@@ -315,7 +315,22 @@ function buildRobokassaSignature(parts, password, shpParams = {}) {
   return createHash('md5').update(signatureBase).digest('hex');
 }
 
-function createRobokassaInvoice(state, req, playerId, pack) {
+function buildPaymentReturnUrl(rawUrl, status, orderId) {
+  const normalized = String(rawUrl || '').trim();
+  if (!normalized) return '';
+
+  try {
+    const url = new URL(normalized);
+    if (!isOriginAllowed(url.origin)) return '';
+    url.searchParams.set('payment', status);
+    url.searchParams.set('orderId', orderId);
+    return url.toString();
+  } catch {
+    return '';
+  }
+}
+
+function createRobokassaInvoice(state, req, playerId, pack, returnUrl = '') {
   const baseUrl = getBaseUrl(req);
   const merchantLogin = String(process.env.ROBOKASSA_MERCHANT_LOGIN || '').trim();
   const password1 = String(process.env.ROBOKASSA_PASSWORD1 || '').trim();
@@ -335,10 +350,18 @@ function createRobokassaInvoice(state, req, playerId, pack) {
   const invId = String(Date.now());
   const outSum = formatAmount(pack.amountRub);
   const originHeader = (req.headers.origin || '').trim();
-  const fallbackSuccess = originHeader ? `${originHeader}/?payment=success&orderId=${encodeURIComponent(orderId)}` : undefined;
-  const fallbackFail = originHeader ? `${originHeader}/?payment=fail&orderId=${encodeURIComponent(orderId)}` : undefined;
-  const successUrl = process.env.ROBOKASSA_SUCCESS_URL || fallbackSuccess || `${baseUrl}/?payment=success`;
-  const failUrl = process.env.ROBOKASSA_FAIL_URL || fallbackFail || `${baseUrl}/?payment=fail`;
+  const fallbackSuccess = buildPaymentReturnUrl(originHeader, 'success', orderId);
+  const fallbackFail = buildPaymentReturnUrl(originHeader, 'fail', orderId);
+  const successUrl =
+    buildPaymentReturnUrl(returnUrl, 'success', orderId) ||
+    buildPaymentReturnUrl(process.env.ROBOKASSA_SUCCESS_URL, 'success', orderId) ||
+    fallbackSuccess ||
+    buildPaymentReturnUrl(baseUrl, 'success', orderId);
+  const failUrl =
+    buildPaymentReturnUrl(returnUrl, 'fail', orderId) ||
+    buildPaymentReturnUrl(process.env.ROBOKASSA_FAIL_URL, 'fail', orderId) ||
+    fallbackFail ||
+    buildPaymentReturnUrl(baseUrl, 'fail', orderId);
   const shp = { Shp_orderId: orderId };
   const signature = buildRobokassaSignature([merchantLogin, outSum, invId], password1, shp);
 
@@ -393,7 +416,8 @@ async function createInvoice(req, res, payload, playerId) {
   }
 
   const state = loadState();
-  const invoice = createRobokassaInvoice(state, req, playerId, pack);
+  const returnUrl = String(payload.returnUrl || '').trim();
+  const invoice = createRobokassaInvoice(state, req, playerId, pack, returnUrl);
   if (!invoice.ok) {
     json(res, invoice.status || 500, { error: invoice.error || 'Invoice create failed' });
     return;
