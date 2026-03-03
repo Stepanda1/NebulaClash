@@ -148,7 +148,8 @@ export function CoinGlyph({ className }: GlyphProps) {
       <circle cx="16" cy="16" r="10.8" fill="url(#coinRim)" />
       <circle cx="16" cy="16" r="8.9" fill="url(#coinFill)" />
       <circle cx="16" cy="16" r="6.9" fill="none" stroke="rgba(120,53,15,0.36)" strokeWidth="1.5" />
-      <path d="M11.7 16h8.6M16 11.7v8.6" stroke="#451a03" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M16 10.7 18.2 13.8 21.9 14.6 19.3 17.1 19.7 20.8 16 18.9 12.3 20.8 12.7 17.1 10.1 14.6 13.8 13.8Z" fill="#5b2a06" />
+      <path d="M16 12.2 17.3 14 19.5 14.5 18 16 18.2 18.2 16 17.1 13.8 18.2 14 16 12.5 14.5 14.7 14Z" fill="rgba(255,243,199,0.55)" />
       <path d="M9.8 10.6c1.2-2.3 3.4-3.7 6.6-4.2" fill="none" stroke="rgba(255,255,255,0.62)" strokeWidth="1.3" strokeLinecap="round" />
       <ellipse cx="12.1" cy="10.9" rx="3.3" ry="1.6" fill="rgba(255,255,255,0.42)" />
       <circle cx="21.2" cy="20.5" r="1.2" fill="rgba(255,255,255,0.24)" />

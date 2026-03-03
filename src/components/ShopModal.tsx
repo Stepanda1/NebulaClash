@@ -48,13 +48,13 @@ export function ShopModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[80] flex items-center justify-center bg-slate-950/72 backdrop-blur-sm p-4"
+      className="absolute inset-0 z-[80] flex items-center justify-center overflow-hidden bg-slate-950/72 backdrop-blur-sm p-3 sm:p-4"
     >
       <CosmicBackdrop variant="shop" className="opacity-95" />
       <motion.div
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-cyan-100/20 bg-[linear-gradient(155deg,rgba(2,6,23,0.9)_0%,rgba(8,20,43,0.92)_34%,rgba(8,17,38,0.94)_100%)] p-4 text-white shadow-[0_20px_70px_rgba(0,0,0,0.55),0_0_60px_rgba(34,211,238,0.08)] sm:p-5"
+        className="relative flex max-h-[min(92vh,760px)] w-full max-w-[min(100%,30rem)] flex-col overflow-hidden rounded-3xl border border-cyan-100/20 bg-[linear-gradient(155deg,rgba(2,6,23,0.9)_0%,rgba(8,20,43,0.92)_34%,rgba(8,17,38,0.94)_100%)] text-white shadow-[0_20px_70px_rgba(0,0,0,0.55),0_0_60px_rgba(34,211,238,0.08)]"
       >
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-16 left-1/2 h-44 w-44 -translate-x-1/2 rounded-full bg-cyan-400/16 blur-3xl" />
@@ -62,23 +62,29 @@ export function ShopModal({
           <div className="absolute left-[-18px] bottom-14 h-24 w-24 rounded-full bg-amber-400/10 blur-2xl" />
           <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(120deg,transparent_0%,rgba(148,163,184,0.04)_32%,rgba(255,255,255,0.02)_50%,transparent_100%)]" />
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-rose-200/35 bg-gradient-to-br from-rose-500 to-red-600 text-white transition-all hover:from-rose-400 hover:to-red-500 active:scale-95 shadow-[0_8px_24px_rgba(239,68,68,0.35)]"
-          aria-label={language === 'ru' ? 'Закрыть магазин' : 'Close shop'}
-        >
-          <CloseGlyph className="h-4.5 w-4.5 text-white" />
-        </button>
+        <div className="relative z-20 flex items-center justify-between border-b border-white/8 px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
+          <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">
+            <NebulaCoreIcon className="h-3.5 w-3.5 text-cyan-100" />
+            {coinLabel}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-rose-200/35 bg-gradient-to-br from-rose-500 to-red-600 text-white transition-all hover:from-rose-400 hover:to-red-500 active:scale-95 shadow-[0_8px_24px_rgba(239,68,68,0.35)]"
+            aria-label={language === 'ru' ? 'Закрыть магазин' : 'Close shop'}
+          >
+            <CloseGlyph className="h-4.5 w-4.5 text-white" />
+          </button>
+        </div>
 
-        <div className="relative z-10 mb-4 overflow-hidden rounded-[1.8rem] border border-amber-200/20 bg-[linear-gradient(145deg,rgba(20,20,32,0.64)_0%,rgba(28,25,17,0.78)_45%,rgba(11,18,32,0.8)_100%)] p-4">
+        <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
+        <div className="relative mb-4 overflow-hidden rounded-[1.8rem] border border-amber-200/20 bg-[linear-gradient(145deg,rgba(20,20,32,0.64)_0%,rgba(28,25,17,0.78)_45%,rgba(11,18,32,0.8)_100%)] p-4">
           <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-amber-300/16 blur-2xl" />
           <div className="pointer-events-none absolute -left-6 bottom-0 h-24 w-24 rounded-full bg-cyan-300/12 blur-2xl" />
-          <div className="flex items-start justify-between gap-3 pr-12">
+          <div className="relative flex items-start justify-between gap-3">
             <div className="max-w-[58%]">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200/80">
-                <NebulaCoreIcon className="h-3.5 w-3.5 text-cyan-100" />
-                {coinLabel}
+                {language === 'ru' ? 'Премиум-валюта' : 'Premium Currency'}
               </div>
               <div className="mt-3 text-xl font-black leading-tight text-white sm:text-2xl">
                 {hookLine}
@@ -122,7 +128,7 @@ export function ShopModal({
           </div>
         </div>
 
-        <div className="relative z-10 space-y-3">
+        <div className="space-y-3">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
             <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/75">{boostersLabel}</div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -281,6 +287,7 @@ export function ShopModal({
               {paymentsHintLine2}
             </div>
           </div>
+        </div>
         </div>
       </motion.div>
     </motion.div>
