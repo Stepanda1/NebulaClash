@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, Lock, LogOut, Settings, Sparkles, Star, Volume2, VolumeX, X } from 'lucide-react';
+import { Lock, LogOut, Star, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import type { LegalSection } from '../types/legal';
 import { COPY } from '../i18n';
+import { CompassGlyph, CosmicBackdrop, JumpGlyph, NebulaCoreIcon } from './CosmicArtwork';
 
 type SpaceRoadmapProps = {
   unlockedLevel: number;
@@ -336,20 +337,23 @@ export function SpaceRoadmap({
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[radial-gradient(120%_130%_at_18%_12%,#3b1f7a_0%,#18103b_36%,#09041d_72%,#05020f_100%)] text-white">
-      <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(circle_at_20%_12%,rgba(255,255,255,0.7)_1px,transparent_1px),radial-gradient(circle_at_80%_33%,rgba(125,211,252,0.55)_1px,transparent_1px),radial-gradient(circle_at_68%_78%,rgba(196,181,253,0.48)_1px,transparent_1px)] [background-size:190px_190px,240px_240px,300px_300px]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_35%,rgba(217,70,239,0.2),transparent_35%),radial-gradient(circle_at_80%_75%,rgba(56,189,248,0.2),transparent_35%),radial-gradient(circle_at_55%_20%,rgba(251,191,36,0.12),transparent_28%)]" />
-      <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 bottom-20 h-72 w-72 rounded-full bg-cyan-400/18 blur-3xl" />
+    <div className="relative h-full w-full overflow-hidden bg-slate-950 text-white">
+      <CosmicBackdrop variant="roadmap" />
 
       <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-5">
-        <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-black/35 px-4 py-3 backdrop-blur-md">
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-[linear-gradient(145deg,rgba(2,6,23,0.52),rgba(15,23,42,0.36))] px-4 py-3 backdrop-blur-md">
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">{currentLabel}</div>
+            <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-cyan-200/80">
+              <NebulaCoreIcon className="h-3.5 w-3.5 text-cyan-100" />
+              {currentLabel}
+            </div>
             <div className="text-lg font-black">{t.level(unlockedLevel)}</div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="rounded-xl bg-cyan-300/20 px-3 py-2 text-xs font-bold text-cyan-100">{levelLabel}</div>
+            <div className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-300/20 px-3 py-2 text-xs font-bold text-cyan-100">
+              <CompassGlyph className="h-3.5 w-3.5 text-cyan-100" />
+              {levelLabel}
+            </div>
             <button
               type="button"
               onClick={() => setIsSettingsOpen(true)}
@@ -357,7 +361,7 @@ export function SpaceRoadmap({
               aria-label={settingsLabel}
               title={settingsLabel}
             >
-              <Settings className="w-5 h-5" />
+              <CompassGlyph className="h-5 w-5 text-white" />
             </button>
           </div>
         </div>
@@ -677,7 +681,7 @@ export function SpaceRoadmap({
           className="absolute bottom-6 left-1/2 z-30 inline-flex -translate-x-1/2 items-center justify-center rounded-full border-2 border-white/85 bg-cyan-400/90 p-3 text-slate-900 shadow-[0_0_24px_rgba(34,211,238,0.45)] hover:scale-105 active:scale-95 transition-all"
           aria-label={language === 'ru' ? 'К текущему уровню' : 'Go to current level'}
         >
-          <ArrowDown size={18} strokeWidth={3.4} />
+          <JumpGlyph className="h-[18px] w-[18px] text-slate-900" />
         </button>
       )}
 
@@ -693,7 +697,7 @@ export function SpaceRoadmap({
               <X size={18} strokeWidth={4} />
             </button>
 
-            <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-cyan-200/80"><Sparkles size={13} />{settingsLabel}</div>
+            <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-cyan-200/80"><NebulaCoreIcon className="h-[13px] w-[13px] text-cyan-100" />{settingsLabel}</div>
             <h3 className="mt-2 text-xl font-black text-white">{levelLabel}</h3>
 
             <div className="mt-5 w-full rounded-xl border border-white/20 bg-white/10 p-3 shadow-inner">

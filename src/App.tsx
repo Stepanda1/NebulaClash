@@ -6,7 +6,6 @@ import { GameOverMenu } from './components/GameOverMenu';
 import { LevelUpModal } from './components/LevelUpModal';
 import { StarProgress } from './components/StarProgress';
 import { AudioPlayer } from './components/AudioPlayer';
-import { Coins, Settings, ShoppingCart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TutorialHint } from './components/TutorialHint';
 import { SpaceRoadmap } from './components/SpaceRoadmap';
@@ -22,6 +21,7 @@ import type { LegalSection } from './types/legal';
 import { COPY } from './i18n';
 import { initAnalytics, trackEvent } from './analytics';
 import { useWallet } from './hooks/useWallet';
+import { CoinGlyph, CompassGlyph, VaultGlyph } from './components/CosmicArtwork';
 import {
   BOOSTER_COST,
   MOVE_BOOST_AMOUNT,
@@ -1023,7 +1023,7 @@ function App() {
               onClick={() => setIsPaused(true)}
               className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-2 sm:border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0"
             >
-              <Settings className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+              <CompassGlyph className="h-5 w-5 text-white sm:h-6 sm:w-6" />
             </button>
           </div>
 
@@ -1095,7 +1095,7 @@ function App() {
             title={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
             aria-label={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
           >
-            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
+            <VaultGlyph className="h-5 w-5 text-white sm:h-6 sm:w-6" />
           </button>
         </div>
         <div className="mt-1 flex items-center justify-end pr-2 sm:pr-3">
@@ -1112,9 +1112,8 @@ function App() {
                 <span className="absolute left-0 top-1/2 h-[2px] w-full -translate-y-1/2 rounded-full bg-emerald-950" />
               </span>
             </span>
-            <span className="relative inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#fde68a_0%,#fbbf24_42%,#f59e0b_72%,#d97706_100%)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.45),inset_0_-1px_2px_rgba(146,64,14,0.28),0_1px_6px_rgba(251,146,60,0.35)]">
-              <span className="absolute left-[3px] top-[2px] h-1 w-1.5 rounded-full bg-white/35 blur-[0.4px]" />
-              <Coins className="relative h-2.5 w-2.5 text-amber-950/95" />
+            <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white/10">
+              <CoinGlyph className="h-3 w-3" />
             </span>
             <span>{spaceCoins}</span>
           </button>

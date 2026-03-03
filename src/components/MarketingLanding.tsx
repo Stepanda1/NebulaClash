@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
-import { MessageSquareText, Play, Sparkles } from 'lucide-react';
 import type { Language } from '../i18n';
 import type { MarketingLinks } from '../config/appConfig';
 import type { LegalContacts } from '../types/legal';
 import { getAttributionPayload, trackEvent } from '../analytics';
+import { CosmicBackdrop, LaunchGlyph, NebulaCoreIcon, SignalGlyph } from './CosmicArtwork';
 
 type MarketingLandingProps = {
   language: Language;
@@ -58,35 +58,28 @@ export function MarketingLanding({
   ] as const;
 
   return (
-    <div className="relative h-full w-full overflow-x-hidden overflow-y-auto bg-[radial-gradient(130%_140%_at_18%_14%,#421a86_0%,#1a1046_34%,#09051c_70%,#03010c_100%)] text-white">
-      <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(circle_at_22%_18%,rgba(255,255,255,0.72)_1px,transparent_1px),radial-gradient(circle_at_74%_28%,rgba(125,211,252,0.58)_1px,transparent_1px),radial-gradient(circle_at_65%_72%,rgba(196,181,253,0.52)_1px,transparent_1px)] [background-size:170px_170px,240px_240px,300px_300px]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_34%,rgba(217,70,239,0.18),transparent_34%),radial-gradient(circle_at_78%_74%,rgba(56,189,248,0.18),transparent_30%),radial-gradient(circle_at_60%_16%,rgba(251,191,36,0.1),transparent_26%)]" />
-      <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-fuchsia-500/18 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 bottom-16 h-72 w-72 rounded-full bg-cyan-400/14 blur-3xl" />
+    <div className="relative h-full w-full overflow-x-hidden overflow-y-auto bg-slate-950 text-white">
+      <CosmicBackdrop variant="landing" />
 
       <div className="relative z-10 mx-auto flex min-h-full w-full max-w-md flex-col justify-center gap-4 px-5 py-4 sm:py-6">
-        <div className="relative mt-4 overflow-hidden rounded-[2.2rem] border border-cyan-200/20 bg-[linear-gradient(145deg,rgba(8,14,34,0.92)_0%,rgba(14,23,52,0.86)_38%,rgba(21,15,56,0.82)_72%,rgba(6,10,28,0.94)_100%)] p-4 sm:p-5 shadow-[0_0_44px_rgba(34,211,238,0.14)] backdrop-blur-md">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-cyan-300/10 blur-2xl" />
-          <div className="pointer-events-none absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-fuchsia-400/10 blur-2xl" />
-          <div className="pointer-events-none absolute right-6 top-6 h-20 w-20 rounded-full border border-cyan-100/20 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.28)_0%,rgba(125,211,252,0.12)_34%,rgba(14,116,144,0.05)_60%,rgba(0,0,0,0)_72%)]" />
+        <div className="relative mt-4 overflow-hidden rounded-[2.2rem] border border-cyan-200/20 bg-[linear-gradient(152deg,rgba(7,17,38,0.94)_0%,rgba(10,28,57,0.9)_30%,rgba(16,32,68,0.86)_58%,rgba(7,14,32,0.96)_100%)] p-4 sm:p-5 shadow-[0_0_44px_rgba(34,211,238,0.16)] backdrop-blur-md">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-cyan-300/12 blur-2xl" />
+          <div className="pointer-events-none absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-amber-300/10 blur-2xl" />
+          <div className="pointer-events-none absolute right-6 top-6 h-20 w-20 rounded-full border border-cyan-100/18 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.24)_0%,rgba(125,211,252,0.12)_34%,rgba(14,116,144,0.05)_60%,rgba(0,0,0,0)_72%)]" />
           <div className="pointer-events-none absolute left-6 top-6 text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200/80">
             Nebula Clash
           </div>
 
-          <div className="relative mt-6 rounded-3xl border border-white/10 bg-black/18 p-4 sm:p-5">
+          <div className="relative mt-6 rounded-3xl border border-white/10 bg-[linear-gradient(160deg,rgba(2,6,23,0.4),rgba(15,23,42,0.28))] p-4 sm:p-5">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">
               <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
               {language === 'ru' ? 'Матч-3 с боссами' : 'Boss Match-3'}
             </div>
             <div className="mb-4 flex items-center justify-center">
-              <div className="relative h-24 w-24">
-                <div className="absolute inset-0 rounded-full border border-cyan-200/25 bg-[radial-gradient(circle_at_35%_32%,rgba(255,255,255,0.2),rgba(56,189,248,0.12)_34%,rgba(8,47,73,0.08)_60%,rgba(0,0,0,0)_78%)]" />
-                <div className="absolute inset-[10px] rounded-full border border-fuchsia-200/20 bg-slate-950/35" />
-                <div className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-2xl border border-cyan-100/25 bg-[linear-gradient(135deg,rgba(34,211,238,0.35),rgba(59,130,246,0.15),rgba(168,85,247,0.28))] shadow-[0_0_22px_rgba(34,211,238,0.18)]" />
-                <div className="absolute left-1/2 top-1/2 h-[2px] w-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-transparent via-cyan-200/55 to-transparent" />
-                <div className="absolute left-1/2 top-1/2 h-14 w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-transparent via-fuchsia-200/45 to-transparent" />
-                <div className="absolute left-[16px] top-[18px] h-2.5 w-2.5 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.8)]" />
-                <div className="absolute bottom-[16px] right-[18px] h-2 w-2 rounded-full bg-fuchsia-300 shadow-[0_0_10px_rgba(244,114,182,0.75)]" />
+              <div className="relative flex h-24 w-24 items-center justify-center">
+                <div className="absolute inset-0 rounded-full border border-cyan-200/20 bg-[radial-gradient(circle_at_50%_50%,rgba(125,211,252,0.12),rgba(0,0,0,0)_70%)]" />
+                <div className="absolute inset-[8px] rounded-full border border-white/8 bg-slate-950/18" />
+                <NebulaCoreIcon className="h-20 w-20 text-cyan-200 drop-shadow-[0_0_18px_rgba(34,211,238,0.22)]" />
               </div>
             </div>
             <div className="max-w-[84%] text-2xl font-black leading-tight text-white sm:text-3xl">
@@ -120,10 +113,10 @@ export function MarketingLanding({
                   trackEvent('landing_play_click', { entry: 'marketing_landing' });
                   onPlayNow();
                 }}
-                className="inline-flex w-full items-center justify-center gap-3 rounded-3xl border border-cyan-100/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.28)_0%,rgba(59,130,246,0.24)_46%,rgba(16,185,129,0.2)_100%)] px-5 py-3.5 text-sm font-black uppercase tracking-[0.22em] text-cyan-50 shadow-[0_0_26px_rgba(34,211,238,0.18)] transition-all hover:scale-[1.01]"
+                className="inline-flex w-full items-center justify-center gap-3 rounded-3xl border border-cyan-100/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.22)_0%,rgba(59,130,246,0.22)_46%,rgba(251,191,36,0.14)_100%)] px-5 py-3.5 text-sm font-black uppercase tracking-[0.22em] text-cyan-50 shadow-[0_0_26px_rgba(34,211,238,0.18)] transition-all hover:scale-[1.01]"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
-                  <Play className="ml-0.5 h-5 w-5" />
+                  <LaunchGlyph className="h-5 w-5 text-cyan-100" />
                 </span>
                 {language === 'ru' ? 'Играть сейчас' : 'Play Now'}
               </button>
@@ -134,7 +127,7 @@ export function MarketingLanding({
                   onClick={() => openTrackedLink('landing_join_tg_click', marketingLinks.telegramUrl, 'telegram')}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200/20 bg-sky-300/[0.08] px-3 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100"
                 >
-                  <Sparkles className="h-4 w-4" />
+                  <NebulaCoreIcon className="h-4 w-4 text-cyan-100" />
                   TG
                 </button>
                 <button
@@ -143,9 +136,9 @@ export function MarketingLanding({
                     trackEvent('landing_feedback_open', { entry: 'marketing_landing' });
                     onOpenFeedback();
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-fuchsia-200/20 bg-fuchsia-300/[0.08] px-3 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-100"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200/20 bg-amber-300/[0.08] px-3 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100"
                 >
-                  <MessageSquareText className="h-4 w-4" />
+                  <SignalGlyph className="h-4 w-4 text-amber-100" />
                   {language === 'ru' ? 'Отзыв' : 'Feedback'}
                 </button>
               </div>
