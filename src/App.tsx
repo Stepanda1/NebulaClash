@@ -866,7 +866,7 @@ function App() {
     setGoalClearText(picked);
     const t1 = window.setTimeout(() => setGoalClearText(null), 900);
     return () => clearTimeout(t1);
-  }, [goalClearId, language]);
+  }, [goalClearId]);
 
   if (isMarketingLandingOpen) {
     return (
