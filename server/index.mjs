@@ -10,7 +10,12 @@ const dataDir = join(rootDir, 'data');
 const statePath = join(dataDir, 'wallet-state.json');
 const port = Number(process.env.PORT || 8787);
 const authSecret = String(process.env.API_AUTH_SECRET || '');
-const adminPlayerId = String(process.env.ADMIN_PLAYER_ID || '').trim();
+const adminPlayerIds = new Set(
+  String(process.env.ADMIN_PLAYER_ID || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean),
+);
 const sessionTtlSeconds = Number(process.env.SESSION_TTL_SECONDS || 60 * 60 * 24 * 30);
 const initialCoins = Math.max(0, Math.floor(Number(process.env.INITIAL_COINS || 50)));
 const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
@@ -305,7 +310,8 @@ function requireAuth(req, res) {
 }
 
 function isAdminPlayer(playerId) {
-  return Boolean(adminPlayerId) && String(playerId || '').trim() === adminPlayerId;
+  const normalized = String(playerId || '').trim();
+  return normalized ? adminPlayerIds.has(normalized) : false;
 }
 
 function ensureWallet(state, playerId) {
