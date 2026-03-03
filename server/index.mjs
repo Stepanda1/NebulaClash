@@ -10,6 +10,7 @@ const dataDir = join(rootDir, 'data');
 const statePath = join(dataDir, 'wallet-state.json');
 const port = Number(process.env.PORT || 8787);
 const authSecret = String(process.env.API_AUTH_SECRET || '');
+const adminPlayerId = String(process.env.ADMIN_PLAYER_ID || '').trim();
 const sessionTtlSeconds = Number(process.env.SESSION_TTL_SECONDS || 60 * 60 * 24 * 30);
 const initialCoins = Math.max(0, Math.floor(Number(process.env.INITIAL_COINS || 50)));
 const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
@@ -303,6 +304,10 @@ function requireAuth(req, res) {
   return session.playerId;
 }
 
+function isAdminPlayer(playerId) {
+  return Boolean(adminPlayerId) && String(playerId || '').trim() === adminPlayerId;
+}
+
 function ensureWallet(state, playerId) {
   if (typeof state.wallets[playerId] !== 'number') {
     state.wallets[playerId] = initialCoins;
@@ -336,6 +341,7 @@ function initSession(res, payload) {
     playerId,
     token,
     balance: Number(state.wallets[playerId] || 0),
+    isAdmin: isAdminPlayer(playerId),
   });
 }
 
@@ -517,7 +523,29 @@ function getWallet(res, playerId) {
   const changed = ensureWallet(state, playerId);
   if (changed) saveState(state);
   const balance = Number(state.wallets[playerId] || 0);
-  json(res, 200, { playerId, balance });
+  json(res, 200, { playerId, balance, isAdmin: isAdminPlayer(playerId) });
+}
+
+function grantAdminCoins(res, payload, playerId) {
+  if (!isAdminPlayer(playerId)) {
+    json(res, 403, { error: 'Forbidden' });
+    return;
+  }
+
+  const amount = Math.floor(Number(payload.amount || 0));
+  if (amount === 0) {
+    json(res, 400, { error: 'non-zero amount is required' });
+    return;
+  }
+
+  const state = loadState();
+  ensureWallet(state, playerId);
+  const current = Number(state.wallets[playerId] || 0);
+  const next = Math.max(0, current + amount);
+  state.wallets[playerId] = next;
+  saveState(state);
+
+  json(res, 200, { ok: true, playerId, balance: next, isAdmin: true });
 }
 
 function spendWallet(res, payload, playerId) {
@@ -686,6 +714,22 @@ const server = createServer(async (req, res) => {
     await createInvoice(req, res, payload, playerId).catch((error) => {
       json(res, 500, { error: 'create-invoice failed', details: String(error) });
     });
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/admin/grant-coins') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'admin-grant-coins', 20)) return;
+    if (!requireJsonRequest(req, res)) return;
+
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    grantAdminCoins(res, payload, playerId);
     return;
   }
 

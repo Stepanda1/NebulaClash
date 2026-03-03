@@ -26,6 +26,8 @@ export function useWallet({
   const [shopNotice, setShopNotice] = useState<string | null>(null);
   const [walletToken, setWalletToken] = useState('');
   const [walletReady, setWalletReady] = useState(false);
+  const [playerId, setPlayerId] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const walletInitInFlightRef = useRef(false);
 
   const syncWalletBalance = useCallback(async (): Promise<boolean> => {
@@ -37,10 +39,14 @@ export function useWallet({
         },
       });
       if (!response.ok) return false;
-      const payload = await response.json() as { balance?: number };
+      const payload = await response.json() as { balance?: number; playerId?: string; isAdmin?: boolean };
       if (typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
         setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
       }
+      if (payload.playerId) {
+        setPlayerId(String(payload.playerId));
+      }
+      setIsAdmin(Boolean(payload.isAdmin));
       return true;
     } catch {
       return false;
@@ -97,6 +103,46 @@ export function useWallet({
       return false;
     }
   }, [notEnoughCoinsMessage, spaceCoins, syncWalletBalance, walletReady, walletToken, walletUnavailableMessage]);
+
+  const grantAdminCoins = useCallback(async (amount: number): Promise<boolean> => {
+    if (!walletReady || !walletToken) {
+      setShopNotice(walletUnavailableMessage);
+      return false;
+    }
+
+    try {
+      const response = await fetch('/api/admin/grant-coins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${walletToken}`,
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      const payload = await response.json().catch(() => ({})) as { balance?: number; isAdmin?: boolean };
+      if (!response.ok) {
+        if (response.status === 403) {
+          setIsAdmin(false);
+        }
+        setShopNotice(walletUnavailableMessage);
+        await syncWalletBalance();
+        return false;
+      }
+
+      if (typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
+        setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
+      } else {
+        await syncWalletBalance();
+      }
+      setIsAdmin(Boolean(payload.isAdmin));
+      return true;
+    } catch {
+      setShopNotice(walletUnavailableMessage);
+      await syncWalletBalance();
+      return false;
+    }
+  }, [syncWalletBalance, walletReady, walletToken, walletUnavailableMessage]);
 
   const buyCoinsPack = useCallback(async (packId: string) => {
     const pack = coinPacks.find((item) => item.id === packId);
@@ -158,7 +204,7 @@ export function useWallet({
           throw new Error('wallet_init_failed');
         }
 
-        const payload = await response.json() as { token?: string; balance?: number };
+        const payload = await response.json() as { token?: string; balance?: number; playerId?: string; isAdmin?: boolean };
         if (isDisposed) return;
 
         if (payload.token) {
@@ -169,6 +215,12 @@ export function useWallet({
         if (typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
           setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
         }
+
+        if (payload.playerId) {
+          setPlayerId(String(payload.playerId));
+        }
+
+        setIsAdmin(Boolean(payload.isAdmin));
 
         setWalletReady(Boolean(payload.token));
       } catch {
@@ -210,6 +262,9 @@ export function useWallet({
 
   return {
     buyCoinsPack,
+    grantAdminCoins,
+    isAdmin,
+    playerId,
     setShopNotice,
     shopNotice,
     spaceCoins,

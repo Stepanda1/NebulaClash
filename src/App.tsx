@@ -15,6 +15,7 @@ import { ShopModal } from './components/ShopModal';
 import { LegalModal } from './components/LegalModal';
 import { GameGuideModal } from './components/GameGuideModal';
 import { FeedbackModal } from './components/FeedbackModal';
+import { AdminModal } from './components/AdminModal';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import type { LegalSection } from './types/legal';
@@ -56,12 +57,16 @@ type LevelStarsMap = Record<number, number>;
 const TUTORIAL_MODAL_STEPS = [0, 1, 3, 5, 7] as const;
 const TUTORIAL_TOTAL_STEPS = TUTORIAL_MODAL_STEPS.length;
 
-const PROGRESS_RESET_VERSION = 2;
+const PROGRESS_RESET_VERSION = 3;
 const UNLOCKED_LEVEL_STORAGE_KEY = `match3_unlocked_level_v${PROGRESS_RESET_VERSION}`;
 const LEVEL_STARS_STORAGE_KEY = `match3_level_stars_v${PROGRESS_RESET_VERSION}`;
 const LEGACY_UNLOCKED_LEVEL_STORAGE_KEY = 'match3_unlocked_level';
 const LEGACY_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars';
+const PREVIOUS_UNLOCKED_LEVEL_STORAGE_KEY = 'match3_unlocked_level_v2';
+const PREVIOUS_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars_v2';
 const PROGRESS_RESET_MARKER_KEY = `match3_progress_reset_applied_v${PROGRESS_RESET_VERSION}`;
+const GAME_STATE_SNAPSHOT_STORAGE_KEY = 'match3_game_state_snapshot';
+const MAX_ADMIN_UNLOCK_LEVEL = 60;
 
 function getHasSeenTutorial(): boolean {
   if (typeof window === 'undefined') return false;
@@ -133,6 +138,7 @@ function App() {
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
@@ -324,6 +330,9 @@ function App() {
 
   const {
     buyCoinsPack,
+    grantAdminCoins,
+    isAdmin,
+    playerId,
     setShopNotice,
     shopNotice,
     spaceCoins,
@@ -369,6 +378,49 @@ function App() {
     const notice = t.boughtExtraTime(TIME_BOOST_SECONDS);
     setShopNotice(notice);
     trackEvent('shop_spend_coins', { item: 'extra_time', cost: BOOSTER_COST, value: TIME_BOOST_SECONDS, level, mode: levelConfig.mode });
+  };
+
+  const openAdmin = () => {
+    if (!isAdmin) return;
+    setIsAdminOpen(true);
+  };
+
+  const grantCoinsAsAdmin = async (amount: number) => {
+    if (!await grantAdminCoins(amount)) return;
+    setShopNotice(language === 'ru' ? `Админ: начислено ${amount} монет` : `Admin: granted ${amount} coins`);
+  };
+
+  const adminAddMoves = () => {
+    const applied = addExtraMoves(MOVE_BOOST_AMOUNT);
+    setShopNotice(applied
+      ? (language === 'ru' ? `Админ: +${MOVE_BOOST_AMOUNT} ходов` : `Admin: +${MOVE_BOOST_AMOUNT} moves`)
+      : (language === 'ru' ? 'Админ: режим без ходов' : 'Admin: not in moves mode'));
+  };
+
+  const adminAddTime = () => {
+    const applied = addExtraTime(TIME_BOOST_SECONDS);
+    setShopNotice(applied
+      ? (language === 'ru' ? `Админ: +${TIME_BOOST_SECONDS} секунд` : `Admin: +${TIME_BOOST_SECONDS} seconds`)
+      : (language === 'ru' ? 'Админ: режим без таймера' : 'Admin: not in timer mode'));
+  };
+
+  const adminUnlockAllLevels = () => {
+    setUnlockedLevel((prev) => Math.max(prev, MAX_ADMIN_UNLOCK_LEVEL));
+    setShopNotice(language === 'ru' ? 'Админ: все уровни открыты' : 'Admin: all levels unlocked');
+  };
+
+  const adminResetLocalProgress = () => {
+    setUnlockedLevel(1);
+    setLevelStars({});
+    setHasSeenTutorial(false);
+    setShowTutorial(false);
+    setLevelToLaunch(null);
+    startAtLevel(1);
+    localStorage.removeItem(UNLOCKED_LEVEL_STORAGE_KEY);
+    localStorage.removeItem(LEVEL_STARS_STORAGE_KEY);
+    localStorage.removeItem(GAME_STATE_SNAPSHOT_STORAGE_KEY);
+    localStorage.removeItem(TUTORIAL_SEEN_KEY);
+    setShopNotice(language === 'ru' ? 'Админ: локальный прогресс сброшен' : 'Admin: local progress reset');
   };
 
   const onToggleMute = () => {
@@ -431,6 +483,9 @@ function App() {
     if (localStorage.getItem(PROGRESS_RESET_MARKER_KEY) !== '1') {
       localStorage.removeItem(LEGACY_UNLOCKED_LEVEL_STORAGE_KEY);
       localStorage.removeItem(LEGACY_LEVEL_STARS_STORAGE_KEY);
+      localStorage.removeItem(PREVIOUS_UNLOCKED_LEVEL_STORAGE_KEY);
+      localStorage.removeItem(PREVIOUS_LEVEL_STARS_STORAGE_KEY);
+      localStorage.removeItem(GAME_STATE_SNAPSHOT_STORAGE_KEY);
       localStorage.setItem(PROGRESS_RESET_MARKER_KEY, '1');
     }
     const raw = localStorage.getItem(LEVEL_STARS_STORAGE_KEY);
@@ -896,6 +951,26 @@ function App() {
     return (
       <div className="relative h-full w-full">
         <AnimatePresence>
+          {isAdmin && isAdminOpen && (
+            <AdminModal
+              language={language}
+              playerId={playerId}
+              onClose={() => setIsAdminOpen(false)}
+              onGrantCoins={grantCoinsAsAdmin}
+              onAddMoves={adminAddMoves}
+              onAddTime={adminAddTime}
+              onSpawnBomb={() => {
+                spawnSpecial('bomb');
+                setShopNotice(language === 'ru' ? 'Админ: бомба добавлена' : 'Admin: bomb added');
+              }}
+              onSpawnLightning={() => {
+                spawnSpecial('lightning');
+                setShopNotice(language === 'ru' ? 'Админ: молния добавлена' : 'Admin: lightning added');
+              }}
+              onUnlockAllLevels={adminUnlockAllLevels}
+              onResetLocalProgress={adminResetLocalProgress}
+            />
+          )}
           {isLegalOpen && (
             <LegalModal
               language={language}
@@ -962,6 +1037,26 @@ function App() {
 
       {/* Pause Overlay */}
       <AnimatePresence>
+        {isAdmin && isAdminOpen && (
+          <AdminModal
+            language={language}
+            playerId={playerId}
+            onClose={() => setIsAdminOpen(false)}
+            onGrantCoins={grantCoinsAsAdmin}
+            onAddMoves={adminAddMoves}
+            onAddTime={adminAddTime}
+            onSpawnBomb={() => {
+              spawnSpecial('bomb');
+              setShopNotice(language === 'ru' ? 'Админ: бомба добавлена' : 'Admin: bomb added');
+            }}
+            onSpawnLightning={() => {
+              spawnSpecial('lightning');
+              setShopNotice(language === 'ru' ? 'Админ: молния добавлена' : 'Admin: lightning added');
+            }}
+            onUnlockAllLevels={adminUnlockAllLevels}
+            onResetLocalProgress={adminResetLocalProgress}
+          />
+        )}
         {isLegalOpen && (
           <LegalModal
             language={language}
@@ -1135,6 +1230,17 @@ function App() {
           </button>
         </div>
         <div className="mt-1 flex items-center justify-end pr-2 sm:pr-3">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={openAdmin}
+              className="relative z-30 mr-2 inline-flex items-center rounded-full border border-rose-200/35 bg-gradient-to-r from-rose-400/20 via-orange-300/18 to-amber-300/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-rose-100 shadow-[0_0_18px_rgba(251,113,133,0.18)] transition-all hover:from-rose-400/30 hover:via-orange-300/24 hover:to-amber-300/30"
+              title={language === 'ru' ? 'Открыть админку' : 'Open admin panel'}
+              aria-label={language === 'ru' ? 'Открыть админку' : 'Open admin panel'}
+            >
+              ADM
+            </button>
+          )}
           <button
             type="button"
             onClick={openShop}
