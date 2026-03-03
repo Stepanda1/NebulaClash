@@ -53,6 +53,7 @@ function GoalGemIcon({ color }: { color: GemType }) {
 
 
 type LevelStarsMap = Record<number, number>;
+const TUTORIAL_TOTAL_STEPS = 5;
 
 const PROGRESS_RESET_VERSION = 2;
 const UNLOCKED_LEVEL_STORAGE_KEY = `match3_unlocked_level_v${PROGRESS_RESET_VERSION}`;
@@ -150,6 +151,7 @@ function App() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
+  const tutorialAllowsBoardInput = !tutorialActive || tutorialStep === 1 || tutorialStep === 2 || tutorialStep === 3;
   const t = COPY[language];
   const legalContacts = useMemo(() => getLegalContactsFromEnv(), []);
   const marketingLinks = useMemo(() => getMarketingLinksFromEnv(legalContacts.telegram), [legalContacts]);
@@ -259,12 +261,25 @@ function App() {
       }
     }, 120);
   };
-  const onSkipTutorial = () => {
+  const finishTutorial = () => {
     setHasSeenTutorial(true);
     window.localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
     setShowTutorial(false);
     setTutorialStep(0);
     setPendingSpawn(null);
+  };
+  const onSkipTutorial = () => {
+    finishTutorial();
+  };
+  const onAdvanceTutorial = () => {
+    if (!tutorialActive) return;
+    if (tutorialStep === 0) {
+      setTutorialStep(1);
+      return;
+    }
+    if (tutorialStep >= TUTORIAL_TOTAL_STEPS - 1) {
+      finishTutorial();
+    }
   };
 
   const onLanguageChange = (nextLanguage: Language) => {
@@ -542,30 +557,27 @@ function App() {
 
   useEffect(() => {
     if (!tutorialActive) return;
-    if (tutorialStep === 0 && match3Moves > match3Ref.current) {
+    if (tutorialStep === 1 && match3Moves > match3Ref.current) {
       match3Ref.current = match3Moves;
-      setTutorialStep(1);
+      setTutorialStep(2);
       setPendingSpawn('bomb');
     }
   }, [match3Moves, tutorialActive, tutorialStep]);
 
   useEffect(() => {
     if (!tutorialActive) return;
-    if (tutorialStep === 1 && bombDoubleActivations > bombRef.current) {
+    if (tutorialStep === 2 && bombDoubleActivations > bombRef.current) {
       bombRef.current = bombDoubleActivations;
-      setTutorialStep(2);
+      setTutorialStep(3);
       setPendingSpawn('lightning');
     }
   }, [bombDoubleActivations, tutorialActive, tutorialStep]);
 
   useEffect(() => {
     if (!tutorialActive) return;
-    if (tutorialStep === 2 && lightningSwaps > lightningRef.current) {
+    if (tutorialStep === 3 && lightningSwaps > lightningRef.current) {
       lightningRef.current = lightningSwaps;
-      setHasSeenTutorial(true);
-      window.localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
-      setShowTutorial(false);
-      setTutorialStep(0);
+      setTutorialStep(4);
       setPendingSpawn(null);
     }
   }, [lightningSwaps, tutorialActive, tutorialStep]);
@@ -996,7 +1008,13 @@ function App() {
 
       <AudioPlayer isMuted={isMuted} volume={volume} mode={isBossLevel ? 'boss' : 'level'} />
       {tutorialActive && (
-        <TutorialHint step={tutorialStep} onSkip={onSkipTutorial} language={language} />
+        <TutorialHint
+          step={tutorialStep}
+          totalSteps={TUTORIAL_TOTAL_STEPS}
+          onSkip={onSkipTutorial}
+          onAdvance={onAdvanceTutorial}
+          language={language}
+        />
       )}
       {goalClearText && (
         <div className="pointer-events-none absolute inset-0 z-[95] flex items-center justify-center bg-[radial-gradient(circle_at_50%_45%,rgba(251,191,36,0.12),rgba(2,6,23,0.82)_45%,rgba(2,6,23,0.92)_100%)]">
@@ -1189,8 +1207,8 @@ function App() {
             isProcessing={isProcessing}
             lowPerfMode={lowPerfMode}
             language={language}
-            onTileClick={(tile) => !isPaused && handleTileClick(tile)}
-            onTileSwipe={(from, to) => !isPaused && handleTileSwipe(from, to)}
+            onTileClick={(tile) => !isPaused && tutorialAllowsBoardInput && handleTileClick(tile)}
+            onTileSwipe={(from, to) => !isPaused && tutorialAllowsBoardInput && handleTileSwipe(from, to)}
           />
         </div>
       </div>

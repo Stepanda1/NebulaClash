@@ -89,10 +89,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
 
     const tutorialHint = useMemo(() => {
         if (!showTutorial || isProcessing || isLevelTransition) return null;
-        if (tutorialStep === 0) {
+        if (tutorialStep === 1) {
             return findHintMove(grid, 'match');
         }
-        if (tutorialStep === 2) {
+        if (tutorialStep === 3) {
             return findLightningSwap(grid);
         }
         return null;
@@ -105,7 +105,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
 
     const bombHint = useMemo(() => {
         if (!showTutorial || isProcessing || isLevelTransition) return null;
-        if (tutorialStep !== 1) return null;
+        if (tutorialStep !== 2) return null;
         for (let y = 0; y < ROWS; y++) {
             for (let x = 0; x < COLS; x++) {
                 const tile = grid[y][x];
