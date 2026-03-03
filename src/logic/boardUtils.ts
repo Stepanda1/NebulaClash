@@ -18,7 +18,8 @@ const createBoardWithoutMatches = (): Grid => {
             // Prevent Horizontal Matches (look back 2)
             while (
                 (x >= 2 && row[x - 1].type === type && row[x - 2].type === type) ||
-                (y >= 2 && grid[y - 1][x].type === type && grid[y - 2][x].type === type)
+                (y >= 2 && grid[y - 1][x].type === type && grid[y - 2][x].type === type) ||
+                (x >= 1 && y >= 1 && row[x - 1].type === type && grid[y - 1][x].type === type && grid[y - 1][x - 1].type === type)
             ) {
                 type = generateRandomTileType();
             }

@@ -654,6 +654,54 @@ export const useGame = () => {
         return scoreGain;
     }, []);
 
+    const resolveAutoMatches = useCallback(async (startGrid: Grid, delayMs: number = 320): Promise<Grid> => {
+        let activeGrid = startGrid;
+        let matchMap = findMatches(activeGrid);
+        let iteration = 0;
+        let comboCount = 0;
+
+        while (matchMap.size > 0 && iteration < 10) {
+            const regularMatches = new Set<string>();
+            const allMatched = new Set<string>();
+
+            matchMap.forEach((type, tileId) => {
+                allMatched.add(tileId);
+                if (type === 'match') {
+                    regularMatches.add(tileId);
+                }
+            });
+
+            const triggeredByMatch = getTriggeredSpecialRemoval(activeGrid, allMatched);
+            const totalRemoved = new Set<string>([...allMatched, ...triggeredByMatch]);
+
+            countCollected(activeGrid, totalRemoved);
+            countSpecialGoalActivations(activeGrid, totalRemoved);
+            applyBossDamage(matchMap, totalRemoved, comboCount);
+            comboCount += 1;
+            setMatchTick((tick) => tick + 1);
+            if (totalRemoved.size >= 12) {
+                setBigBlastId((id) => id + 1);
+            }
+
+            activeGrid = convertToSpecialPieces(activeGrid, matchMap);
+            setGrid(activeGrid);
+
+            const extraTriggeredCount = [...totalRemoved].filter((id) => !allMatched.has(id)).length;
+            setScore((prev) => prev + getMatchScoreGain(matchMap, extraTriggeredCount));
+
+            await waitForBoardDelay(delayMs);
+
+            const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
+            clearTrashByImpact(activeGrid, removeSet, allMatched);
+            activeGrid = await runRemovalAndGravity(activeGrid, removeSet);
+
+            matchMap = findMatches(activeGrid);
+            iteration++;
+        }
+
+        return activeGrid;
+    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, getMatchScoreGain, getTriggeredSpecialRemoval, runRemovalAndGravity, waitForBoardDelay]);
+
     const applyComboRewards = useCallback(async (baseGrid: Grid, comboCount: number, includePlayerMove: boolean = true): Promise<Grid> => {
         let activeGrid = baseGrid;
         const effectiveCombo = comboCount + (includePlayerMove ? 1 : 0);
@@ -729,6 +777,7 @@ export const useGame = () => {
             }
 
             activeGrid = await runRemovalAndGravity(activeGrid, affected, { remove: 120, gravity: 150 });
+            activeGrid = await resolveAutoMatches(activeGrid, 180);
         }
 
         if (levelConfig.mode === 'moves' && remainingCounter !== 0) {
@@ -745,7 +794,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         return activeGrid;
-    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, levelConfig.mode, moves, runRemovalAndGravity, timeLeft]);
+    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, levelConfig.mode, moves, resolveAutoMatches, runRemovalAndGravity, timeLeft]);
 
     const processBoard = useCallback(async (currentGrid: Grid) => {
         setIsProcessing(true);
@@ -803,13 +852,14 @@ export const useGame = () => {
         }
 
         activeGrid = await applyComboRewards(activeGrid, comboCount, false);
+        activeGrid = await resolveAutoMatches(activeGrid, 260);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getTriggeredSpecialRemoval, runRemovalAndGravity, waitForBoardDelay]);
+    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getTriggeredSpecialRemoval, resolveAutoMatches, runRemovalAndGravity, waitForBoardDelay]);
 
     useEffect(() => {
         const goalReached = isGoalReached(goal, {
@@ -967,6 +1017,7 @@ export const useGame = () => {
         }
 
         activeGrid = await applyComboRewards(activeGrid, comboCount, true);
+        activeGrid = await resolveAutoMatches(activeGrid, 260);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
@@ -975,7 +1026,7 @@ export const useGame = () => {
         if (finalizeProcessing) {
             setIsProcessing(false);
         }
-    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getPulseAffectedTiles, getTriggeredSpecialRemoval, runRemovalAndGravity, waitForBoardDelay]);
+    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getPulseAffectedTiles, getTriggeredSpecialRemoval, resolveAutoMatches, runRemovalAndGravity, waitForBoardDelay]);
 
     const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
         let activeGrid = copyGrid(currentGrid);
@@ -1092,13 +1143,14 @@ export const useGame = () => {
         }
 
         activeGrid = await applyComboRewards(activeGrid, comboCount, true);
+        activeGrid = await resolveAutoMatches(activeGrid, 260);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getPulseAffectedTiles, getTriggeredSpecialRemoval]);
+    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getPulseAffectedTiles, getTriggeredSpecialRemoval, resolveAutoMatches]);
 
     const attemptSwap = async (firstTile: Tile, secondTile: Tile) => {
         if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
