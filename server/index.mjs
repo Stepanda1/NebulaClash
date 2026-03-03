@@ -12,12 +12,6 @@ const port = Number(process.env.PORT || 8787);
 const authSecret = String(process.env.API_AUTH_SECRET || '');
 const adminLogin = String(process.env.ADMIN_LOGIN || '').trim();
 const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim();
-const adminPlayerIds = new Set(
-  String(process.env.ADMIN_PLAYER_ID || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean),
-);
 const sessionTtlSeconds = Number(process.env.SESSION_TTL_SECONDS || 60 * 60 * 24 * 30);
 const initialCoins = Math.max(0, Math.floor(Number(process.env.INITIAL_COINS || 50)));
 const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
@@ -365,11 +359,6 @@ function initAdminSession(res, payload) {
   json(res, 200, { ok: true, token });
 }
 
-function isAdminPlayer(playerId) {
-  const normalized = String(playerId || '').trim();
-  return normalized ? adminPlayerIds.has(normalized) : false;
-}
-
 function ensureWallet(state, playerId) {
   if (typeof state.wallets[playerId] !== 'number') {
     state.wallets[playerId] = initialCoins;
@@ -403,7 +392,6 @@ function initSession(res, payload) {
     playerId,
     token,
     balance: Number(state.wallets[playerId] || 0),
-    isAdmin: isAdminPlayer(playerId),
   });
 }
 
@@ -585,29 +573,7 @@ function getWallet(res, playerId) {
   const changed = ensureWallet(state, playerId);
   if (changed) saveState(state);
   const balance = Number(state.wallets[playerId] || 0);
-  json(res, 200, { playerId, balance, isAdmin: isAdminPlayer(playerId) });
-}
-
-function grantAdminCoins(res, payload, playerId) {
-  if (!isAdminPlayer(playerId)) {
-    json(res, 403, { error: 'Forbidden' });
-    return;
-  }
-
-  const amount = Math.floor(Number(payload.amount || 0));
-  if (amount === 0) {
-    json(res, 400, { error: 'non-zero amount is required' });
-    return;
-  }
-
-  const state = loadState();
-  ensureWallet(state, playerId);
-  const current = Number(state.wallets[playerId] || 0);
-  const next = Math.max(0, current + amount);
-  state.wallets[playerId] = next;
-  saveState(state);
-
-  json(res, 200, { ok: true, playerId, balance: next, isAdmin: true });
+  json(res, 200, { playerId, balance });
 }
 
 function grantCoinsWithAdminToken(res, payload) {
@@ -630,7 +596,7 @@ function grantCoinsWithAdminToken(res, payload) {
   state.wallets[playerId] = next;
   saveState(state);
 
-  json(res, 200, { ok: true, playerId, balance: next, isAdmin: true });
+  json(res, 200, { ok: true, playerId, balance: next });
 }
 
 function spendWallet(res, payload, playerId) {
@@ -832,9 +798,7 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    const playerId = requireAuth(req, res);
-    if (!playerId) return;
-    grantAdminCoins(res, payload, playerId);
+    json(res, 401, { error: 'Unauthorized' });
     return;
   }
 

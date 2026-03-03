@@ -30,6 +30,7 @@ import {
   PAYMENT_RETURN_TO_GAME_KEY,
   TIME_BOOST_SECONDS,
   TUTORIAL_SEEN_KEY,
+  WALLET_TOKEN_KEY,
   getCoinPacksFromEnv,
   getLegalContactsFromEnv,
   getMarketingLinksFromEnv,
@@ -58,13 +59,13 @@ type LevelStarsMap = Record<number, number>;
 const TUTORIAL_MODAL_STEPS = [0, 1, 3, 5, 7] as const;
 const TUTORIAL_TOTAL_STEPS = TUTORIAL_MODAL_STEPS.length;
 
-const PROGRESS_RESET_VERSION = 4;
+const PROGRESS_RESET_VERSION = 5;
 const UNLOCKED_LEVEL_STORAGE_KEY = `match3_unlocked_level_v${PROGRESS_RESET_VERSION}`;
 const LEVEL_STARS_STORAGE_KEY = `match3_level_stars_v${PROGRESS_RESET_VERSION}`;
 const LEGACY_UNLOCKED_LEVEL_STORAGE_KEY = 'match3_unlocked_level';
 const LEGACY_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars';
-const PREVIOUS_UNLOCKED_LEVEL_STORAGE_KEY = 'match3_unlocked_level_v3';
-const PREVIOUS_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars_v3';
+const PREVIOUS_UNLOCKED_LEVEL_STORAGE_KEY = 'match3_unlocked_level_v4';
+const PREVIOUS_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars_v4';
 const PROGRESS_RESET_MARKER_KEY = `match3_progress_reset_applied_v${PROGRESS_RESET_VERSION}`;
 const GAME_STATE_SNAPSHOT_STORAGE_KEY = 'match3_game_state_snapshot';
 const MAX_ADMIN_UNLOCK_LEVEL = 60;
@@ -342,8 +343,6 @@ function App() {
 
   const {
     buyCoinsPack,
-    grantAdminCoins,
-    isAdmin,
     playerId,
     setShopNotice,
     shopNotice,
@@ -393,7 +392,7 @@ function App() {
   };
 
   const openAdmin = () => {
-    if (!(isAdmin || adminAccessToken)) return;
+    if (!(isAdminPath() && adminAccessToken)) return;
     setIsAdminOpen(true);
   };
 
@@ -419,8 +418,6 @@ function App() {
         setShopNotice(language === 'ru' ? 'Админ: не удалось начислить монеты' : 'Admin: failed to grant coins');
         return;
       }
-    } else if (!await grantAdminCoins(amount)) {
-      return;
     }
 
     setShopNotice(language === 'ru' ? `Админ: начислено ${amount} монет` : `Admin: granted ${amount} coins`);
@@ -559,6 +556,7 @@ function App() {
       localStorage.removeItem(PREVIOUS_UNLOCKED_LEVEL_STORAGE_KEY);
       localStorage.removeItem(PREVIOUS_LEVEL_STARS_STORAGE_KEY);
       localStorage.removeItem(GAME_STATE_SNAPSHOT_STORAGE_KEY);
+      localStorage.removeItem(WALLET_TOKEN_KEY);
       localStorage.setItem(PROGRESS_RESET_MARKER_KEY, '1');
     }
     const raw = localStorage.getItem(LEVEL_STARS_STORAGE_KEY);
@@ -1024,7 +1022,7 @@ function App() {
     return (
       <div className="relative h-full w-full">
         <AnimatePresence>
-          {(isAdmin || Boolean(adminAccessToken)) && isAdminOpen && (
+          {isAdminPath() && adminAccessToken && isAdminOpen && (
             <AdminModal
               language={language}
               playerId={playerId}
@@ -1110,7 +1108,7 @@ function App() {
 
       {/* Pause Overlay */}
       <AnimatePresence>
-        {(isAdmin || Boolean(adminAccessToken)) && isAdminOpen && (
+        {isAdminPath() && adminAccessToken && isAdminOpen && (
           <AdminModal
             language={language}
             playerId={playerId}
@@ -1303,7 +1301,7 @@ function App() {
           </button>
         </div>
         <div className="mt-1 flex items-center justify-end pr-2 sm:pr-3">
-          {(isAdmin || Boolean(adminAccessToken)) && (
+          {isAdminPath() && adminAccessToken && (
             <button
               type="button"
               onClick={openAdmin}
