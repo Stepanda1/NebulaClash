@@ -147,6 +147,8 @@ Frontend links are optional fallback. For automatic top-up, configure backend va
 - `PORT` (default `8787`)
 - `PUBLIC_BASE_URL` (public URL of backend, used for Robokassa callback and redirects)
 - `API_AUTH_SECRET` (required; used to sign player session token for wallet/payment API)
+- `ADMIN_LOGIN` (optional; enables `/admin` login)
+- `ADMIN_PASSWORD` (optional; enables `/admin` login)
 - `ADMIN_PLAYER_ID` (optional; enables in-game admin panel only for this exact playerId)
 - `SESSION_TTL_SECONDS` (optional; default `2592000`)
 - `INITIAL_COINS` (optional; default `50`)

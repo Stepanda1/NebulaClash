@@ -16,6 +16,7 @@ import { LegalModal } from './components/LegalModal';
 import { GameGuideModal } from './components/GameGuideModal';
 import { FeedbackModal } from './components/FeedbackModal';
 import { AdminModal } from './components/AdminModal';
+import { AdminAccessModal } from './components/AdminAccessModal';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import type { LegalSection } from './types/legal';
@@ -67,6 +68,7 @@ const PREVIOUS_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars_v3';
 const PROGRESS_RESET_MARKER_KEY = `match3_progress_reset_applied_v${PROGRESS_RESET_VERSION}`;
 const GAME_STATE_SNAPSHOT_STORAGE_KEY = 'match3_game_state_snapshot';
 const MAX_ADMIN_UNLOCK_LEVEL = 60;
+const ADMIN_ACCESS_TOKEN_KEY = 'match3_admin_access_token';
 
 function getHasSeenTutorial(): boolean {
   if (typeof window === 'undefined') return false;
@@ -96,12 +98,14 @@ function getDefaultLanguage(): Language {
 
 function shouldOpenMarketingLanding(): boolean {
   if (typeof window === 'undefined') return true;
+  if (window.location.pathname.startsWith('/admin')) return false;
   if (window.localStorage.getItem(PAYMENT_RETURN_TO_GAME_KEY) === '1') return false;
   return !window.location.pathname.startsWith('/play');
 }
 
 function shouldOpenMapByDefault(): boolean {
   if (typeof window === 'undefined') return getHasSeenTutorial();
+  if (window.location.pathname.startsWith('/admin')) return false;
   if (window.localStorage.getItem(PAYMENT_RETURN_TO_GAME_KEY) === '1') return false;
   return getHasSeenTutorial();
 }
@@ -110,6 +114,11 @@ function replaceAppPath(pathname: string): void {
   if (typeof window === 'undefined') return;
   const { search, hash } = window.location;
   window.history.replaceState(null, '', `${pathname}${search}${hash}`);
+}
+
+function isAdminPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname.startsWith('/admin');
 }
 
 function App() {
@@ -139,6 +148,9 @@ function App() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [adminAccessToken, setAdminAccessToken] = useState(() => (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) || '' : ''));
+  const [adminAuthLoading, setAdminAuthLoading] = useState(false);
+  const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [levelStars, setLevelStars] = useState<LevelStarsMap>({});
   const [levelToLaunch, setLevelToLaunch] = useState<number | null>(null);
@@ -381,12 +393,36 @@ function App() {
   };
 
   const openAdmin = () => {
-    if (!isAdmin) return;
+    if (!(isAdmin || adminAccessToken)) return;
     setIsAdminOpen(true);
   };
 
   const grantCoinsAsAdmin = async (amount: number) => {
-    if (!await grantAdminCoins(amount)) return;
+    if (adminAccessToken && playerId) {
+      try {
+        const response = await fetch('/api/admin/grant-coins', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${adminAccessToken}`,
+          },
+          body: JSON.stringify({ amount, playerId }),
+        });
+
+        if (!response.ok) {
+          setShopNotice(language === 'ru' ? 'Админ: не удалось начислить монеты' : 'Admin: failed to grant coins');
+          return;
+        }
+
+        await syncWalletBalance();
+      } catch {
+        setShopNotice(language === 'ru' ? 'Админ: не удалось начислить монеты' : 'Admin: failed to grant coins');
+        return;
+      }
+    } else if (!await grantAdminCoins(amount)) {
+      return;
+    }
+
     setShopNotice(language === 'ru' ? `Админ: начислено ${amount} монет` : `Admin: granted ${amount} coins`);
   };
 
@@ -421,6 +457,37 @@ function App() {
     localStorage.removeItem(GAME_STATE_SNAPSHOT_STORAGE_KEY);
     localStorage.removeItem(TUTORIAL_SEEN_KEY);
     setShopNotice(language === 'ru' ? 'Админ: локальный прогресс сброшен' : 'Admin: local progress reset');
+  };
+
+  const handleAdminLogin = async (username: string, password: string) => {
+    setAdminAuthLoading(true);
+    setAdminAuthError(null);
+
+    try {
+      const response = await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const payload = await response.json().catch(() => ({})) as { token?: string };
+      if (!response.ok || !payload.token) {
+        setAdminAuthError(language === 'ru' ? 'Неверный логин или пароль' : 'Invalid login or password');
+        return;
+      }
+
+      setAdminAccessToken(payload.token);
+      localStorage.setItem(ADMIN_ACCESS_TOKEN_KEY, payload.token);
+      setIsMarketingLandingOpen(false);
+      setIsMapOpen(false);
+      replaceAppPath('/admin');
+    } catch {
+      setAdminAuthError(language === 'ru' ? 'Сервис админки недоступен' : 'Admin service is unavailable');
+    } finally {
+      setAdminAuthLoading(false);
+    }
   };
 
   const onToggleMute = () => {
@@ -478,6 +545,12 @@ function App() {
     setIsMapOpen(true);
   };
 
+
+  useEffect(() => {
+    if (!isAdminPath() || !adminAccessToken) return;
+    setIsMarketingLandingOpen(false);
+    setIsMapOpen(false);
+  }, [adminAccessToken]);
 
   useEffect(() => {
     if (localStorage.getItem(PROGRESS_RESET_MARKER_KEY) !== '1') {
@@ -951,7 +1024,7 @@ function App() {
     return (
       <div className="relative h-full w-full">
         <AnimatePresence>
-          {isAdmin && isAdminOpen && (
+          {(isAdmin || Boolean(adminAccessToken)) && isAdminOpen && (
             <AdminModal
               language={language}
               playerId={playerId}
@@ -1037,7 +1110,7 @@ function App() {
 
       {/* Pause Overlay */}
       <AnimatePresence>
-        {isAdmin && isAdminOpen && (
+        {(isAdmin || Boolean(adminAccessToken)) && isAdminOpen && (
           <AdminModal
             language={language}
             playerId={playerId}
@@ -1230,7 +1303,7 @@ function App() {
           </button>
         </div>
         <div className="mt-1 flex items-center justify-end pr-2 sm:pr-3">
-          {isAdmin && (
+          {(isAdmin || Boolean(adminAccessToken)) && (
             <button
               type="button"
               onClick={openAdmin}
@@ -1363,6 +1436,14 @@ function App() {
           <div className="mt-2 text-center text-xs sm:text-sm font-bold text-cyan-200">
             {shopNotice}
           </div>
+        )}
+        {isAdminPath() && !adminAccessToken && (
+          <AdminAccessModal
+            language={language}
+            onSubmit={handleAdminLogin}
+            isLoading={adminAuthLoading}
+            error={adminAuthError}
+          />
         )}
       </div>
 

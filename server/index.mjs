@@ -10,6 +10,8 @@ const dataDir = join(rootDir, 'data');
 const statePath = join(dataDir, 'wallet-state.json');
 const port = Number(process.env.PORT || 8787);
 const authSecret = String(process.env.API_AUTH_SECRET || '');
+const adminLogin = String(process.env.ADMIN_LOGIN || '').trim();
+const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim();
 const adminPlayerIds = new Set(
   String(process.env.ADMIN_PLAYER_ID || '')
     .split(',')
@@ -287,6 +289,33 @@ function issueSession(playerId) {
   return signSessionToken({ playerId, exp });
 }
 
+function issueAdminSessionToken() {
+  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 12;
+  return signSessionToken({ role: 'admin', exp });
+}
+
+function verifyAdminToken(token) {
+  if (!authSecret || !token) return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+
+  const [encodedPayload, encodedSignature] = parts;
+  const expectedSignature = toBase64Url(
+    createHmac('sha256', authSecret).update(encodedPayload).digest(),
+  );
+
+  if (!safeEqual(encodedSignature, expectedSignature)) return false;
+
+  try {
+    const payload = JSON.parse(fromBase64Url(encodedPayload));
+    const role = String(payload?.role || '').trim();
+    const exp = Number(payload?.exp || 0);
+    return role === 'admin' && Number.isFinite(exp) && Date.now() < exp * 1000;
+  } catch {
+    return false;
+  }
+}
+
 function extractBearerToken(req) {
   const authHeader = String(req.headers.authorization || '').trim();
   if (!authHeader.toLowerCase().startsWith('bearer ')) return '';
@@ -307,6 +336,33 @@ function requireAuth(req, res) {
   }
 
   return session.playerId;
+}
+
+function initAdminSession(res, payload) {
+  if (!authSecret) {
+    json(res, 500, { error: 'API_AUTH_SECRET is required' });
+    return;
+  }
+
+  if (!adminLogin || !adminPassword) {
+    json(res, 500, { error: 'ADMIN_LOGIN and ADMIN_PASSWORD are required' });
+    return;
+  }
+
+  const username = String(payload?.username || '').trim();
+  const password = String(payload?.password || '').trim();
+  if (!safeEqual(username, adminLogin) || !safeEqual(password, adminPassword)) {
+    json(res, 401, { error: 'Invalid credentials' });
+    return;
+  }
+
+  const token = issueAdminSessionToken();
+  if (!token) {
+    json(res, 500, { error: 'Failed to issue admin token' });
+    return;
+  }
+
+  json(res, 200, { ok: true, token });
 }
 
 function isAdminPlayer(playerId) {
@@ -554,6 +610,29 @@ function grantAdminCoins(res, payload, playerId) {
   json(res, 200, { ok: true, playerId, balance: next, isAdmin: true });
 }
 
+function grantCoinsWithAdminToken(res, payload) {
+  const playerId = String(payload.playerId || '').trim();
+  if (!playerId) {
+    json(res, 400, { error: 'playerId is required' });
+    return;
+  }
+
+  const amount = Math.floor(Number(payload.amount || 0));
+  if (amount === 0) {
+    json(res, 400, { error: 'non-zero amount is required' });
+    return;
+  }
+
+  const state = loadState();
+  ensureWallet(state, playerId);
+  const current = Number(state.wallets[playerId] || 0);
+  const next = Math.max(0, current + amount);
+  state.wallets[playerId] = next;
+  saveState(state);
+
+  json(res, 200, { ok: true, playerId, balance: next, isAdmin: true });
+}
+
 function spendWallet(res, payload, playerId) {
   const amount = Math.floor(Number(payload.amount || 0));
   if (amount <= 0) {
@@ -682,6 +761,19 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'POST' && urlObj.pathname === '/api/admin/session') {
+    if (!enforceRateLimit(req, res, 'admin-session', 20)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    initAdminSession(res, payload);
+    return;
+  }
+
   if (req.method === 'GET' && urlObj.pathname === '/api/wallet') {
     const playerId = requireAuth(req, res);
     if (!playerId) return;
@@ -724,8 +816,6 @@ const server = createServer(async (req, res) => {
   }
 
   if (req.method === 'POST' && urlObj.pathname === '/api/admin/grant-coins') {
-    const playerId = requireAuth(req, res);
-    if (!playerId) return;
     if (!enforceRateLimit(req, res, 'admin-grant-coins', 20)) return;
     if (!requireJsonRequest(req, res)) return;
 
@@ -735,6 +825,15 @@ const server = createServer(async (req, res) => {
       json(res, 400, { error: 'Invalid JSON payload' });
       return;
     }
+
+    const token = extractBearerToken(req);
+    if (verifyAdminToken(token)) {
+      grantCoinsWithAdminToken(res, payload);
+      return;
+    }
+
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
     grantAdminCoins(res, payload, playerId);
     return;
   }
