@@ -148,7 +148,7 @@ Frontend links are optional fallback. For automatic top-up, configure backend va
 - `PUBLIC_BASE_URL` (public URL of backend, used for Robokassa callback and redirects)
 - `API_AUTH_SECRET` (required; used to sign player session token for wallet/payment API)
 - `SESSION_TTL_SECONDS` (optional; default `2592000`)
-- `INITIAL_COINS` (optional; default `120`)
+- `INITIAL_COINS` (optional; default `50`)
 - `CORS_ALLOWED_ORIGINS` (comma-separated whitelist, e.g. `https://yourgame.com`)
 - `ROBOKASSA_MERCHANT_LOGIN`
 - `ROBOKASSA_PASSWORD1` (password for payment link signature)

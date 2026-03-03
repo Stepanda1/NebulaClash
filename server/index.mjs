@@ -11,7 +11,7 @@ const statePath = join(dataDir, 'wallet-state.json');
 const port = Number(process.env.PORT || 8787);
 const authSecret = String(process.env.API_AUTH_SECRET || '');
 const sessionTtlSeconds = Number(process.env.SESSION_TTL_SECONDS || 60 * 60 * 24 * 30);
-const initialCoins = Math.max(0, Math.floor(Number(process.env.INITIAL_COINS || 40)));
+const initialCoins = Math.max(0, Math.floor(Number(process.env.INITIAL_COINS || 50)));
 const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
   .map((origin) => origin.trim())
