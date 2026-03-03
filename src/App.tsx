@@ -70,6 +70,7 @@ const PROGRESS_RESET_MARKER_KEY = `match3_progress_reset_applied_v${PROGRESS_RES
 const GAME_STATE_SNAPSHOT_STORAGE_KEY = 'match3_game_state_snapshot';
 const MAX_ADMIN_UNLOCK_LEVEL = 60;
 const ADMIN_ACCESS_TOKEN_KEY = 'match3_admin_access_token';
+const ADMIN_LAST_ACTIVE_KEY = 'match3_admin_last_active_at';
 const ADMIN_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 
 function getHasSeenTutorial(): boolean {
@@ -402,7 +403,12 @@ function App() {
     setIsAdminOpen(false);
     setAdminAuthError(null);
     localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
+    localStorage.removeItem(ADMIN_LAST_ACTIVE_KEY);
     replaceAppPath('/admin');
+  }, []);
+
+  const markAdminActive = useCallback(() => {
+    localStorage.setItem(ADMIN_LAST_ACTIVE_KEY, String(Date.now()));
   }, []);
 
   const grantCoinsAsAdmin = async (amount: number) => {
@@ -486,6 +492,7 @@ function App() {
 
       setAdminAccessToken(payload.token);
       localStorage.setItem(ADMIN_ACCESS_TOKEN_KEY, payload.token);
+      markAdminActive();
       setIsMarketingLandingOpen(false);
       setIsMapOpen(false);
       replaceAppPath('/admin');
@@ -554,9 +561,16 @@ function App() {
 
   useEffect(() => {
     if (!isAdminPath() || !adminAccessToken) return;
+
+    const lastActiveAt = Number(localStorage.getItem(ADMIN_LAST_ACTIVE_KEY) || 0);
+    if (!Number.isFinite(lastActiveAt) || Date.now() - lastActiveAt > ADMIN_IDLE_TIMEOUT_MS) {
+      clearAdminAccess();
+      return;
+    }
+
     setIsMarketingLandingOpen(false);
     setIsMapOpen(false);
-  }, [adminAccessToken]);
+  }, [adminAccessToken, clearAdminAccess]);
 
   useEffect(() => {
     if (!isAdminPath() || !adminAccessToken) return;
@@ -566,6 +580,7 @@ function App() {
     }, ADMIN_IDLE_TIMEOUT_MS);
 
     const refreshTimeout = () => {
+      markAdminActive();
       clearTimeout(timeoutId);
       timeoutId = window.setTimeout(() => {
         clearAdminAccess();
@@ -579,7 +594,7 @@ function App() {
       clearTimeout(timeoutId);
       events.forEach((eventName) => window.removeEventListener(eventName, refreshTimeout));
     };
-  }, [adminAccessToken, clearAdminAccess]);
+  }, [adminAccessToken, clearAdminAccess, markAdminActive]);
 
   useEffect(() => {
     if (localStorage.getItem(PROGRESS_RESET_MARKER_KEY) !== '1') {
