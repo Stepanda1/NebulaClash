@@ -53,7 +53,8 @@ function GoalGemIcon({ color }: { color: GemType }) {
 
 
 type LevelStarsMap = Record<number, number>;
-const TUTORIAL_TOTAL_STEPS = 5;
+const TUTORIAL_MODAL_STEPS = [0, 2, 4, 6] as const;
+const TUTORIAL_TOTAL_STEPS = TUTORIAL_MODAL_STEPS.length;
 
 const PROGRESS_RESET_VERSION = 2;
 const UNLOCKED_LEVEL_STORAGE_KEY = `match3_unlocked_level_v${PROGRESS_RESET_VERSION}`;
@@ -151,7 +152,11 @@ function App() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
-  const tutorialAllowsBoardInput = !tutorialActive || tutorialStep === 1 || tutorialStep === 2 || tutorialStep === 3;
+  const tutorialShowsModal = tutorialActive && TUTORIAL_MODAL_STEPS.includes(tutorialStep as (typeof TUTORIAL_MODAL_STEPS)[number]);
+  const tutorialAllowsBoardInput = !tutorialActive || tutorialStep === 1 || tutorialStep === 3 || tutorialStep === 5;
+  const tutorialDisplayStep = tutorialShowsModal
+    ? Math.max(1, TUTORIAL_MODAL_STEPS.findIndex((value) => value === tutorialStep) + 1)
+    : 1;
   const t = COPY[language];
   const legalContacts = useMemo(() => getLegalContactsFromEnv(), []);
   const marketingLinks = useMemo(() => getMarketingLinksFromEnv(legalContacts.telegram), [legalContacts]);
@@ -277,7 +282,15 @@ function App() {
       setTutorialStep(1);
       return;
     }
-    if (tutorialStep >= TUTORIAL_TOTAL_STEPS - 1) {
+    if (tutorialStep === 2) {
+      setTutorialStep(3);
+      return;
+    }
+    if (tutorialStep === 4) {
+      setTutorialStep(5);
+      return;
+    }
+    if (tutorialStep >= 6) {
       finishTutorial();
     }
   };
@@ -566,18 +579,18 @@ function App() {
 
   useEffect(() => {
     if (!tutorialActive) return;
-    if (tutorialStep === 2 && bombDoubleActivations > bombRef.current) {
+    if (tutorialStep === 3 && bombDoubleActivations > bombRef.current) {
       bombRef.current = bombDoubleActivations;
-      setTutorialStep(3);
+      setTutorialStep(4);
       setPendingSpawn('lightning');
     }
   }, [bombDoubleActivations, tutorialActive, tutorialStep]);
 
   useEffect(() => {
     if (!tutorialActive) return;
-    if (tutorialStep === 3 && lightningSwaps > lightningRef.current) {
+    if (tutorialStep === 5 && lightningSwaps > lightningRef.current) {
       lightningRef.current = lightningSwaps;
-      setTutorialStep(4);
+      setTutorialStep(6);
       setPendingSpawn(null);
     }
   }, [lightningSwaps, tutorialActive, tutorialStep]);
@@ -1007,10 +1020,11 @@ function App() {
       </AnimatePresence>
 
       <AudioPlayer isMuted={isMuted} volume={volume} mode={isBossLevel ? 'boss' : 'level'} />
-      {tutorialActive && (
+      {tutorialShowsModal && (
         <TutorialHint
           step={tutorialStep}
           totalSteps={TUTORIAL_TOTAL_STEPS}
+          displayStep={tutorialDisplayStep}
           onSkip={onSkipTutorial}
           onAdvance={onAdvanceTutorial}
           language={language}

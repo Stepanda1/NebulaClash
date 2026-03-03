@@ -6,6 +6,7 @@ import { BoosterGlyph, CoinGlyph, CompassGlyph, NebulaCoreIcon, VaultGlyph } fro
 type TutorialHintProps = {
   step: number;
   totalSteps: number;
+  displayStep: number;
   onSkip: () => void;
   onAdvance: () => void;
   language: Language;
@@ -37,44 +38,44 @@ function getStepContent(step: number, language: Language): TutorialStepContent {
         actionLabel: isRu ? 'Начать обучение' : 'Start Tutorial',
         actionKind: 'advance',
       };
-    case 1:
+    case 2:
       return {
         badge: isRu ? 'Шаг 1' : 'Step 1',
         title: isRu ? 'Собери первый матч' : 'Make your first match',
         body: isRu
-          ? 'Следуй подсветке на поле и передвинь фишку, чтобы собрать обычный матч-3. Это главный базовый ход.'
-          : 'Follow the board highlight and move the piece to create a standard match-3. This is the main core action.',
+          ? 'Сейчас окно закроется, и поле подсветит нужный ход. Передвинь фишку и собери обычный матч-3.'
+          : 'The window will close and the board will highlight the move. Slide the piece to make a standard match-3.',
         tips: isRu
           ? ['Можно тапнуть соседнюю фишку', 'Или провести свайп в нужную сторону']
           : ['Tap an adjacent piece', 'Or swipe in the shown direction'],
-        actionLabel: isRu ? 'Сделай матч' : 'Make the Match',
-        actionKind: 'wait',
+        actionLabel: isRu ? 'Далее' : 'Next',
+        actionKind: 'advance',
       };
-    case 2:
+    case 4:
       return {
         badge: isRu ? 'Шаг 2' : 'Step 2',
         title: isRu ? 'Активируй бомбу' : 'Trigger the bomb',
         body: isRu
-          ? 'После первого матча на поле появится бомба. Дважды нажми на неё, чтобы взорвать зону и быстро расчистить поле.'
-          : 'A bomb appears after your first move. Double tap it to blast an area and clear the board fast.',
+          ? 'После нажатия окно исчезнет. На поле останется бомба: дважды нажми на неё, чтобы взорвать участок.'
+          : 'After you continue, the window closes. A bomb will stay on the board: double tap it to blast the area.',
         tips: isRu
           ? ['Бомбы хороши против плотных участков', 'Их стоит беречь под сложные цели']
           : ['Bombs are best against dense areas', 'Save them for harder goals'],
-        actionLabel: isRu ? 'Двойной тап по бомбе' : 'Double Tap the Bomb',
-        actionKind: 'wait',
+        actionLabel: isRu ? 'Далее' : 'Next',
+        actionKind: 'advance',
       };
-    case 3:
+    case 6:
       return {
         badge: isRu ? 'Шаг 3' : 'Step 3',
         title: isRu ? 'Проведи молнию' : 'Use the lightning',
         body: isRu
-          ? 'Теперь на поле появится молния. Свайпни её с соседней фишкой, чтобы очистить целый ряд или колонку.'
-          : 'Now a lightning piece appears. Swap it with a nearby tile to clear a full row or column.',
+          ? 'После нажатия окно закроется, и тебе останется сдвинуть молнию с соседней фишкой. Это очищает целую линию.'
+          : 'After you continue, close the window and swap the lightning with a nearby tile. It clears a full line.',
         tips: isRu
           ? ['Это лучший быстрый клир', 'Используй на нужной линии к цели']
           : ['This is your fast lane clear', 'Use it on lines that push your goal'],
-        actionLabel: isRu ? 'Сдвинь молнию' : 'Swap the Lightning',
-        actionKind: 'wait',
+        actionLabel: isRu ? 'Далее' : 'Next',
+        actionKind: 'advance',
       };
     default:
       return {
@@ -92,11 +93,10 @@ function getStepContent(step: number, language: Language): TutorialStepContent {
   }
 }
 
-export const TutorialHint: React.FC<TutorialHintProps> = ({ step, totalSteps, onSkip, onAdvance, language }) => {
+export const TutorialHint: React.FC<TutorialHintProps> = ({ step, totalSteps, displayStep, onSkip, onAdvance, language }) => {
   const content = getStepContent(step, language);
-  const progress = Math.max(1, Math.min(totalSteps, step + 1));
+  const progress = Math.max(1, Math.min(totalSteps, displayStep));
   const showAdvance = content.actionKind !== 'wait';
-  const isActionStep = content.actionKind === 'wait';
 
   return (
     <motion.div
@@ -182,11 +182,6 @@ export const TutorialHint: React.FC<TutorialHintProps> = ({ step, totalSteps, on
               )}
             </div>
 
-            {isActionStep && (
-              <div className="mt-3 text-center text-[11px] font-semibold text-cyan-100/70">
-                {language === 'ru' ? 'Поле уже подсвечивает нужный ход' : 'The board is already highlighting the right move'}
-              </div>
-            )}
           </div>
         </div>
       </div>
