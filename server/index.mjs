@@ -18,6 +18,9 @@ const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:51
   .filter(Boolean);
 
 const MAX_BODY_SIZE = 1024 * 1024;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_STORE = new Map();
+const JSON_CONTENT_TYPES = ['application/json', 'application/json; charset=utf-8'];
 
 const DEFAULT_PACKS = [
   { id: 'pack-120', coins: 120, amountRub: 99 },
@@ -78,7 +81,6 @@ function saveState(state) {
 
 function isOriginAllowed(origin) {
   if (!origin) return true;
-  if (origin === 'null') return true;
   if (allowedOrigins.includes('*')) return true;
   if (allowedOrigins.includes(origin)) return true;
 
@@ -115,10 +117,71 @@ function applyCors(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 }
 
+function applySecurityHeaders(res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+}
+
 function json(res, status, payload) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(payload));
+}
+
+function getClientIp(req) {
+  const forwardedFor = String(req.headers['x-forwarded-for'] || '').trim();
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  return String(req.socket?.remoteAddress || '').trim() || 'unknown';
+}
+
+function cleanupRateLimitBucket(now) {
+  for (const [key, bucket] of RATE_LIMIT_STORE.entries()) {
+    if (bucket.resetAt <= now) {
+      RATE_LIMIT_STORE.delete(key);
+    }
+  }
+}
+
+function enforceRateLimit(req, res, bucketName, limit, windowMs = RATE_LIMIT_WINDOW_MS) {
+  const now = Date.now();
+  cleanupRateLimitBucket(now);
+
+  const key = `${bucketName}:${getClientIp(req)}`;
+  const existing = RATE_LIMIT_STORE.get(key);
+
+  if (!existing || existing.resetAt <= now) {
+    RATE_LIMIT_STORE.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+
+  if (existing.count >= limit) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((existing.resetAt - now) / 1000));
+    res.setHeader('Retry-After', String(retryAfterSeconds));
+    json(res, 429, { error: 'Too many requests', retryAfter: retryAfterSeconds });
+    return false;
+  }
+
+  existing.count += 1;
+  return true;
+}
+
+function isJsonRequest(req) {
+  const contentType = String(req.headers['content-type'] || '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase();
+  return JSON_CONTENT_TYPES.some((item) => item.split(';')[0] === contentType);
+}
+
+function requireJsonRequest(req, res) {
+  if (isJsonRequest(req)) return true;
+  json(res, 415, { error: 'Content-Type must be application/json' });
+  return false;
 }
 
 function readRawBody(req) {
@@ -278,8 +341,23 @@ function initSession(res, payload) {
 
 function getBaseUrl(req) {
   if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL;
-  const proto = req.headers['x-forwarded-proto'] || 'http';
-  const host = req.headers.host || `localhost:${port}`;
+  const forwardedProto = String(req.headers['x-forwarded-proto'] || '').trim().toLowerCase();
+  const proto = forwardedProto === 'https' ? 'https' : 'http';
+  const host = String(req.headers.host || '').trim();
+
+  if (!host) {
+    return `http://localhost:${port}`;
+  }
+
+  try {
+    const hostUrl = new URL(`${proto}://${host}`);
+    if (!isOriginAllowed(hostUrl.origin)) {
+      return `http://localhost:${port}`;
+    }
+  } catch {
+    return `http://localhost:${port}`;
+  }
+
   return `${proto}://${host}`;
 }
 
@@ -535,6 +613,7 @@ const server = createServer(async (req, res) => {
   const urlObj = new URL(req.url || '/', `http://${req.headers.host || `localhost:${port}`}`);
   const origin = String(req.headers.origin || '').trim();
   applyCors(req, res);
+  applySecurityHeaders(res);
 
   if (req.method === 'OPTIONS') {
     if (origin && !isOriginAllowed(origin)) {
@@ -557,6 +636,8 @@ const server = createServer(async (req, res) => {
   }
 
   if (req.method === 'POST' && urlObj.pathname === '/api/session/init') {
+    if (!enforceRateLimit(req, res, 'session-init', 30)) return;
+    if (!requireJsonRequest(req, res)) return;
     const rawBody = await readRawBody(req).catch(() => '');
     const payload = parseJsonBody(rawBody);
     if (payload == null) {
@@ -577,6 +658,8 @@ const server = createServer(async (req, res) => {
   if (req.method === 'POST' && urlObj.pathname === '/api/wallet/spend') {
     const playerId = requireAuth(req, res);
     if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'wallet-spend', 40)) return;
+    if (!requireJsonRequest(req, res)) return;
 
     const rawBody = await readRawBody(req).catch(() => '');
     const payload = parseJsonBody(rawBody);
@@ -591,6 +674,8 @@ const server = createServer(async (req, res) => {
   if (req.method === 'POST' && urlObj.pathname === '/api/payments/robokassa/create-invoice') {
     const playerId = requireAuth(req, res);
     if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'create-invoice', 20)) return;
+    if (!requireJsonRequest(req, res)) return;
 
     const rawBody = await readRawBody(req).catch(() => '');
     const payload = parseJsonBody(rawBody);
@@ -605,6 +690,7 @@ const server = createServer(async (req, res) => {
   }
 
   if ((req.method === 'POST' || req.method === 'GET') && urlObj.pathname === '/api/payments/robokassa/result') {
+    if (!enforceRateLimit(req, res, 'robokassa-result', 120)) return;
     const rawBody = await readRawBody(req).catch(() => '');
     const payload = parseRobokassaPayload(rawBody, urlObj);
     creditFromRobokassaResult(res, payload);
