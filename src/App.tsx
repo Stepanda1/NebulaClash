@@ -57,13 +57,13 @@ type LevelStarsMap = Record<number, number>;
 const TUTORIAL_MODAL_STEPS = [0, 1, 3, 5, 7] as const;
 const TUTORIAL_TOTAL_STEPS = TUTORIAL_MODAL_STEPS.length;
 
-const PROGRESS_RESET_VERSION = 3;
+const PROGRESS_RESET_VERSION = 4;
 const UNLOCKED_LEVEL_STORAGE_KEY = `match3_unlocked_level_v${PROGRESS_RESET_VERSION}`;
 const LEVEL_STARS_STORAGE_KEY = `match3_level_stars_v${PROGRESS_RESET_VERSION}`;
 const LEGACY_UNLOCKED_LEVEL_STORAGE_KEY = 'match3_unlocked_level';
 const LEGACY_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars';
-const PREVIOUS_UNLOCKED_LEVEL_STORAGE_KEY = 'match3_unlocked_level_v2';
-const PREVIOUS_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars_v2';
+const PREVIOUS_UNLOCKED_LEVEL_STORAGE_KEY = 'match3_unlocked_level_v3';
+const PREVIOUS_LEVEL_STARS_STORAGE_KEY = 'match3_level_stars_v3';
 const PROGRESS_RESET_MARKER_KEY = `match3_progress_reset_applied_v${PROGRESS_RESET_VERSION}`;
 const GAME_STATE_SNAPSHOT_STORAGE_KEY = 'match3_game_state_snapshot';
 const MAX_ADMIN_UNLOCK_LEVEL = 60;
