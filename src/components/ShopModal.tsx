@@ -34,6 +34,11 @@ export function ShopModal({
   const t = COPY[language];
   const coinLabel = language === 'ru' ? 'Космический магазин' : 'Space Shop';
   const boostersLabel = language === 'ru' ? 'Бустеры за монеты' : 'Boosters for coins';
+  const hookLine = language === 'ru' ? 'Заряди запас и не выходи из ритма' : 'Load up and keep the streak alive';
+  const premiumLine = language === 'ru' ? 'Самые редкие и красивые монеты во всей галактике' : 'The hottest currency in your galaxy';
+  const hotDealLabel = language === 'ru' ? 'Самый сочный пак' : 'Best Value';
+  const instantTopUpLabel = language === 'ru' ? 'Мгновенное пополнение' : 'Instant top-up';
+  const claimLabel = language === 'ru' ? 'Забрать монеты' : 'Get Coins';
   const paymentsHintLine1 = language === 'ru' ? 'Оплата проходит на защищенной странице провайдера' : 'Payments are processed on a secure provider page';
   const paymentsHintLine2 = language === 'ru' ? 'После подтверждения монеты начисляются автоматически.' : 'Coins are credited automatically after payment confirmation.';
   const maxPackCoins = Math.max(...packs.map((p) => p.coins), 0);
@@ -66,20 +71,53 @@ export function ShopModal({
           <CloseGlyph className="h-4.5 w-4.5 text-white" />
         </button>
 
-        <div className="relative z-10 mb-4 rounded-2xl border border-cyan-200/20 bg-white/[0.03] p-3">
+        <div className="relative z-10 mb-4 overflow-hidden rounded-[1.8rem] border border-amber-200/20 bg-[linear-gradient(145deg,rgba(20,20,32,0.64)_0%,rgba(28,25,17,0.78)_45%,rgba(11,18,32,0.8)_100%)] p-4">
+          <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-amber-300/16 blur-2xl" />
+          <div className="pointer-events-none absolute -left-6 bottom-0 h-24 w-24 rounded-full bg-cyan-300/12 blur-2xl" />
           <div className="flex items-start justify-between gap-3 pr-12">
-            <div>
-              <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200/80">
+            <div className="max-w-[58%]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200/80">
                 <NebulaCoreIcon className="h-3.5 w-3.5 text-cyan-100" />
                 {coinLabel}
               </div>
-              <div className="mt-1 text-sm text-white/80">{t.buyCoins}</div>
+              <div className="mt-3 text-xl font-black leading-tight text-white sm:text-2xl">
+                {hookLine}
+              </div>
+              <div className="mt-2 text-xs leading-relaxed text-white/70">
+                {premiumLine}
+              </div>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200/35 bg-gradient-to-r from-amber-300/25 via-yellow-300/20 to-orange-300/25 px-3 py-1.5 shadow-[0_0_20px_rgba(251,191,36,0.16)]">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10">
-                <CoinGlyph className="h-4 w-4" />
+            <div className="relative mr-1 mt-1 flex h-24 w-24 shrink-0 items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-amber-300/10 blur-xl" />
+              <div className="absolute inset-[8%] rounded-full border border-white/10 bg-white/[0.03]" />
+              <motion.div
+                animate={{
+                  scale: [1, 1.05, 1],
+                  rotate: [-4, 4, -4],
+                  filter: [
+                    'drop-shadow(0 0 16px rgba(251,191,36,0.24))',
+                    'drop-shadow(0 0 26px rgba(251,191,36,0.42))',
+                    'drop-shadow(0 0 16px rgba(251,191,36,0.24))',
+                  ],
+                }}
+                transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+                className="relative"
+              >
+                <CoinGlyph className="h-20 w-20" />
+              </motion.div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-200/20 bg-black/20 px-3 py-2.5">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-100/75">{instantTopUpLabel}</div>
+              <div className="mt-1 text-sm font-semibold text-white/80">{t.buyCoins}</div>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200/35 bg-gradient-to-r from-amber-300/25 via-yellow-300/22 to-orange-300/24 px-3 py-1.5 shadow-[0_0_24px_rgba(251,191,36,0.2)]">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/10">
+                <CoinGlyph className="h-5 w-5" />
               </span>
-              <span className="text-lg font-black text-amber-100">{coinsBalance}</span>
+              <span className="text-xl font-black text-amber-100">{coinsBalance}</span>
             </div>
           </div>
         </div>
@@ -133,35 +171,82 @@ export function ShopModal({
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
             <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/75">{t.buyCoins}</div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2.5">
               {packs.map((pack) => {
                 const featured = pack.coins === maxPackCoins;
+                const accent = featured
+                  ? {
+                      shell: 'border-amber-200/35 bg-[linear-gradient(135deg,rgba(251,191,36,0.16),rgba(249,115,22,0.12),rgba(14,165,233,0.12))] hover:from-amber-300/18',
+                      label: 'text-amber-100/90',
+                      button: 'from-amber-300 via-yellow-300 to-orange-400 text-amber-950',
+                    }
+                  : {
+                      shell: 'border-cyan-200/20 bg-[linear-gradient(135deg,rgba(34,211,238,0.12),rgba(59,130,246,0.1),rgba(15,23,42,0.08))]',
+                      label: 'text-cyan-100/82',
+                      button: 'from-cyan-300 via-sky-300 to-blue-400 text-slate-950',
+                    };
                 const cardClass = featured
-                  ? 'col-span-2 border-fuchsia-200/30 bg-gradient-to-br from-fuchsia-400/14 via-violet-500/12 to-cyan-400/10 hover:from-fuchsia-400/20 hover:via-violet-500/16 hover:to-cyan-400/14'
-                  : 'border-emerald-200/20 bg-gradient-to-br from-emerald-400/12 to-teal-500/10 hover:from-emerald-400/18 hover:to-teal-500/14';
+                  ? accent.shell
+                  : accent.shell;
                 const content = (
-                  <>
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <div className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5">
-                        {featured ? <GiftGlyph className="h-4 w-4 text-fuchsia-200" /> : <VaultGlyph className="h-4 w-4 text-emerald-200" />}
+                  <div className="relative overflow-hidden rounded-[1.4rem]">
+                    <div className="pointer-events-none absolute -right-8 top-0 h-24 w-24 rounded-full bg-white/6 blur-2xl" />
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/12 bg-black/18">
+                        <div className="absolute inset-0 rounded-2xl bg-white/[0.02]" />
+                        <motion.div
+                          animate={
+                            featured
+                              ? {
+                                  scale: [1, 1.06, 1],
+                                  rotate: [-3, 3, -3],
+                                }
+                              : {
+                                  scale: [1, 1.03, 1],
+                                }
+                          }
+                          transition={{
+                            duration: featured ? 2.8 : 3.6,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
+                          className="relative"
+                        >
+                          <CoinGlyph className={`${featured ? 'h-11 w-11' : 'h-9 w-9'} drop-shadow-[0_0_18px_rgba(251,191,36,0.28)]`} />
+                        </motion.div>
                       </div>
-                      {featured && (
-                        <span className="rounded-full border border-fuchsia-200/25 bg-fuchsia-300/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-100">
-                          {language === 'ru' ? 'Хит' : 'Best'}
-                        </span>
-                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="text-lg font-black leading-none text-white">{t.coinsAmount(pack.coins)}</div>
+                            <div className="mt-1 text-xs font-semibold text-white/72">{pack.priceLabel}</div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/12 bg-white/5">
+                              {featured ? <GiftGlyph className="h-4 w-4 text-amber-100" /> : <VaultGlyph className="h-4 w-4 text-cyan-100" />}
+                            </span>
+                            {featured && (
+                              <span className="rounded-full border border-amber-200/30 bg-amber-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100">
+                                {hotDealLabel}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className={`mt-2 text-[11px] font-black uppercase tracking-[0.16em] ${accent.label}`}>
+                          {featured ? (language === 'ru' ? 'Максимум сияния за покупку' : 'Maximum shine per purchase') : (language === 'ru' ? 'Быстрый заряд для серии' : 'Fast fuel for your streak')}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/8">
-                        <CoinGlyph className="h-4.5 w-4.5" />
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70">
+                        <CoinGlyph className="h-3.5 w-3.5" />
+                        {t.openPayment}
+                      </div>
+                      <span className={`inline-flex items-center justify-center rounded-full bg-gradient-to-r px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] shadow-[0_8px_18px_rgba(0,0,0,0.2)] ${accent.button}`}>
+                        {claimLabel}
                       </span>
-                      <span className="text-sm font-black text-white">{t.coinsAmount(pack.coins)}</span>
                     </div>
-                    <div className="mt-2 text-xs font-semibold text-white/80 break-words leading-tight">{pack.priceLabel}</div>
-                    <div className={`mt-2 text-[11px] font-black uppercase tracking-[0.16em] ${featured ? 'text-fuchsia-100/90' : 'text-emerald-100/85'}`}>
-                      {t.openPayment}
-                    </div>
-                  </>
+                  </div>
                 );
 
                 if (pack.url) {
@@ -171,7 +256,7 @@ export function ShopModal({
                       href={pack.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`rounded-2xl border p-3 transition-all active:scale-[0.98] ${cardClass}`}
+                      className={`rounded-2xl border p-3 transition-all hover:scale-[1.01] active:scale-[0.98] ${cardClass}`}
                     >
                       {content}
                     </a>
@@ -183,7 +268,7 @@ export function ShopModal({
                     type="button"
                     key={pack.id}
                     onClick={() => onBuyPack(pack.id)}
-                    className={`rounded-2xl border p-3 text-left transition-all active:scale-[0.98] ${cardClass}`}
+                    className={`rounded-2xl border p-3 text-left transition-all hover:scale-[1.01] active:scale-[0.98] ${cardClass}`}
                   >
                     {content}
                   </button>

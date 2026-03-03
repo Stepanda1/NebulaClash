@@ -125,17 +125,33 @@ export function CoinGlyph({ className }: GlyphProps) {
   return (
     <svg viewBox="0 0 32 32" className={joinClassNames('h-5 w-5', className)} aria-hidden="true">
       <defs>
-        <radialGradient id="coinFill" cx="35%" cy="28%" r="72%">
-          <stop offset="0%" stopColor="#fef3c7" />
-          <stop offset="35%" stopColor="#fcd34d" />
-          <stop offset="68%" stopColor="#f59e0b" />
-          <stop offset="100%" stopColor="#b45309" />
+        <radialGradient id="coinAura" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fde68a" stopOpacity="0.7" />
+          <stop offset="55%" stopColor="#f59e0b" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
         </radialGradient>
+        <radialGradient id="coinFill" cx="34%" cy="24%" r="76%">
+          <stop offset="0%" stopColor="#fff7d6" />
+          <stop offset="24%" stopColor="#fde68a" />
+          <stop offset="52%" stopColor="#fbbf24" />
+          <stop offset="76%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#92400e" />
+        </radialGradient>
+        <linearGradient id="coinRim" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fffbeb" />
+          <stop offset="30%" stopColor="#fde68a" />
+          <stop offset="64%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#78350f" />
+        </linearGradient>
       </defs>
-      <circle cx="16" cy="16" r="10" fill="url(#coinFill)" />
-      <circle cx="16" cy="16" r="7" fill="none" stroke="rgba(120,53,15,0.35)" strokeWidth="1.8" />
-      <path d="M12.4 16h7.2M16 12.4v7.2" stroke="#422006" strokeWidth="2.2" strokeLinecap="round" />
-      <ellipse cx="12.5" cy="11.2" rx="3.2" ry="1.6" fill="rgba(255,255,255,0.34)" />
+      <circle cx="16" cy="16" r="15" fill="url(#coinAura)" />
+      <circle cx="16" cy="16" r="10.8" fill="url(#coinRim)" />
+      <circle cx="16" cy="16" r="8.9" fill="url(#coinFill)" />
+      <circle cx="16" cy="16" r="6.9" fill="none" stroke="rgba(120,53,15,0.36)" strokeWidth="1.5" />
+      <path d="M11.7 16h8.6M16 11.7v8.6" stroke="#451a03" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M9.8 10.6c1.2-2.3 3.4-3.7 6.6-4.2" fill="none" stroke="rgba(255,255,255,0.62)" strokeWidth="1.3" strokeLinecap="round" />
+      <ellipse cx="12.1" cy="10.9" rx="3.3" ry="1.6" fill="rgba(255,255,255,0.42)" />
+      <circle cx="21.2" cy="20.5" r="1.2" fill="rgba(255,255,255,0.24)" />
     </svg>
   );
 }
