@@ -38,7 +38,7 @@ function getStepContent(step: number, language: Language): TutorialStepContent {
         actionLabel: isRu ? 'Начать обучение' : 'Start Tutorial',
         actionKind: 'advance',
       };
-    case 2:
+    case 1:
       return {
         badge: isRu ? 'Шаг 1' : 'Step 1',
         title: isRu ? 'Собери первый матч' : 'Make your first match',
@@ -51,7 +51,7 @@ function getStepContent(step: number, language: Language): TutorialStepContent {
         actionLabel: isRu ? 'Далее' : 'Next',
         actionKind: 'advance',
       };
-    case 4:
+    case 3:
       return {
         badge: isRu ? 'Шаг 2' : 'Step 2',
         title: isRu ? 'Активируй бомбу' : 'Trigger the bomb',
@@ -64,7 +64,7 @@ function getStepContent(step: number, language: Language): TutorialStepContent {
         actionLabel: isRu ? 'Далее' : 'Next',
         actionKind: 'advance',
       };
-    case 6:
+    case 5:
       return {
         badge: isRu ? 'Шаг 3' : 'Step 3',
         title: isRu ? 'Проведи молнию' : 'Use the lightning',

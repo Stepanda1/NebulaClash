@@ -53,7 +53,7 @@ function GoalGemIcon({ color }: { color: GemType }) {
 
 
 type LevelStarsMap = Record<number, number>;
-const TUTORIAL_MODAL_STEPS = [0, 2, 4, 6] as const;
+const TUTORIAL_MODAL_STEPS = [0, 1, 3, 5, 7] as const;
 const TUTORIAL_TOTAL_STEPS = TUTORIAL_MODAL_STEPS.length;
 
 const PROGRESS_RESET_VERSION = 2;
@@ -153,7 +153,7 @@ function App() {
   const parallaxEnabledRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
   const tutorialShowsModal = tutorialActive && TUTORIAL_MODAL_STEPS.includes(tutorialStep as (typeof TUTORIAL_MODAL_STEPS)[number]);
-  const tutorialAllowsBoardInput = !tutorialActive || tutorialStep === 1 || tutorialStep === 3 || tutorialStep === 5;
+  const tutorialAllowsBoardInput = !tutorialActive || tutorialStep === 2 || tutorialStep === 4 || tutorialStep === 6;
   const tutorialDisplayStep = tutorialShowsModal
     ? Math.max(1, TUTORIAL_MODAL_STEPS.findIndex((value) => value === tutorialStep) + 1)
     : 1;
@@ -282,15 +282,19 @@ function App() {
       setTutorialStep(1);
       return;
     }
-    if (tutorialStep === 2) {
-      setTutorialStep(3);
+    if (tutorialStep === 1) {
+      setTutorialStep(2);
       return;
     }
-    if (tutorialStep === 4) {
-      setTutorialStep(5);
+    if (tutorialStep === 3) {
+      setTutorialStep(4);
       return;
     }
-    if (tutorialStep >= 6) {
+    if (tutorialStep === 5) {
+      setTutorialStep(6);
+      return;
+    }
+    if (tutorialStep >= 7) {
       finishTutorial();
     }
   };
@@ -570,27 +574,27 @@ function App() {
 
   useEffect(() => {
     if (!tutorialActive) return;
-    if (tutorialStep === 1 && match3Moves > match3Ref.current) {
+    if (tutorialStep === 2 && match3Moves > match3Ref.current) {
       match3Ref.current = match3Moves;
-      setTutorialStep(2);
+      setTutorialStep(3);
       setPendingSpawn('bomb');
     }
   }, [match3Moves, tutorialActive, tutorialStep]);
 
   useEffect(() => {
     if (!tutorialActive) return;
-    if (tutorialStep === 3 && bombDoubleActivations > bombRef.current) {
+    if (tutorialStep === 4 && bombDoubleActivations > bombRef.current) {
       bombRef.current = bombDoubleActivations;
-      setTutorialStep(4);
+      setTutorialStep(5);
       setPendingSpawn('lightning');
     }
   }, [bombDoubleActivations, tutorialActive, tutorialStep]);
 
   useEffect(() => {
     if (!tutorialActive) return;
-    if (tutorialStep === 5 && lightningSwaps > lightningRef.current) {
+    if (tutorialStep === 6 && lightningSwaps > lightningRef.current) {
       lightningRef.current = lightningSwaps;
-      setTutorialStep(6);
+      setTutorialStep(7);
       setPendingSpawn(null);
     }
   }, [lightningSwaps, tutorialActive, tutorialStep]);
