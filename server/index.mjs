@@ -576,6 +576,39 @@ function getWallet(res, playerId) {
   json(res, 200, { playerId, balance });
 }
 
+function getOrderStatus(res, orderId, playerId) {
+  const normalizedOrderId = String(orderId || '').trim();
+  if (!normalizedOrderId) {
+    json(res, 400, { error: 'orderId is required' });
+    return;
+  }
+
+  const state = loadState();
+  const order = state.orders[normalizedOrderId];
+  if (!order) {
+    json(res, 404, { error: 'Order not found' });
+    return;
+  }
+
+  if (String(order.playerId || '').trim() !== playerId) {
+    json(res, 403, { error: 'Order does not belong to this player' });
+    return;
+  }
+
+  ensureWallet(state, playerId);
+  json(res, 200, {
+    ok: true,
+    orderId: normalizedOrderId,
+    status: String(order.status || 'created'),
+    packId: String(order.packId || ''),
+    coins: Number(order.coins || 0),
+    amountRub: Number(order.amountRub || 0),
+    balance: Number(state.wallets[playerId] || 0),
+    createdAt: String(order.createdAt || ''),
+    creditedAt: order.creditedAt ? String(order.creditedAt) : null,
+  });
+}
+
 function grantCoinsWithAdminToken(res, payload) {
   const playerId = String(payload.playerId || '').trim();
   if (!playerId) {
@@ -744,6 +777,14 @@ const server = createServer(async (req, res) => {
     const playerId = requireAuth(req, res);
     if (!playerId) return;
     getWallet(res, playerId);
+    return;
+  }
+
+  if (req.method === 'GET' && urlObj.pathname === '/api/payments/order-status') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'order-status', 60)) return;
+    getOrderStatus(res, urlObj.searchParams.get('orderId'), playerId);
     return;
   }
 

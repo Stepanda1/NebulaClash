@@ -7,6 +7,7 @@ export const TIME_BOOST_SECONDS = 30;
 export const TUTORIAL_SEEN_KEY = 'match3_tutorial_seen';
 export const WALLET_TOKEN_KEY = 'match3_wallet_token';
 export const PAYMENT_RETURN_TO_GAME_KEY = 'match3_payment_return_to_game';
+export const PAYMENT_ORDER_ID_KEY = 'match3_payment_order_id';
 
 export type MarketingLinks = {
   installUrl?: string;

@@ -166,7 +166,7 @@ function App() {
   const prevPausedRef = useRef(false);
   const prevGameOverRef = useRef(false);
   const prevLevelUpRef = useRef(false);
-  const prevLevelRef = useRef(level);
+  const prevLevelRef = useRef<number | null>(null);
   const analyticsMovesRef = useRef(0);
   const analyticsBombCountRef = useRef(0);
   const analyticsLightningCountRef = useRef(0);

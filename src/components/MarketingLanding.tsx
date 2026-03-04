@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { Language } from '../i18n';
 import type { MarketingLinks } from '../config/appConfig';
 import type { LegalContacts } from '../types/legal';
@@ -20,6 +20,10 @@ export function MarketingLanding({
   onPlayNow,
   onOpenFeedback,
 }: MarketingLandingProps) {
+  useEffect(() => {
+    trackEvent('landing_view', { entry: 'marketing_landing' });
+  }, []);
+
   const buildTrackedUrl = useCallback((targetUrl: string, medium: string) => {
     const url = new URL(targetUrl, typeof window !== 'undefined' ? window.location.origin : 'https://nebulaclash.com');
     const attribution = getAttributionPayload();

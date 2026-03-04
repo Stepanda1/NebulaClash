@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Language } from '../i18n';
-import { PAYMENT_RETURN_TO_GAME_KEY, WALLET_TOKEN_KEY } from '../config/appConfig';
+import { trackEvent } from '../analytics';
+import { PAYMENT_ORDER_ID_KEY, PAYMENT_RETURN_TO_GAME_KEY, WALLET_TOKEN_KEY } from '../config/appConfig';
 import type { ShopPack } from '../types/shop';
 
 type UseWalletOptions = {
@@ -50,6 +51,46 @@ export function useWallet({
       return false;
     }
   }, [walletToken]);
+
+  const fetchOrderStatus = useCallback(async (orderId: string) => {
+    if (!walletToken) return null;
+
+    try {
+      const response = await fetch(`/api/payments/order-status?orderId=${encodeURIComponent(orderId)}`, {
+        headers: {
+          Authorization: `Bearer ${walletToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return await response.json() as { status?: string; balance?: number; coins?: number };
+    } catch {
+      return null;
+    }
+  }, [walletToken]);
+
+  const waitForOrderCredit = useCallback(async (orderId: string): Promise<boolean> => {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const payload = await fetchOrderStatus(orderId);
+      if (payload?.status === 'credited') {
+        if (typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
+          setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
+        } else {
+          await syncWalletBalance();
+        }
+        return true;
+      }
+
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, 1250);
+      });
+    }
+
+    return false;
+  }, [fetchOrderStatus, syncWalletBalance]);
 
   const spendCoins = useCallback(async (cost: number): Promise<boolean> => {
     if (!walletReady || !walletToken) {
@@ -112,6 +153,7 @@ export function useWallet({
     }
 
     try {
+      trackEvent('checkout_start', { pack_id: packId, coins: pack.coins, price_label: pack.priceLabel });
       const response = await fetch('/api/payments/robokassa/create-invoice', {
         method: 'POST',
         headers: {
@@ -121,21 +163,24 @@ export function useWallet({
         body: JSON.stringify({ packId, returnUrl: window.location.href }),
       });
 
-      const payload = await response.json().catch(() => ({})) as { paymentUrl?: string };
+      const payload = await response.json().catch(() => ({})) as { paymentUrl?: string; orderId?: string };
       if (response.ok && payload.paymentUrl) {
         onPackCheckout(packId);
+        if (payload.orderId) {
+          window.localStorage.setItem(PAYMENT_ORDER_ID_KEY, payload.orderId);
+        }
         window.localStorage.setItem(PAYMENT_RETURN_TO_GAME_KEY, '1');
+        trackEvent('checkout_redirect', {
+          pack_id: packId,
+          coins: pack.coins,
+          has_order_id: Boolean(payload.orderId),
+        });
         window.location.assign(payload.paymentUrl);
         return;
       }
+      trackEvent('checkout_error', { pack_id: packId, status: response.status });
     } catch {
-      // Fallback to direct provider link if backend invoice is temporarily unavailable.
-    }
-
-    if (pack.url) {
-      window.open(pack.url, '_blank', 'noopener,noreferrer');
-      onPackCheckout(packId);
-      return;
+      trackEvent('checkout_error', { pack_id: packId, status: 'network_error' });
     }
 
     setShopNotice(shopPackUnavailableMessage);
@@ -179,10 +224,16 @@ export function useWallet({
         }
 
         setWalletReady(Boolean(payload.token));
+        trackEvent('wallet_ready', {
+          has_token: Boolean(payload.token),
+          has_player_id: Boolean(payload.playerId),
+          balance: typeof payload.balance === 'number' ? Math.max(0, Math.floor(payload.balance)) : null,
+        });
       } catch {
         if (isDisposed) return;
         setWalletReady(false);
         setShopNotice(walletUnavailableMessage);
+        trackEvent('wallet_init_error', { reason: 'wallet_init_failed' });
       } finally {
         walletInitInFlightRef.current = false;
       }
@@ -200,21 +251,45 @@ export function useWallet({
     const paymentState = url.searchParams.get('payment');
     if (!paymentState) return;
     if (paymentState === 'success' && !walletToken) return;
+    const orderId = url.searchParams.get('orderId') || window.localStorage.getItem(PAYMENT_ORDER_ID_KEY) || '';
+
+    const cleanupPaymentParams = () => {
+      url.searchParams.delete('payment');
+      url.searchParams.delete('orderId');
+      window.localStorage.removeItem(PAYMENT_RETURN_TO_GAME_KEY);
+      window.localStorage.removeItem(PAYMENT_ORDER_ID_KEY);
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    };
+
+    cleanupPaymentParams();
+
+    trackEvent('payment_return', {
+      status: paymentState,
+      has_order_id: Boolean(orderId),
+    });
 
     if (paymentState === 'success') {
-      setShopNotice(language === 'ru' ? 'Платеж принят, зачисляем монеты...' : 'Payment received, crediting coins...');
-      void syncWalletBalance();
-      onPaymentStatus('success');
+      setShopNotice(language === 'ru' ? 'Платеж подтвержден, проверяем зачисление...' : 'Payment confirmed, verifying coin credit...');
+      void (async () => {
+        const credited = orderId ? await waitForOrderCredit(orderId) : await syncWalletBalance();
+
+        if (credited) {
+          setShopNotice(language === 'ru' ? 'Монеты зачислены' : 'Coins credited');
+          trackEvent('payment_credited', { order_id: orderId || null });
+        } else {
+          setShopNotice(language === 'ru' ? 'Платеж принят. Зачисление может занять до минуты.' : 'Payment received. Coin credit may take up to a minute.');
+          trackEvent('payment_credit_pending', { order_id: orderId || null });
+          await syncWalletBalance();
+        }
+
+        onPaymentStatus('success');
+      })();
     } else if (paymentState === 'fail') {
       setShopNotice(language === 'ru' ? 'Платеж не завершен' : 'Payment was not completed');
+      trackEvent('payment_failed', { order_id: orderId || null });
       onPaymentStatus('fail');
     }
-
-    url.searchParams.delete('payment');
-    url.searchParams.delete('orderId');
-    window.localStorage.removeItem(PAYMENT_RETURN_TO_GAME_KEY);
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-  }, [language, onPaymentStatus, syncWalletBalance, walletToken]);
+  }, [language, onPaymentStatus, syncWalletBalance, waitForOrderCredit, walletToken]);
 
   return {
     buyCoinsPack,
