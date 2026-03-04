@@ -43,6 +43,10 @@ type PersistedGameState = {
 };
 
 const BOSS_DEBRIS_CAP = 14;
+const VICTORY_BONUS_EXPLOSION_MS = 140;
+const VICTORY_BONUS_REMOVE_MS = 80;
+const VICTORY_BONUS_GRAVITY_MS = 110;
+const VICTORY_BONUS_AUTO_MATCH_MS = 120;
 const LEVEL_CONFIGS: LevelConfig[] = buildLevelConfigs();
 const GAME_STATE_STORAGE_KEY = 'match3_game_state_snapshot';
 
@@ -760,7 +764,7 @@ export const useGame = () => {
             explodeTimeoutRef.current = window.setTimeout(() => {
                 setExplodingIds(new Set());
                 explodeTimeoutRef.current = null;
-            }, 220);
+            }, VICTORY_BONUS_EXPLOSION_MS);
 
             countCollected(activeGrid, affected);
             countSpecialGoalActivations(activeGrid, affected);
@@ -776,8 +780,11 @@ export const useGame = () => {
                 setTimeLeft(remainingCounter);
             }
 
-            activeGrid = await runRemovalAndGravity(activeGrid, affected, { remove: 120, gravity: 150 });
-            activeGrid = await resolveAutoMatches(activeGrid, 180);
+            activeGrid = await runRemovalAndGravity(activeGrid, affected, {
+                remove: VICTORY_BONUS_REMOVE_MS,
+                gravity: VICTORY_BONUS_GRAVITY_MS,
+            });
+            activeGrid = await resolveAutoMatches(activeGrid, VICTORY_BONUS_AUTO_MATCH_MS);
         }
 
         if (levelConfig.mode === 'moves' && remainingCounter !== 0) {
