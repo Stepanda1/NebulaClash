@@ -27,6 +27,7 @@ let sessionId: string | null = null;
 let attributionCache: AnalyticsPayload | null = null;
 const UTM_STORAGE_KEY = 'match3_utm_attribution';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
+const CORE_FUNNEL_NAME = 'core_conversion';
 
 const isBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined';
 
@@ -179,9 +180,7 @@ export function initAnalytics() {
   initialized = true;
 }
 
-export function trackEvent(eventName: string, payload: AnalyticsPayload = {}) {
-  if (!isBrowser()) return;
-
+function dispatchEvent(eventName: string, payload: AnalyticsPayload) {
   const withSession = {
     session_id: getSessionId(),
     ...getAttributionPayload(),
@@ -198,5 +197,55 @@ export function trackEvent(eventName: string, payload: AnalyticsPayload = {}) {
 
   if (posthogInitialized) {
     posthog.capture(eventName, withSession);
+  }
+}
+
+function getFunnelStepPayload(eventName: string, payload: AnalyticsPayload): AnalyticsPayload | null {
+  const level = typeof payload.level === 'number' ? payload.level : Number.NaN;
+
+  if (eventName === 'landing_view') {
+    return { funnel_name: CORE_FUNNEL_NAME, funnel_step: 'landing_view', funnel_index: 1 };
+  }
+  if (eventName === 'landing_play_click') {
+    return { funnel_name: CORE_FUNNEL_NAME, funnel_step: 'landing_play_click', funnel_index: 2 };
+  }
+  if (eventName === 'session_start') {
+    return { funnel_name: CORE_FUNNEL_NAME, funnel_step: 'session_start', funnel_index: 3 };
+  }
+  if (eventName === 'level_start' && level === 1) {
+    return { funnel_name: CORE_FUNNEL_NAME, funnel_step: 'level_1_start', funnel_index: 4 };
+  }
+  if (eventName === 'level_complete' && level === 1) {
+    return { funnel_name: CORE_FUNNEL_NAME, funnel_step: 'level_1_complete', funnel_index: 5 };
+  }
+  if (eventName === 'shop_open') {
+    return { funnel_name: CORE_FUNNEL_NAME, funnel_step: 'shop_open', funnel_index: 6 };
+  }
+  if (eventName === 'checkout_start') {
+    return { funnel_name: CORE_FUNNEL_NAME, funnel_step: 'checkout_start', funnel_index: 7 };
+  }
+  if (eventName === 'payment_credited') {
+    return { funnel_name: CORE_FUNNEL_NAME, funnel_step: 'payment_credited', funnel_index: 8 };
+  }
+
+  return null;
+}
+
+export function trackEvent(eventName: string, payload: AnalyticsPayload = {}) {
+  if (!isBrowser()) return;
+  if (!initialized) {
+    initAnalytics();
+  }
+
+  dispatchEvent(eventName, payload);
+
+  if (eventName === 'funnel_step') return;
+
+  const funnelPayload = getFunnelStepPayload(eventName, payload);
+  if (funnelPayload) {
+    dispatchEvent('funnel_step', {
+      ...funnelPayload,
+      source_event: eventName,
+    });
   }
 }
