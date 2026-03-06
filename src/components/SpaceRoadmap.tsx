@@ -337,7 +337,7 @@ export function SpaceRoadmap({
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-slate-950 text-white">
+    <div className="relative h-full w-full overflow-hidden bg-[radial-gradient(180%_140%_at_12%_-2%,#20528f_0%,#12315b_24%,#0a1736_56%,#050a17_100%)] text-white">
       <CosmicBackdrop variant="roadmap" />
 
       <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-5">
@@ -366,8 +366,16 @@ export function SpaceRoadmap({
           </div>
         </div>
 
-        <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-white/15 bg-black/30 shadow-[0_0_80px_rgba(56,189,248,0.16)] backdrop-blur-md">
+        <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-[linear-gradient(165deg,rgba(7,19,40,0.68),rgba(2,6,23,0.52))] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md">
+          <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_20%_14%,rgba(56,189,248,0.2)_0%,transparent_36%),radial-gradient(circle_at_82%_70%,rgba(16,185,129,0.14)_0%,transparent_34%),radial-gradient(circle_at_56%_42%,rgba(251,191,36,0.1)_0%,transparent_28%)]" />
+          <div className="pointer-events-none absolute inset-0 rounded-3xl opacity-[0.1] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:36px_36px,36px_36px]" />
           <div className="relative mx-auto w-[340px]" style={{ height: mapHeight }}>
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div className="absolute -left-20 top-24 h-56 w-56 rounded-full bg-cyan-300/18 blur-3xl" />
+              <div className="absolute right-[-88px] top-[820px] h-60 w-60 rounded-full bg-blue-300/14 blur-3xl" />
+              <div className="absolute left-[-72px] top-[1750px] h-64 w-64 rounded-full bg-emerald-300/12 blur-3xl" />
+              <div className="absolute right-[-80px] top-[2580px] h-64 w-64 rounded-full bg-amber-300/12 blur-3xl" />
+            </div>
             {secondSectorStart && (
               <>
                 <div

@@ -10,3 +10,28 @@ Original prompt: ускорь дополнительные ходы, при эт
 - 2026-03-04: `npm run build` прошёл после правки унифицированной воронки.
 - TODO: Прогнать ручной сценарий оплаты на реальном сервере: checkout -> возврат -> webhook -> подтверждённое зачисление по `/api/payments/order-status`.
 - TODO: Прогнать визуальную проверку конца уровня и убедиться, что темп выглядит быстрее, но счёт, цели и обнуление оставшихся ходов синхронны.
+- 2026-03-06: Аналитика переведена на GTM-контейнер (`VITE_GTM_CONTAINER_ID`, по умолчанию `GTM-54KD4D8H`): инициализация через `gtm.js`, события отправляются в `window.dataLayer` как `{ event, ...payload }`; direct `gtag` оставлен только как fallback при отключенном GTM.
+- 2026-03-06: Для DebugView добавлена авто-активация `debug_mode` при `ga_debug=1/true`, `gtm_debug`, `gtm_preview` и на localhost.
+- 2026-03-06: Сборка `npm run build` успешна после правок аналитики.
+- 2026-03-06: Локальная браузерная проверка (`output/web-game/analytics-check.json`) подтвердила события в dataLayer: `ga_debug_probe`, `landing_view`, `session_start`, `level_start`, `landing_play_click`, `funnel_step`.
+- 2026-03-06: Фронтенд задеплоен вручную через `pscp/plink` (первичный `deploy-per.ps1` падал на `scp: Connection closed` в текущем окружении).
+- 2026-03-06: Прод-проверка (`output/web-game/analytics-prod-check.json`) подтвердила dataLayer-события на `https://nebulaclash.com` после клика "Играть".
+- TODO: Проверить и при необходимости расширить CSP `script-src` для внешнего CMP-скрипта `https://cdn.consentmanager.net/...` (в консоли прода фиксируется блокировка CSP, на отправку GTM-событий не повлияло).
+- 2026-03-06: Backend wallet/payments переведён с JSON-файла на SQLite (`data/wallet-state.sqlite`) в `server/index.mjs`; добавлены SQL-таблицы `wallets` и `orders`, транзакционные обновления баланса/заказов и миграция legacy-данных из `data/wallet-state.json` при первом запуске.
+- 2026-03-06: Проверен локальный smoke API (session -> wallet -> spend -> create-invoice -> order-status): сценарий проходит, статус нового заказа `created`, баланс корректно списывается.
+- 2026-03-06: Проверена идемпотентность webhook Robokassa Result URL: повторный вызов с теми же параметрами не делает повторного начисления; заказ получает `credited`, баланс увеличивается ровно на один пакет.
+- TODO: Выкатить backend-обновление `server/index.mjs` на прод-сервер и прогнать боевой платежный сценарий end-to-end (checkout -> result webhook -> order-status credited).
+- 2026-03-06: Выявлен prod-блокер для выката SQLite-версии backend: на сервере Node.js `v10.24.0`, а реализация использует `node:sqlite` (нужен современный Node). На сервере есть `sqlite3` CLI `3.26.0`, можно сделать fallback-реализацию под Node 10 или обновить Node на сервере и выкатить текущую версию.
+- 2026-03-06: На прод-сервер установлен Node.js `v22.13.1` в user-space (`/var/www/u3426655/data/opt/node-v22.13.1-linux-x64`) и backend startup-скрипты переключены на этот runtime.
+- 2026-03-06: Backend `server/index.mjs` выкачен на прод и успешно запущен под Node 22; процесс: `/var/www/u3426655/data/opt/node-v22.13.1-linux-x64/bin/node server/index.mjs`.
+- 2026-03-06: Прод-smoke через `https://nebulaclash.com/api/*` успешен: `health.ok=true`, `session/init ok=true`, чтение wallet работает, `create-invoice` создаёт заказ, `order-status` возвращает `created`.
+- 2026-03-06: На проде создана и используется SQLite state-база: `data/wallet-state.sqlite` (+`-wal`/`-shm`), legacy `wallet-state.json` сохранён как источник для миграции/бэкапа.
+- 2026-03-06: Добавлен A/B эксперимент `shop_timing_v1` в `src/App.tsx`: 50/50 assignment (`a`/`b`) с сохранением варианта в `localStorage` (`match3_exp_shop_timing_v1_variant`), событие `experiment_assigned`, ивент `shop_prompt_shown` с `source`.
+- 2026-03-06: Для варианта `b` реализован автопоказ магазина после первого `level_complete` на уровне 1 (однократно на пользователя, ключ `match3_exp_shop_timing_v1_auto_shown`), для ручного открытия источник `source=manual_button`.
+- 2026-03-06: Выполнен визуальный редизайн фонов для лендинга/игры/roadmap: обновлены слои `CosmicBackdrop` (`src/components/CosmicArtwork.tsx`), фон и стеклянная глубина игрового поля (`src/components/GameBoard.tsx`), фон контейнера и атмосферные оверлеи roadmap (`src/components/SpaceRoadmap.tsx`), а также главный фон игрового экрана (`src/App.tsx`).
+- 2026-03-06: `npm run build` успешно после правок визуала (первый запуск в sandbox падал на `spawn EPERM`, повторный запуск вне sandbox прошёл).
+- 2026-03-06: Прогнан Playwright-клиент skill (временная локальная копия скрипта, после прогона удалена) после редизайна; получены артефакты в `output/web-game` и `output/web-game/bg-roadmap`. Визуально проверены скриншоты:
+  - лендинг: `output/web-game/shot-0.png`
+  - игровой экран с туториалом: `output/web-game/bg-roadmap/shot-0.png`
+  - roadmap на `/play`: `output/web-game/bg-roadmap-map.png`
+- 2026-03-06: В console-errors Playwright на локальном dev сохраняется `Failed to load resource: ... 500 (Internal Server Error)` (в `errors-0.json`), вероятно связано с отсутствующим локальным backend API в dev-окружении; на редизайн фонов не влияет.

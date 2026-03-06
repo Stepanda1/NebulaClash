@@ -14,28 +14,28 @@ function joinClassNames(...parts: Array<string | undefined>) {
 export function CosmicBackdrop({ variant, className }: CosmicBackdropProps) {
   const theme = {
     landing: {
-      base: 'bg-[radial-gradient(140%_140%_at_16%_14%,#18386b_0%,#101b45_28%,#090b24_58%,#03040f_100%)]',
-      stars: '[background-image:radial-gradient(circle_at_18%_14%,rgba(255,255,255,0.85)_1px,transparent_1.3px),radial-gradient(circle_at_74%_26%,rgba(125,211,252,0.6)_1px,transparent_1.4px),radial-gradient(circle_at_68%_74%,rgba(251,191,36,0.5)_1px,transparent_1.5px)] [background-size:160px_160px,220px_220px,280px_280px]',
-      haze: 'bg-[radial-gradient(circle_at_14%_28%,rgba(14,165,233,0.18),transparent_30%),radial-gradient(circle_at_82%_22%,rgba(56,189,248,0.12),transparent_26%),radial-gradient(circle_at_76%_74%,rgba(245,158,11,0.14),transparent_34%),radial-gradient(circle_at_36%_80%,rgba(59,130,246,0.12),transparent_28%)]',
-      leftOrb: 'bg-sky-400/16',
-      rightOrb: 'bg-amber-300/12',
-      beam: 'bg-[linear-gradient(115deg,transparent_0%,rgba(148,163,184,0.02)_25%,rgba(103,232,249,0.06)_52%,rgba(251,191,36,0.04)_74%,transparent_100%)]',
+      base: 'bg-[radial-gradient(165%_140%_at_12%_0%,#204b8f_0%,#13295f_28%,#0a1130_56%,#040713_100%)]',
+      stars: '[background-image:radial-gradient(circle_at_14%_16%,rgba(255,255,255,0.86)_1px,transparent_1.2px),radial-gradient(circle_at_72%_24%,rgba(186,230,253,0.62)_1px,transparent_1.3px),radial-gradient(circle_at_62%_74%,rgba(252,211,77,0.54)_1px,transparent_1.4px),radial-gradient(circle_at_32%_62%,rgba(255,255,255,0.22)_0.8px,transparent_1.1px)] [background-size:150px_150px,220px_220px,280px_280px,90px_90px]',
+      haze: 'bg-[radial-gradient(circle_at_8%_26%,rgba(14,165,233,0.26),transparent_36%),radial-gradient(circle_at_82%_20%,rgba(56,189,248,0.2),transparent_34%),radial-gradient(circle_at_74%_72%,rgba(245,158,11,0.2),transparent_40%),radial-gradient(circle_at_36%_82%,rgba(59,130,246,0.16),transparent_36%)]',
+      leftOrb: 'bg-sky-300/22',
+      rightOrb: 'bg-amber-300/18',
+      beam: 'bg-[linear-gradient(118deg,transparent_0%,rgba(125,211,252,0.06)_20%,rgba(186,230,253,0.12)_46%,rgba(253,224,71,0.08)_74%,transparent_100%)]',
     },
     roadmap: {
-      base: 'bg-[radial-gradient(135%_150%_at_18%_10%,#163b66_0%,#12214c_26%,#0a1430_54%,#040814_100%)]',
-      stars: '[background-image:radial-gradient(circle_at_16%_12%,rgba(255,255,255,0.82)_1px,transparent_1.2px),radial-gradient(circle_at_84%_22%,rgba(125,211,252,0.58)_1px,transparent_1.3px),radial-gradient(circle_at_64%_78%,rgba(148,163,184,0.5)_1px,transparent_1.4px)] [background-size:180px_180px,240px_240px,320px_320px]',
-      haze: 'bg-[radial-gradient(circle_at_18%_26%,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_84%_70%,rgba(59,130,246,0.14),transparent_34%),radial-gradient(circle_at_54%_18%,rgba(245,158,11,0.1),transparent_24%)]',
-      leftOrb: 'bg-cyan-400/14',
-      rightOrb: 'bg-blue-400/12',
-      beam: 'bg-[linear-gradient(108deg,transparent_0%,rgba(56,189,248,0.04)_20%,rgba(14,165,233,0.08)_50%,rgba(59,130,246,0.04)_80%,transparent_100%)]',
+      base: 'bg-[radial-gradient(170%_170%_at_8%_2%,#1f4d82_0%,#16325e_24%,#0b1a3b_54%,#050916_100%)]',
+      stars: '[background-image:radial-gradient(circle_at_12%_12%,rgba(255,255,255,0.86)_1px,transparent_1.2px),radial-gradient(circle_at_84%_18%,rgba(125,211,252,0.64)_1px,transparent_1.3px),radial-gradient(circle_at_66%_76%,rgba(148,163,184,0.56)_1px,transparent_1.4px),radial-gradient(circle_at_36%_58%,rgba(255,255,255,0.2)_0.8px,transparent_1.2px)] [background-size:170px_170px,230px_230px,310px_310px,92px_92px]',
+      haze: 'bg-[radial-gradient(circle_at_16%_22%,rgba(34,211,238,0.26),transparent_38%),radial-gradient(circle_at_82%_66%,rgba(59,130,246,0.2),transparent_38%),radial-gradient(circle_at_52%_16%,rgba(245,158,11,0.16),transparent_30%),radial-gradient(circle_at_50%_86%,rgba(16,185,129,0.12),transparent_34%)]',
+      leftOrb: 'bg-cyan-300/22',
+      rightOrb: 'bg-blue-300/18',
+      beam: 'bg-[linear-gradient(112deg,transparent_0%,rgba(56,189,248,0.06)_18%,rgba(125,211,252,0.14)_50%,rgba(59,130,246,0.08)_82%,transparent_100%)]',
     },
     shop: {
-      base: 'bg-[radial-gradient(130%_140%_at_50%_8%,#143766_0%,#0f224a_26%,#09132f_56%,#040814_100%)]',
-      stars: '[background-image:radial-gradient(circle_at_14%_18%,rgba(255,255,255,0.8)_1px,transparent_1.2px),radial-gradient(circle_at_82%_30%,rgba(125,211,252,0.58)_1px,transparent_1.3px),radial-gradient(circle_at_48%_78%,rgba(251,191,36,0.48)_1px,transparent_1.4px)] [background-size:150px_150px,220px_220px,300px_300px]',
-      haze: 'bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.18),transparent_36%),radial-gradient(circle_at_84%_70%,rgba(59,130,246,0.12),transparent_32%),radial-gradient(circle_at_18%_78%,rgba(245,158,11,0.12),transparent_30%)]',
-      leftOrb: 'bg-cyan-400/12',
-      rightOrb: 'bg-amber-300/10',
-      beam: 'bg-[linear-gradient(120deg,transparent_0%,rgba(56,189,248,0.04)_22%,rgba(250,204,21,0.05)_50%,rgba(59,130,246,0.03)_80%,transparent_100%)]',
+      base: 'bg-[radial-gradient(146%_150%_at_50%_0%,#1a4d80_0%,#123464_24%,#0b1d42_52%,#050917_100%)]',
+      stars: '[background-image:radial-gradient(circle_at_12%_16%,rgba(255,255,255,0.82)_1px,transparent_1.2px),radial-gradient(circle_at_82%_26%,rgba(125,211,252,0.62)_1px,transparent_1.3px),radial-gradient(circle_at_46%_76%,rgba(251,191,36,0.52)_1px,transparent_1.4px),radial-gradient(circle_at_64%_50%,rgba(255,255,255,0.2)_0.8px,transparent_1.1px)] [background-size:150px_150px,220px_220px,300px_300px,90px_90px]',
+      haze: 'bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.24),transparent_38%),radial-gradient(circle_at_84%_70%,rgba(59,130,246,0.18),transparent_36%),radial-gradient(circle_at_18%_78%,rgba(245,158,11,0.18),transparent_34%)]',
+      leftOrb: 'bg-cyan-300/20',
+      rightOrb: 'bg-amber-300/16',
+      beam: 'bg-[linear-gradient(122deg,transparent_0%,rgba(56,189,248,0.06)_22%,rgba(250,204,21,0.08)_52%,rgba(59,130,246,0.05)_82%,transparent_100%)]',
     },
   }[variant];
 
@@ -47,6 +47,7 @@ export function CosmicBackdrop({ variant, className }: CosmicBackdropProps) {
       <div className={joinClassNames('absolute -left-24 top-12 h-72 w-72 rounded-full blur-3xl', theme.leftOrb)} />
       <div className={joinClassNames('absolute -right-20 bottom-12 h-72 w-72 rounded-full blur-3xl', theme.rightOrb)} />
       <div className={joinClassNames('absolute inset-0 opacity-80', theme.beam)} />
+      <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:84px_84px,84px_84px]" />
       <div className="absolute inset-x-[12%] top-[8%] h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
     </div>
   );

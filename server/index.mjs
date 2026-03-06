@@ -1,13 +1,15 @@
 import { createHmac, createHash, randomUUID, timingSafeEqual } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DatabaseSync } from 'node:sqlite';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
 const dataDir = join(rootDir, 'data');
-const statePath = join(dataDir, 'wallet-state.json');
+const legacyStatePath = join(dataDir, 'wallet-state.json');
+const dbPath = join(dataDir, 'wallet-state.sqlite');
 const port = Number(process.env.PORT || 8787);
 const authSecret = String(process.env.API_AUTH_SECRET || '');
 const adminLogin = String(process.env.ADMIN_LOGIN || '').trim();
@@ -51,34 +53,142 @@ function readPacks() {
   }
 }
 
-function ensureStateFile() {
-  mkdirSync(dataDir, { recursive: true });
-  if (!existsSync(statePath)) {
-    writeFileSync(
-      statePath,
-      JSON.stringify({ wallets: {}, orders: {} }, null, 2),
-      'utf8',
-    );
-  }
-}
-
-function loadState() {
-  ensureStateFile();
+function parseLegacyState() {
+  if (!existsSync(legacyStatePath)) return null;
   try {
-    const raw = readFileSync(statePath, 'utf8');
+    const raw = readFileSync(legacyStatePath, 'utf8');
     const parsed = JSON.parse(raw);
     return {
       wallets: parsed.wallets ?? {},
       orders: parsed.orders ?? {},
     };
   } catch {
-    return { wallets: {}, orders: {} };
+    return null;
   }
 }
 
-function saveState(state) {
-  ensureStateFile();
-  writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf8');
+function initDatabase() {
+  mkdirSync(dataDir, { recursive: true });
+  const db = new DatabaseSync(dbPath);
+
+  db.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+    CREATE TABLE IF NOT EXISTS wallets (
+      player_id TEXT PRIMARY KEY,
+      balance INTEGER NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS orders (
+      order_id TEXT PRIMARY KEY,
+      inv_id TEXT UNIQUE NOT NULL,
+      player_id TEXT NOT NULL,
+      pack_id TEXT NOT NULL,
+      coins INTEGER NOT NULL,
+      amount_rub REAL NOT NULL,
+      out_sum TEXT NOT NULL,
+      status TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      credited_at TEXT,
+      provider TEXT NOT NULL,
+      last_webhook_payload TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_orders_player_id ON orders (player_id);
+    CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status);
+  `);
+
+  const hasOrders = db.prepare('SELECT 1 AS ok FROM orders LIMIT 1').get();
+  if (!hasOrders) {
+    const legacy = parseLegacyState();
+    if (legacy) {
+      const insertWallet = db.prepare(`
+        INSERT INTO wallets (player_id, balance, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(player_id) DO UPDATE SET
+          balance = excluded.balance,
+          updated_at = excluded.updated_at
+      `);
+      const insertOrder = db.prepare(`
+        INSERT OR REPLACE INTO orders (
+          order_id, inv_id, player_id, pack_id, coins, amount_rub, out_sum, status, created_at, credited_at, provider, last_webhook_payload
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      const nowIso = new Date().toISOString();
+      const migrate = () => {
+        db.exec('BEGIN IMMEDIATE');
+        try {
+        Object.entries(legacy.wallets).forEach(([playerId, balance]) => {
+          const normalizedId = String(playerId || '').trim();
+          if (!normalizedId) return;
+          const normalizedBalance = Math.max(0, Math.floor(Number(balance || 0)));
+          insertWallet.run(normalizedId, normalizedBalance, nowIso);
+        });
+
+        Object.entries(legacy.orders).forEach(([orderId, orderRaw]) => {
+          const order = orderRaw || {};
+          const normalizedOrderId = String(order.orderId || orderId || '').trim();
+          const invId = String(order.invId || '').trim();
+          const playerId = String(order.playerId || '').trim();
+          const packId = String(order.packId || '').trim();
+          if (!normalizedOrderId || !invId || !playerId || !packId) return;
+
+          const coins = Math.max(0, Math.floor(Number(order.coins || 0)));
+          const amountRub = Number(order.amountRub || 0);
+          const outSum = String(order.outSum || Number(amountRub || 0).toFixed(2));
+          const status = String(order.status || 'created');
+          const createdAt = String(order.createdAt || nowIso);
+          const creditedAt = order.creditedAt ? String(order.creditedAt) : null;
+          const provider = String(order.provider || 'robokassa');
+          const webhookPayload = order.lastWebhookPayload ? JSON.stringify(order.lastWebhookPayload) : null;
+
+          insertOrder.run(
+            normalizedOrderId,
+            invId,
+            playerId,
+            packId,
+            coins,
+            amountRub,
+            outSum,
+            status,
+            createdAt,
+            creditedAt,
+            provider,
+            webhookPayload,
+          );
+        });
+          db.exec('COMMIT');
+        } catch (error) {
+          try {
+            db.exec('ROLLBACK');
+          } catch {
+            // Ignore rollback failures and rethrow original error.
+          }
+          throw error;
+        }
+      };
+      migrate();
+    }
+  }
+
+  return db;
+}
+
+const db = initDatabase();
+
+function withTransaction(work) {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const result = work();
+    db.exec('COMMIT');
+    return result;
+  } catch (error) {
+    try {
+      db.exec('ROLLBACK');
+    } catch {
+      // Ignore rollback failures and rethrow the original error.
+    }
+    throw error;
+  }
 }
 
 function isOriginAllowed(origin) {
@@ -359,12 +469,22 @@ function initAdminSession(res, payload) {
   json(res, 200, { ok: true, token });
 }
 
-function ensureWallet(state, playerId) {
-  if (typeof state.wallets[playerId] !== 'number') {
-    state.wallets[playerId] = initialCoins;
-    return true;
-  }
-  return false;
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function ensureWalletRow(playerId) {
+  const normalizedPlayerId = String(playerId || '').trim();
+  if (!normalizedPlayerId) return 0;
+
+  db.prepare(`
+    INSERT INTO wallets (player_id, balance, updated_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(player_id) DO NOTHING
+  `).run(normalizedPlayerId, initialCoins, nowIso());
+
+  const row = db.prepare('SELECT balance FROM wallets WHERE player_id = ?').get(normalizedPlayerId);
+  return Math.max(0, Math.floor(Number(row?.balance || 0)));
 }
 
 function initSession(res, payload) {
@@ -383,15 +503,13 @@ function initSession(res, payload) {
     return;
   }
 
-  const state = loadState();
-  const changed = ensureWallet(state, playerId);
-  if (changed) saveState(state);
+  const balance = ensureWalletRow(playerId);
 
   json(res, 200, {
     ok: true,
     playerId,
     token,
-    balance: Number(state.wallets[playerId] || 0),
+    balance,
   });
 }
 
@@ -464,7 +582,7 @@ function buildPaymentReturnUrl(rawUrl, status, orderId) {
   }
 }
 
-function createRobokassaInvoice(state, req, playerId, pack, returnUrl = '') {
+function createRobokassaInvoice(req, playerId, pack, returnUrl = '') {
   const baseUrl = getBaseUrl(req);
   const merchantLogin = String(process.env.ROBOKASSA_MERCHANT_LOGIN || '').trim();
   const password1 = String(process.env.ROBOKASSA_PASSWORD1 || '').trim();
@@ -479,9 +597,9 @@ function createRobokassaInvoice(state, req, playerId, pack, returnUrl = '') {
     };
   }
 
-  ensureWallet(state, playerId);
+  ensureWalletRow(playerId);
   const orderId = `${playerId}_${pack.id}_${Date.now()}`;
-  const invId = String(Date.now());
+  const invId = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const outSum = formatAmount(pack.amountRub);
   const originHeader = (req.headers.origin || '').trim();
   const fallbackSuccess = buildPaymentReturnUrl(originHeader, 'success', orderId);
@@ -515,7 +633,8 @@ function createRobokassaInvoice(state, req, playerId, pack, returnUrl = '') {
   }
   Object.entries(shp).forEach(([key, value]) => paymentUrl.searchParams.set(key, value));
 
-  state.orders[orderId] = {
+  return {
+    ok: true,
     orderId,
     invId,
     playerId,
@@ -524,14 +643,8 @@ function createRobokassaInvoice(state, req, playerId, pack, returnUrl = '') {
     amountRub: pack.amountRub,
     outSum,
     status: 'created',
-    createdAt: new Date().toISOString(),
+    createdAt: nowIso(),
     provider: 'robokassa',
-  };
-
-  return {
-    ok: true,
-    orderId,
-    invId,
     paymentUrl: paymentUrl.toString(),
   };
 }
@@ -549,15 +662,39 @@ async function createInvoice(req, res, payload, playerId) {
     return;
   }
 
-  const state = loadState();
   const returnUrl = String(payload.returnUrl || '').trim();
-  const invoice = createRobokassaInvoice(state, req, playerId, pack, returnUrl);
+  const invoice = createRobokassaInvoice(req, playerId, pack, returnUrl);
   if (!invoice.ok) {
     json(res, invoice.status || 500, { error: invoice.error || 'Invoice create failed' });
     return;
   }
 
-  saveState(state);
+  const createOrderTx = (order) => withTransaction(() => {
+    ensureWalletRow(order.playerId);
+    db.prepare(`
+      INSERT INTO orders (
+        order_id, inv_id, player_id, pack_id, coins, amount_rub, out_sum, status, created_at, provider
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      order.orderId,
+      order.invId,
+      order.playerId,
+      order.packId,
+      order.coins,
+      order.amountRub,
+      order.outSum,
+      order.status,
+      order.createdAt,
+      order.provider,
+    );
+  });
+
+  try {
+    createOrderTx(invoice);
+  } catch {
+    json(res, 500, { error: 'Invoice create failed' });
+    return;
+  }
 
   json(res, 200, {
     ok: true,
@@ -569,10 +706,7 @@ async function createInvoice(req, res, payload, playerId) {
 }
 
 function getWallet(res, playerId) {
-  const state = loadState();
-  const changed = ensureWallet(state, playerId);
-  if (changed) saveState(state);
-  const balance = Number(state.wallets[playerId] || 0);
+  const balance = ensureWalletRow(playerId);
   json(res, 200, { playerId, balance });
 }
 
@@ -583,29 +717,32 @@ function getOrderStatus(res, orderId, playerId) {
     return;
   }
 
-  const state = loadState();
-  const order = state.orders[normalizedOrderId];
+  const order = db.prepare(`
+    SELECT order_id, status, pack_id, coins, amount_rub, created_at, credited_at, player_id
+    FROM orders
+    WHERE order_id = ?
+  `).get(normalizedOrderId);
   if (!order) {
     json(res, 404, { error: 'Order not found' });
     return;
   }
 
-  if (String(order.playerId || '').trim() !== playerId) {
+  if (String(order.player_id || '').trim() !== playerId) {
     json(res, 403, { error: 'Order does not belong to this player' });
     return;
   }
 
-  ensureWallet(state, playerId);
+  const balance = ensureWalletRow(playerId);
   json(res, 200, {
     ok: true,
     orderId: normalizedOrderId,
     status: String(order.status || 'created'),
-    packId: String(order.packId || ''),
+    packId: String(order.pack_id || ''),
     coins: Number(order.coins || 0),
-    amountRub: Number(order.amountRub || 0),
-    balance: Number(state.wallets[playerId] || 0),
-    createdAt: String(order.createdAt || ''),
-    creditedAt: order.creditedAt ? String(order.creditedAt) : null,
+    amountRub: Number(order.amount_rub || 0),
+    balance,
+    createdAt: String(order.created_at || ''),
+    creditedAt: order.credited_at ? String(order.credited_at) : null,
   });
 }
 
@@ -622,12 +759,15 @@ function grantCoinsWithAdminToken(res, payload) {
     return;
   }
 
-  const state = loadState();
-  ensureWallet(state, playerId);
-  const current = Number(state.wallets[playerId] || 0);
-  const next = Math.max(0, current + amount);
-  state.wallets[playerId] = next;
-  saveState(state);
+  const grantTx = (targetPlayerId, delta) => withTransaction(() => {
+    const current = ensureWalletRow(targetPlayerId);
+    const next = Math.max(0, current + delta);
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, nowIso(), targetPlayerId);
+    return next;
+  });
+
+  const next = grantTx(playerId, amount);
 
   json(res, 200, { ok: true, playerId, balance: next });
 }
@@ -639,18 +779,25 @@ function spendWallet(res, payload, playerId) {
     return;
   }
 
-  const state = loadState();
-  ensureWallet(state, playerId);
-  const current = Number(state.wallets[playerId] || 0);
-  if (current < amount) {
-    json(res, 409, { error: 'Not enough balance', balance: current });
+  const spendTx = (targetPlayerId, cost) => withTransaction(() => {
+    const current = ensureWalletRow(targetPlayerId);
+    if (current < cost) {
+      return { ok: false, balance: current };
+    }
+
+    const next = current - cost;
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, nowIso(), targetPlayerId);
+    return { ok: true, balance: next };
+  });
+
+  const result = spendTx(playerId, amount);
+  if (!result.ok) {
+    json(res, 409, { error: 'Not enough balance', balance: result.balance });
     return;
   }
 
-  const next = current - amount;
-  state.wallets[playerId] = next;
-  saveState(state);
-  json(res, 200, { ok: true, playerId, balance: next });
+  json(res, 200, { ok: true, playerId, balance: result.balance });
 }
 
 function parseRobokassaPayload(rawBody, urlObj) {
@@ -687,38 +834,49 @@ function creditFromRobokassaResult(res, payload) {
   }
 
   const orderIdFromShp = String(payload.Shp_orderId || '').trim();
-  const state = loadState();
-  const order =
-    (orderIdFromShp && state.orders[orderIdFromShp]) ||
-    Object.values(state.orders).find((item) => String(item.invId || '') === invId);
 
-  if (!order) {
-    text(res, 200, `OK${invId}`);
-    return;
-  }
+  const creditTx = (candidateOrderId, providerInvId, providerOutSum, webhookPayload) => withTransaction(() => {
+    let order = null;
+    if (candidateOrderId) {
+      order = db.prepare('SELECT * FROM orders WHERE order_id = ?').get(candidateOrderId);
+    }
+    if (!order) {
+      order = db.prepare('SELECT * FROM orders WHERE inv_id = ?').get(providerInvId);
+    }
+    if (!order) return { status: 'missing' };
+    if (String(order.status || '') === 'credited') {
+      return { status: 'already', invId: String(order.inv_id || providerInvId) };
+    }
+    if (Number(order.out_sum || 0).toFixed(2) !== Number(providerOutSum || 0).toFixed(2)) {
+      return { status: 'mismatch' };
+    }
 
-  if (order.status === 'credited') {
-    text(res, 200, `OK${invId}`);
-    return;
-  }
+    const playerId = String(order.player_id || '').trim();
+    const current = ensureWalletRow(playerId);
+    const next = current + Number(order.coins || 0);
+    const creditedAt = nowIso();
 
-  if (Number(order.outSum || 0).toFixed(2) !== Number(outSum || 0).toFixed(2)) {
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, creditedAt, playerId);
+    db.prepare(`
+      UPDATE orders
+      SET status = 'credited',
+          credited_at = ?,
+          provider = 'robokassa',
+          last_webhook_payload = ?
+      WHERE order_id = ?
+    `).run(creditedAt, webhookPayload, order.order_id);
+
+    return { status: 'credited', invId: String(order.inv_id || providerInvId) };
+  });
+
+  const result = creditTx(orderIdFromShp, invId, outSum, JSON.stringify(payload));
+  if (result.status === 'mismatch') {
     text(res, 409, 'OutSum mismatch');
     return;
   }
 
-  const playerId = String(order.playerId || '').trim();
-  const current = Number(state.wallets[playerId] || 0);
-  const next = current + Number(order.coins || 0);
-  state.wallets[playerId] = next;
-  order.status = 'credited';
-  order.creditedAt = new Date().toISOString();
-  order.provider = 'robokassa';
-  order.lastWebhookPayload = payload;
-  state.orders[order.orderId] = order;
-  saveState(state);
-
-  text(res, 200, `OK${invId}`);
+  text(res, 200, `OK${result.invId || invId}`);
 }
 
 const server = createServer(async (req, res) => {

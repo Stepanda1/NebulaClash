@@ -72,6 +72,28 @@ const MAX_ADMIN_UNLOCK_LEVEL = 60;
 const ADMIN_ACCESS_TOKEN_KEY = 'match3_admin_access_token';
 const ADMIN_LAST_ACTIVE_KEY = 'match3_admin_last_active_at';
 const ADMIN_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+const SHOP_TIMING_EXPERIMENT_ID = 'shop_timing_v1';
+const SHOP_TIMING_VARIANT_KEY = 'match3_exp_shop_timing_v1_variant';
+const SHOP_TIMING_AUTO_SHOWN_KEY = 'match3_exp_shop_timing_v1_auto_shown';
+
+type ShopTimingVariant = 'a' | 'b';
+
+function getShopTimingVariant(): ShopTimingVariant {
+  if (typeof window === 'undefined') return 'a';
+  const stored = window.localStorage.getItem(SHOP_TIMING_VARIANT_KEY);
+  if (stored === 'a' || stored === 'b') {
+    return stored;
+  }
+
+  const assigned: ShopTimingVariant = Math.random() < 0.5 ? 'a' : 'b';
+  window.localStorage.setItem(SHOP_TIMING_VARIANT_KEY, assigned);
+  return assigned;
+}
+
+function wasShopTimingAutoShown(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(SHOP_TIMING_AUTO_SHOWN_KEY) === '1';
+}
 
 function getHasSeenTutorial(): boolean {
   if (typeof window === 'undefined') return false;
@@ -170,6 +192,8 @@ function App() {
   const analyticsMovesRef = useRef(0);
   const analyticsBombCountRef = useRef(0);
   const analyticsLightningCountRef = useRef(0);
+  const experimentAssignedTrackedRef = useRef(false);
+  const autoShopPromptShownRef = useRef(wasShopTimingAutoShown());
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
@@ -182,6 +206,7 @@ function App() {
   const legalContacts = useMemo(() => getLegalContactsFromEnv(), []);
   const marketingLinks = useMemo(() => getMarketingLinksFromEnv(legalContacts.telegram), [legalContacts]);
   const coinPacks = useMemo(() => getCoinPacksFromEnv(), []);
+  const shopTimingVariant = useMemo(() => getShopTimingVariant(), []);
   const goalAnalyticsValue = levelConfig.goal.type === 'collect_multi'
     ? Object.values(levelConfig.goal.targets).reduce((sum, value) => sum + (value ?? 0), 0)
     : levelConfig.goal.value;
@@ -326,11 +351,6 @@ function App() {
     trackEvent('language_change', { language: nextLanguage });
   };
 
-  const openShop = () => {
-    setIsShopOpen(true);
-    trackEvent('shop_open', { level, coins_balance: spaceCoins, mode: levelConfig.mode });
-  };
-
   const openLegal = (_section: LegalSection) => {
     setIsLegalOpen(true);
   };
@@ -392,6 +412,22 @@ function App() {
     setShopNotice(notice);
     trackEvent('shop_spend_coins', { item: 'extra_time', cost: BOOSTER_COST, value: TIME_BOOST_SECONDS, level, mode: levelConfig.mode });
   };
+
+  const openShopWithSource = useCallback((source: 'manual_button' | 'level_1_complete_auto') => {
+    setIsShopOpen(true);
+    trackEvent('shop_prompt_shown', {
+      source,
+      experiment_id: SHOP_TIMING_EXPERIMENT_ID,
+      variant: shopTimingVariant,
+      level,
+      mode: levelConfig.mode,
+    });
+    trackEvent('shop_open', { level, coins_balance: spaceCoins, mode: levelConfig.mode, source });
+  }, [level, levelConfig.mode, shopTimingVariant, spaceCoins]);
+
+  const openShop = useCallback(() => {
+    openShopWithSource('manual_button');
+  }, [openShopWithSource]);
 
   const openAdmin = () => {
     if (!(isAdminPath() && adminAccessToken)) return;
@@ -647,6 +683,17 @@ function App() {
 
   useEffect(() => {
     if (!analyticsInitRef.current) return;
+    if (experimentAssignedTrackedRef.current) return;
+
+    experimentAssignedTrackedRef.current = true;
+    trackEvent('experiment_assigned', {
+      experiment_id: SHOP_TIMING_EXPERIMENT_ID,
+      variant: shopTimingVariant,
+    });
+  }, [shopTimingVariant]);
+
+  useEffect(() => {
+    if (!analyticsInitRef.current) return;
     if (prevLevelRef.current === level) return;
 
     prevLevelRef.current = level;
@@ -680,10 +727,16 @@ function App() {
     if (!analyticsInitRef.current) return;
     if (isLevelUp && !prevLevelUpRef.current) {
       trackEvent('level_complete', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
+
+      if (level === 1 && shopTimingVariant === 'b' && !autoShopPromptShownRef.current) {
+        autoShopPromptShownRef.current = true;
+        window.localStorage.setItem(SHOP_TIMING_AUTO_SHOWN_KEY, '1');
+        openShopWithSource('level_1_complete_auto');
+      }
     }
 
     prevLevelUpRef.current = isLevelUp;
-  }, [isLevelUp, level, score, moves, timeLeft, levelConfig.mode]);
+  }, [isLevelUp, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, shopTimingVariant]);
 
   useEffect(() => {
     if (!analyticsInitRef.current) return;
@@ -1151,7 +1204,15 @@ function App() {
   }
 
   return (
-    <div className={`flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden p-1 sm:mx-auto sm:max-h-[900px] sm:max-w-lg sm:p-4 safe-area-inset relative bg-black/30 backdrop-blur-none ${lowPerfMode ? 'sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-lg' : 'sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-white/20 sm:shadow-[0_0_80px_rgba(0,0,0,0.8),0_0_30px_rgba(255,255,255,0.05)]'} ${shakeActive ? 'shake-soft' : ''}`}>
+    <div className={`flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden p-1 sm:mx-auto sm:max-h-[900px] sm:max-w-lg sm:p-4 safe-area-inset relative bg-[radial-gradient(170%_130%_at_12%_0%,rgba(56,189,248,0.22)_0%,rgba(14,116,144,0.1)_24%,rgba(2,6,23,0.66)_58%,rgba(2,6,23,0.84)_100%)] backdrop-blur-none ${lowPerfMode ? 'sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-lg' : 'sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-cyan-100/24 sm:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_110px_rgba(2,6,23,0.86),0_0_44px_rgba(34,211,238,0.14)]'} ${shakeActive ? 'shake-soft' : ''}`}>
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <div className="absolute -left-20 top-10 h-56 w-56 rounded-full bg-cyan-300/22 blur-3xl" />
+        <div className="absolute right-[-70px] top-24 h-64 w-64 rounded-full bg-blue-300/16 blur-3xl" />
+        <div className="absolute left-10 bottom-16 h-44 w-44 rounded-full bg-amber-300/14 blur-3xl" />
+        {!lowPerfMode && (
+          <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:32px_32px,32px_32px]" />
+        )}
+      </div>
 
       {/* Pause Overlay */}
       <AnimatePresence>

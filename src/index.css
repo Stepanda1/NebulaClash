@@ -194,3 +194,18 @@ body.low-performance * {
   display: none;
 }
 
+/* Hide Consentmanager overlays/popups injected via GTM/CMP scripts. */
+#cmpwrapper,
+#cmpwrapper *,
+#cmpbox,
+#cmplayer,
+[id^="cmpbox"],
+[id^="cmplayer"],
+.cmpbox,
+.cmplayer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+

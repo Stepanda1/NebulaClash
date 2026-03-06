@@ -76,10 +76,11 @@ export default defineConfig([
 
 The game now supports analytics providers via Vite env vars:
 
+- `VITE_GTM_CONTAINER_ID` - Google Tag Manager container ID (default `GTM-54KD4D8H`). Gameplay events are pushed to `window.dataLayer` as `{ event: <event_name>, ...payload }`.
 - `VITE_GA_MEASUREMENT_ID` - Google Analytics 4 measurement ID (for example `G-XXXXXXXXXX`)
 - `VITE_YM_COUNTER_ID` - Yandex Metrica counter ID
 
-If one or both variables are set, the app automatically initializes the provider(s) and sends gameplay events such as:
+If `VITE_GTM_CONTAINER_ID` is set, GTM is initialized automatically and receives gameplay events. If GTM is disabled, the app can fall back to direct GA4 (`VITE_GA_MEASUREMENT_ID`).
 
 - `session_start`
 - `level_start`

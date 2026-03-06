@@ -16,6 +16,7 @@ declare global {
 }
 
 const GA_MEASUREMENT_ID = ((import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined) || '').trim();
+const GTM_CONTAINER_ID = ((import.meta.env.VITE_GTM_CONTAINER_ID as string | undefined) || 'GTM-54KD4D8H').trim();
 const YM_COUNTER_ID_RAW = ((import.meta.env.VITE_YM_COUNTER_ID as string | undefined) || '').trim();
 const YM_COUNTER_ID = YM_COUNTER_ID_RAW ? Number(YM_COUNTER_ID_RAW) : NaN;
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
@@ -28,6 +29,7 @@ let attributionCache: AnalyticsPayload | null = null;
 const UTM_STORAGE_KEY = 'match3_utm_attribution';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 const CORE_FUNNEL_NAME = 'core_conversion';
+const GA_DEBUG_QUERY_KEY = 'ga_debug';
 
 const isBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined';
 
@@ -42,8 +44,21 @@ function injectScript(src: string, id: string) {
   document.head.appendChild(script);
 }
 
-function initGA4() {
+function initGTM() {
+  if (!isBrowser() || !GTM_CONTAINER_ID) return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    'gtm.start': Date.now(),
+    event: 'gtm.js',
+  });
+
+  injectScript(`https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`, 'gtm-script');
+}
+
+function initGA4Direct() {
   if (!isBrowser() || !GA_MEASUREMENT_ID) return;
+  if (GTM_CONTAINER_ID) return;
 
   injectScript(`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`, 'ga4-script');
 
@@ -98,6 +113,35 @@ function initPostHog() {
   });
 
   posthogInitialized = true;
+}
+
+function isGaDebugModeEnabled() {
+  if (!isBrowser()) return false;
+
+  try {
+    const url = new URL(window.location.href);
+    const debugParam = (url.searchParams.get(GA_DEBUG_QUERY_KEY) || '').trim();
+    if (debugParam === '1' || debugParam.toLowerCase() === 'true') return true;
+    if (url.searchParams.has('gtm_debug')) return true;
+    if (url.searchParams.has('gtm_preview')) return true;
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return true;
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function emitGaDebugProbe() {
+  if (!isGaDebugModeEnabled()) return;
+  if (!isBrowser()) return;
+  if (window.sessionStorage.getItem('ga_debug_probe_sent') === '1') return;
+
+  window.sessionStorage.setItem('ga_debug_probe_sent', '1');
+  dispatchEvent('ga_debug_probe', {
+    debug_mode: true,
+    probe_ts: Date.now(),
+  });
 }
 
 function createSessionId() {
@@ -174,9 +218,11 @@ export function initAnalytics() {
   if (initialized) return;
 
   getAttributionPayload();
-  initGA4();
+  initGTM();
+  initGA4Direct();
   initYandexMetrica();
   initPostHog();
+  emitGaDebugProbe();
   initialized = true;
 }
 
@@ -184,11 +230,19 @@ function dispatchEvent(eventName: string, payload: AnalyticsPayload) {
   const withSession = {
     session_id: getSessionId(),
     ...getAttributionPayload(),
+    ...(isGaDebugModeEnabled() ? { debug_mode: true } : {}),
     ...payload,
   };
 
   if (GA_MEASUREMENT_ID && typeof window.gtag === 'function') {
     window.gtag('event', eventName, withSession);
+  }
+
+  if (window.dataLayer) {
+    window.dataLayer.push({
+      event: eventName,
+      ...withSession,
+    });
   }
 
   if (Number.isFinite(YM_COUNTER_ID) && typeof window.ym === 'function') {

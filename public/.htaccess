@@ -6,7 +6,7 @@ DirectoryIndex index.html
   Header always set X-Frame-Options "DENY"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
-  Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://auth.robokassa.ru https://*.robokassa.ru; form-action 'self' https://auth.robokassa.ru https://*.robokassa.ru"
+  Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' https://www.googletagmanager.com https://mc.yandex.ru https://us-assets.i.posthog.com https://cdn.consentmanager.net https://delivery.consentmanager.net 'sha256-EblDZagDOrUf3Mek2TOUL5DRx3II7pthT/IFlSIMv3Y='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://www.google-analytics.com https://mc.yandex.ru https://www.googletagmanager.com https://cdn.consentmanager.net https://c.delivery.consentmanager.net; frame-src 'self' https://www.googletagmanager.com https://mc.yandex.ru; connect-src 'self' https://auth.robokassa.ru https://*.robokassa.ru https://www.google-analytics.com https://region1.google-analytics.com https://mc.yandex.ru wss://mc.yandex.ru https://us.i.posthog.com https://us-assets.i.posthog.com https://o4510891889131520.ingest.de.sentry.io; form-action 'self' https://auth.robokassa.ru https://*.robokassa.ru"
 </IfModule>
 
 <IfModule mod_rewrite.c>
