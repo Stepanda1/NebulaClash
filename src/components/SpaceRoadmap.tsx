@@ -232,12 +232,14 @@ export function SpaceRoadmap({
           </div>
         </div>
 
-        <div className="relative flex-1 min-h-0">
-          <div className="absolute left-2 top-2 z-30 flex flex-col gap-2">
+        <div className="relative flex-1 min-h-0 isolate">
+          <div className="absolute left-2 top-2 z-[70] flex flex-col gap-2 pointer-events-auto">
             <button
               type="button"
               onClick={onClaimDailyReward}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all ${
+              onPointerDown={(event) => event.stopPropagation()}
+              onTouchStart={(event) => event.stopPropagation()}
+              className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${
                 dailyCanClaim
                   ? 'border-emerald-200/55 bg-emerald-300/25 text-emerald-50 shadow-[0_0_16px_rgba(74,222,128,0.28)]'
                   : 'border-white/20 bg-slate-900/70 text-white/80'
@@ -245,16 +247,18 @@ export function SpaceRoadmap({
               title={language === 'ru' ? `Ежедневная награда: день ${dailyStreak}, +${dailyNextReward}` : `Daily reward: day ${dailyStreak}, +${dailyNextReward}`}
               aria-label={language === 'ru' ? `Ежедневная награда: день ${dailyStreak}, +${dailyNextReward}` : `Daily reward: day ${dailyStreak}, +${dailyNextReward}`}
             >
-              <Gift className="h-4.5 w-4.5" />
+              <Gift className="h-6 w-6" />
             </button>
             <button
               type="button"
               onClick={onOpenLeaderboard}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-200/45 bg-cyan-300/22 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] transition-all hover:bg-cyan-300/30"
+              onPointerDown={(event) => event.stopPropagation()}
+              onTouchStart={(event) => event.stopPropagation()}
+              className="inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border border-cyan-200/45 bg-cyan-300/22 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] transition-all hover:bg-cyan-300/30"
               title={language === 'ru' ? 'Рейтинг' : 'Ranking'}
               aria-label={language === 'ru' ? 'Рейтинг' : 'Ranking'}
             >
-              <Trophy className="h-4.5 w-4.5" />
+              <Trophy className="h-6 w-6" />
             </button>
           </div>
           <div ref={scrollerRef} className="relative h-full overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-slate-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md">
