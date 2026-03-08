@@ -12,19 +12,27 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@babylonjs/core": "^8.54.1",
     "@sentry/react": "^10.38.0",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.26.2",
+    "framer-motion": "^12.35.1",
+    "gsap": "^3.14.2",
+    "howler": "^2.2.4",
     "lucide-react": "^0.562.0",
+    "matter-js": "^0.20.0",
+    "phaser": "^3.90.0",
+    "pixi.js": "^8.16.0",
     "posthog-js": "^1.347.2",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "three": "^0.183.2",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.5",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.23",
@@ -34,9 +42,9 @@
     "globals": "^16.5.0",
     "playwright": "^1.58.2",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.18",
+    "tailwindcss": "^4.2.1",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.22.0",
-    "vite": "^6.0.0"
+    "vite": "^6.4.1"
   }
 }

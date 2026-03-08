@@ -3,7 +3,7 @@ import { Lock, LogOut, Star, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import type { LegalSection } from '../types/legal';
 import { COPY } from '../i18n';
-import { CompassGlyph, CosmicBackdrop, JumpGlyph, NebulaCoreIcon } from './CosmicArtwork';
+import { CompassGlyph, JumpGlyph, NebulaCoreIcon } from './CosmicArtwork';
 
 type SpaceRoadmapProps = {
   unlockedLevel: number;
@@ -26,155 +26,11 @@ type Point = {
   y: number;
 };
 
-type Decoration = {
-  left: number;
-  top: number;
-  size: number;
-  color: string;
-};
-
 const TOTAL_LEVELS = 60;
 const MAP_WIDTH = 340;
 const NODE_SIZE = 42;
 const TOP_PADDING = 110;
 const STEP_Y = 118;
-
-const PLANETS: Decoration[] = [
-  { left: 18, top: 140, size: 70, color: 'from-fuchsia-300/35 to-violet-600/25' },
-  { left: 112, top: 210, size: 38, color: 'from-blue-300/30 to-indigo-500/22' },
-  { left: 250, top: 300, size: 90, color: 'from-cyan-300/35 to-blue-500/25' },
-  { left: 198, top: 470, size: 44, color: 'from-pink-300/28 to-fuchsia-500/18' },
-  { left: 22, top: 620, size: 56, color: 'from-amber-300/30 to-orange-500/20' },
-  { left: 258, top: 910, size: 62, color: 'from-emerald-300/30 to-cyan-500/20' },
-  { left: 38, top: 1220, size: 84, color: 'from-rose-300/30 to-pink-500/20' },
-  { left: 245, top: 1540, size: 76, color: 'from-sky-300/35 to-indigo-500/20' },
-  { left: 52, top: 1860, size: 58, color: 'from-lime-300/30 to-emerald-500/20' },
-  { left: 256, top: 2140, size: 92, color: 'from-violet-300/30 to-fuchsia-500/20' },
-  { left: 30, top: 2460, size: 64, color: 'from-cyan-300/30 to-blue-500/20' },
-  { left: 252, top: 2820, size: 72, color: 'from-amber-300/30 to-orange-500/20' },
-  { left: 40, top: 3120, size: 88, color: 'from-rose-300/30 to-violet-500/20' },
-];
-
-const STARS = Array.from({ length: 74 }, (_, i) => ({
-  left: 12 + ((i * 61) % 316),
-  top: 90 + i * 74,
-  size: 1 + (i % 3),
-  opacity: 0.28 + (i % 5) * 0.12,
-}));
-
-const COMETS = Array.from({ length: 12 }, (_, i) => ({
-  left: 20 + ((i * 47) % 300),
-  top: 180 + i * 290,
-  rotate: -18 + (i % 5) * 7,
-}));
-
-const ASTEROID_FIELDS = Array.from({ length: 20 }, (_, i) => ({
-  left: 14 + ((i * 37) % 312),
-  top: 130 + i * 164,
-  size: 4 + (i % 4) * 2,
-  rotate: (i * 23) % 360,
-}));
-
-const ORBIT_STATIONS = [
-  { left: 268, top: 420, scale: 1 },
-  { left: 38, top: 1120, scale: 0.85 },
-  { left: 260, top: 1980, scale: 1.1 },
-  { left: 48, top: 2780, scale: 0.92 },
-];
-const FIRST_SECTOR_RELICS = [
-  { left: 18, top: 260, w: 34, h: 18, rotate: -12 },
-  { left: 278, top: 560, w: 28, h: 16, rotate: 18 },
-  { left: 46, top: 980, w: 38, h: 20, rotate: -8 },
-  { left: 252, top: 1320, w: 30, h: 16, rotate: 11 },
-  { left: 68, top: 1680, w: 42, h: 22, rotate: -16 },
-];
-const FIRST_SECTOR_CRYSTAL_FIELDS = Array.from({ length: 14 }, (_, i) => ({
-  left: 18 + ((i * 53) % 300),
-  top: 160 + i * 120,
-  hue: i % 2 === 0 ? 'cyan' : 'fuchsia',
-  rotate: (i * 31) % 360,
-  size: 8 + (i % 3) * 3,
-}));
-const EARLY_ZONE_NEBULAE = [
-  { left: -24, top: 3920, w: 220, h: 150, color: 'from-cyan-300/18 via-blue-500/12 to-transparent' },
-  { left: 154, top: 4250, w: 210, h: 140, color: 'from-fuchsia-300/16 via-violet-500/10 to-transparent' },
-  { left: 22, top: 4680, w: 260, h: 170, color: 'from-emerald-300/14 via-cyan-500/10 to-transparent' },
-  { left: 132, top: 5250, w: 240, h: 160, color: 'from-amber-300/14 via-orange-500/10 to-transparent' },
-  { left: -10, top: 5900, w: 240, h: 160, color: 'from-rose-300/14 via-pink-500/10 to-transparent' },
-  { left: 130, top: 6520, w: 230, h: 155, color: 'from-sky-300/16 via-indigo-500/10 to-transparent' },
-];
-const EARLY_ZONE_GAS_ARCS = [
-  { left: -30, top: 3800, w: 310, h: 90, rotate: -12, color: 'from-cyan-300/12 via-transparent to-fuchsia-300/10' },
-  { left: 70, top: 4520, w: 290, h: 86, rotate: 10, color: 'from-violet-300/12 via-transparent to-cyan-300/10' },
-  { left: -10, top: 5320, w: 340, h: 96, rotate: -8, color: 'from-emerald-300/10 via-transparent to-sky-300/10' },
-  { left: 34, top: 6080, w: 300, h: 88, rotate: 14, color: 'from-amber-300/10 via-transparent to-rose-300/10' },
-  { left: -24, top: 6820, w: 320, h: 92, rotate: -10, color: 'from-cyan-300/10 via-transparent to-indigo-300/10' },
-];
-const EARLY_ZONE_BEACONS = [
-  { left: 26, top: 4040, scale: 1 },
-  { left: 274, top: 4470, scale: 0.9 },
-  { left: 56, top: 5030, scale: 1.08 },
-  { left: 262, top: 5660, scale: 0.95 },
-  { left: 44, top: 6320, scale: 1.02 },
-  { left: 252, top: 6870, scale: 0.88 },
-];
-const EARLY_ZONE_PORTALS = [
-  { left: 238, top: 4180, size: 54, hue: 'cyan' },
-  { left: 26, top: 5730, size: 58, hue: 'violet' },
-  { left: 248, top: 6460, size: 50, hue: 'emerald' },
-];
-const EARLY_ZONE_WRECKS = [
-  { left: 208, top: 3860, w: 46, h: 18, rotate: -18 },
-  { left: 32, top: 4380, w: 52, h: 20, rotate: 14 },
-  { left: 236, top: 4905, w: 42, h: 16, rotate: -9 },
-  { left: 96, top: 5510, w: 56, h: 22, rotate: 11 },
-  { left: 214, top: 6095, w: 48, h: 18, rotate: -15 },
-  { left: 118, top: 6755, w: 58, h: 22, rotate: 8 },
-];
-const EARLY_ZONE_RINGS = [
-  { left: 150, top: 4140, w: 74, h: 26, rotate: 18 },
-  { left: 62, top: 4780, w: 88, h: 30, rotate: -14 },
-  { left: 202, top: 5440, w: 80, h: 28, rotate: 12 },
-  { left: 46, top: 6200, w: 92, h: 32, rotate: -10 },
-];
-const EARLY_ZONE_STAR_CLUSTERS = Array.from({ length: 56 }, (_, i) => ({
-  left: 12 + ((i * 47) % 316),
-  top: 3720 + i * 62,
-  size: 1 + (i % 3),
-  opacity: 0.22 + (i % 5) * 0.11,
-  tint: i % 4 === 0 ? 'cyan' : i % 4 === 1 ? 'violet' : i % 4 === 2 ? 'white' : 'amber',
-}));
-const EARLY_ZONE_DRONES = [
-  { left: 132, top: 4325, rotate: 18 },
-  { left: 226, top: 5080, rotate: -14 },
-  { left: 82, top: 5905, rotate: 12 },
-  { left: 214, top: 6645, rotate: -20 },
-];
-const BOTTOM_NEBULAE = [
-  { left: -30, top: 3190, w: 210, h: 140, color: 'from-cyan-300/20 via-blue-500/14 to-transparent' },
-  { left: 150, top: 3270, w: 230, h: 150, color: 'from-fuchsia-300/18 via-violet-500/14 to-transparent' },
-  { left: 30, top: 3400, w: 280, h: 170, color: 'from-amber-300/14 via-orange-500/10 to-transparent' },
-];
-
-const BOTTOM_PLANETS: Decoration[] = [
-  { left: 20, top: 3336, size: 78, color: 'from-cyan-300/34 to-blue-500/22' },
-  { left: 228, top: 3428, size: 64, color: 'from-fuchsia-300/30 to-violet-500/20' },
-  { left: 136, top: 3498, size: 46, color: 'from-amber-300/28 to-orange-500/18' },
-];
-
-const BOTTOM_COMETS = [
-  { left: 30, top: 3310, rotate: 12 },
-  { left: 210, top: 3378, rotate: -16 },
-  { left: 88, top: 3468, rotate: 20 },
-  { left: 246, top: 3524, rotate: -12 },
-];
-
-const BOTTOM_STARS = Array.from({ length: 28 }, (_, i) => ({
-  left: 8 + ((i * 41) % 324),
-  top: 3240 + i * 14,
-  size: 1 + (i % 3),
-  opacity: 0.24 + (i % 6) * 0.1,
-}));
 
 export function SpaceRoadmap({
   unlockedLevel,
@@ -337,8 +193,7 @@ export function SpaceRoadmap({
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[radial-gradient(180%_140%_at_12%_-2%,#20528f_0%,#12315b_24%,#0a1736_56%,#050a17_100%)] text-white">
-      <CosmicBackdrop variant="roadmap" />
+    <div className="relative h-full w-full overflow-hidden bg-[#050a17] text-white">
 
       <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-5">
         <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-[linear-gradient(145deg,rgba(2,6,23,0.52),rgba(15,23,42,0.36))] px-4 py-3 backdrop-blur-md">
@@ -366,16 +221,14 @@ export function SpaceRoadmap({
           </div>
         </div>
 
-        <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-[linear-gradient(165deg,rgba(7,19,40,0.68),rgba(2,6,23,0.52))] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md">
-          <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_20%_14%,rgba(56,189,248,0.2)_0%,transparent_36%),radial-gradient(circle_at_82%_70%,rgba(16,185,129,0.14)_0%,transparent_34%),radial-gradient(circle_at_56%_42%,rgba(251,191,36,0.1)_0%,transparent_28%)]" />
-          <div className="pointer-events-none absolute inset-0 rounded-3xl opacity-[0.1] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:36px_36px,36px_36px]" />
+        <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-slate-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md">
           <div className="relative mx-auto w-[340px]" style={{ height: mapHeight }}>
-            <div className="pointer-events-none absolute inset-0 overflow-hidden">
-              <div className="absolute -left-20 top-24 h-56 w-56 rounded-full bg-cyan-300/18 blur-3xl" />
-              <div className="absolute right-[-88px] top-[820px] h-60 w-60 rounded-full bg-blue-300/14 blur-3xl" />
-              <div className="absolute left-[-72px] top-[1750px] h-64 w-64 rounded-full bg-emerald-300/12 blur-3xl" />
-              <div className="absolute right-[-80px] top-[2580px] h-64 w-64 rounded-full bg-amber-300/12 blur-3xl" />
-            </div>
+            <img
+              src="/roadmap-space-bg.svg"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-90"
+            />
             {secondSectorStart && (
               <>
                 <div
@@ -390,232 +243,7 @@ export function SpaceRoadmap({
                 </div>
               </>
             )}
-            {PLANETS.map((item, idx) => (
-              <div key={idx} className="pointer-events-none absolute" style={{ left: item.left, top: item.top, width: item.size, height: item.size }}>
-                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${item.color} border border-white/20 shadow-[inset_-10px_-8px_20px_rgba(15,23,42,0.35)]`} />
-                <div className="absolute inset-[18%] rounded-full border border-white/20" />
-                <div className="absolute top-[20%] left-[24%] h-[14%] w-[14%] rounded-full bg-white/25" />
-                <div className="absolute top-[45%] right-[18%] h-[10%] w-[10%] rounded-full bg-black/20" />
-                {idx % 2 === 0 && (
-                  <div className="absolute left-[-12%] top-1/2 h-[24%] w-[124%] -translate-y-1/2 rounded-full border border-white/25 bg-white/5" />
-                )}
-              </div>
-            ))}
-
-            {ORBIT_STATIONS.map((station, idx) => (
-              <div key={`station-${idx}`} className="pointer-events-none absolute" style={{ left: station.left, top: station.top, transform: `scale(${station.scale})` }}>
-                <div className="relative h-10 w-10 rounded-full border border-cyan-200/50 bg-slate-900/55 shadow-[0_0_14px_rgba(34,211,238,0.35)]">
-                  <div className="absolute inset-[22%] rounded-full border border-cyan-100/60" />
-                  <div className="absolute left-1/2 top-1/2 h-[2px] w-14 -translate-x-1/2 -translate-y-1/2 bg-cyan-200/70" />
-                  <div className="absolute left-1/2 top-1/2 h-14 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-cyan-200/40" />
-                </div>
-              </div>
-            ))}
-
-            {FIRST_SECTOR_RELICS.map((relic, idx) => (
-              <div
-                key={`relic-${idx}`}
-                className="pointer-events-none absolute"
-                style={{ left: relic.left, top: relic.top, width: relic.w, height: relic.h, transform: `rotate(${relic.rotate}deg)` }}
-              >
-                <div className="absolute inset-0 rounded-lg border border-cyan-100/20 bg-slate-900/45 shadow-[0_0_12px_rgba(34,211,238,0.12)]" />
-                <div className="absolute inset-y-[35%] left-[10%] right-[10%] rounded-full bg-gradient-to-r from-transparent via-cyan-200/45 to-transparent" />
-                <div className="absolute left-[18%] top-[18%] h-[22%] w-[18%] rounded-full bg-cyan-100/25" />
-                <div className="absolute right-[16%] bottom-[18%] h-[20%] w-[16%] rounded-full bg-fuchsia-200/20" />
-              </div>
-            ))}
-
-            {FIRST_SECTOR_CRYSTAL_FIELDS.map((item, idx) => (
-              <div
-                key={`crystal-field-${idx}`}
-                className="pointer-events-none absolute"
-                style={{ left: item.left, top: item.top, transform: `rotate(${item.rotate}deg)` }}
-              >
-                <div
-                  className={`relative rounded-[3px] border ${item.hue === 'cyan' ? 'border-cyan-100/25 bg-cyan-300/15' : 'border-fuchsia-100/25 bg-fuchsia-300/12'}`}
-                  style={{ width: item.size, height: item.size * 1.5 }}
-                >
-                  <div className={`absolute left-1/2 top-[-18%] h-[35%] w-[40%] -translate-x-1/2 rotate-45 ${item.hue === 'cyan' ? 'bg-cyan-200/35' : 'bg-fuchsia-200/30'}`} />
-                </div>
-              </div>
-            ))}
-
-            {EARLY_ZONE_NEBULAE.map((nebula, idx) => (
-              <div
-                key={`early-nebula-${idx}`}
-                className={`pointer-events-none absolute rounded-full blur-2xl bg-gradient-to-br ${nebula.color}`}
-                style={{ left: nebula.left, top: nebula.top, width: nebula.w, height: nebula.h }}
-              />
-            ))}
-
-            {EARLY_ZONE_GAS_ARCS.map((arc, idx) => (
-              <div
-                key={`early-gas-arc-${idx}`}
-                className={`pointer-events-none absolute rounded-full bg-gradient-to-r ${arc.color} blur-[1px]`}
-                style={{ left: arc.left, top: arc.top, width: arc.w, height: arc.h, transform: `rotate(${arc.rotate}deg)` }}
-              >
-                <div className="absolute inset-[8%] rounded-full" />
-              </div>
-            ))}
-
-            {EARLY_ZONE_RINGS.map((ring, idx) => (
-              <div
-                key={`early-ring-${idx}`}
-                className="pointer-events-none absolute rounded-full border border-white/14 bg-white/[0.02]"
-                style={{ left: ring.left, top: ring.top, width: ring.w, height: ring.h, transform: `rotate(${ring.rotate}deg)` }}
-              >
-                <div className="absolute inset-[12%] rounded-full border border-cyan-200/18" />
-              </div>
-            ))}
-
-            {EARLY_ZONE_PORTALS.map((portal, idx) => (
-              <div
-                key={`early-portal-${idx}`}
-                className="pointer-events-none absolute"
-                style={{ left: portal.left, top: portal.top, width: portal.size, height: portal.size }}
-              >
-                <div
-                  className={`absolute inset-0 rounded-full ${
-                    portal.hue === 'cyan' ? 'bg-cyan-300/10' : portal.hue === 'violet' ? 'bg-violet-300/10' : 'bg-emerald-300/10'
-                  } blur-xl`}
-                />
-                <div className="absolute inset-0 rounded-full border border-white/14 bg-black/20" />
-                <div
-                  className={`absolute inset-[12%] rounded-full border-2 ${
-                    portal.hue === 'cyan'
-                      ? 'border-cyan-200/45 shadow-[0_0_18px_rgba(34,211,238,0.22)]'
-                      : portal.hue === 'violet'
-                        ? 'border-violet-200/40 shadow-[0_0_18px_rgba(168,85,247,0.22)]'
-                        : 'border-emerald-200/40 shadow-[0_0_18px_rgba(16,185,129,0.22)]'
-                  }`}
-                />
-                <div className="absolute inset-[26%] rounded-full border border-white/12" />
-                <div className="absolute left-1/2 top-1/2 h-[2px] w-[72%] -translate-x-1/2 -translate-y-1/2 bg-white/12" />
-                <div className="absolute left-1/2 top-1/2 h-[72%] w-[2px] -translate-x-1/2 -translate-y-1/2 bg-white/10" />
-              </div>
-            ))}
-
-            {EARLY_ZONE_BEACONS.map((beacon, idx) => (
-              <div
-                key={`early-beacon-${idx}`}
-                className="pointer-events-none absolute"
-                style={{ left: beacon.left, top: beacon.top, transform: `scale(${beacon.scale})` }}
-              >
-                <div className="relative h-12 w-12">
-                  <div className="absolute left-1/2 top-[7px] h-8 w-[3px] -translate-x-1/2 rounded-full bg-slate-300/60" />
-                  <div className="absolute left-1/2 top-[2px] h-4 w-4 -translate-x-1/2 rounded-full border border-cyan-100/35 bg-slate-900/70 shadow-[0_0_14px_rgba(34,211,238,0.28)]" />
-                  <div className="absolute left-1/2 top-[4px] h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-cyan-200/80" />
-                  <div className="absolute left-1/2 top-[1px] h-8 w-8 -translate-x-1/2 rounded-full bg-cyan-300/10 blur-md" />
-                  <div className="absolute bottom-[4px] left-1/2 h-[2px] w-8 -translate-x-1/2 bg-white/20" />
-                </div>
-              </div>
-            ))}
-
-            {EARLY_ZONE_DRONES.map((drone, idx) => (
-              <div
-                key={`early-drone-${idx}`}
-                className="pointer-events-none absolute"
-                style={{ left: drone.left, top: drone.top, transform: `rotate(${drone.rotate}deg)` }}
-              >
-                <div className="relative h-8 w-8 rounded-full border border-cyan-100/18 bg-slate-900/30">
-                  <div className="absolute inset-[22%] rounded-full border border-white/12" />
-                  <div className="absolute left-1/2 top-1/2 h-[2px] w-10 -translate-x-1/2 -translate-y-1/2 bg-cyan-200/16" />
-                  <div className="absolute left-1/2 top-1/2 h-10 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-violet-200/12" />
-                  <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-100/25" />
-                </div>
-              </div>
-            ))}
-
-            {EARLY_ZONE_WRECKS.map((wreck, idx) => (
-              <div
-                key={`early-wreck-${idx}`}
-                className="pointer-events-none absolute"
-                style={{ left: wreck.left, top: wreck.top, width: wreck.w, height: wreck.h, transform: `rotate(${wreck.rotate}deg)` }}
-              >
-                <div className="absolute inset-0 rounded-lg border border-slate-200/12 bg-slate-700/20" />
-                <div className="absolute left-[8%] right-[22%] top-[34%] h-[2px] rounded-full bg-cyan-200/28" />
-                <div className="absolute right-[10%] top-[22%] h-[56%] w-[2px] rounded-full bg-white/12" />
-                <div className="absolute left-[14%] top-[18%] h-[24%] w-[18%] rounded-full bg-white/12" />
-              </div>
-            ))}
-
-            {EARLY_ZONE_STAR_CLUSTERS.map((star, idx) => (
-              <div
-                key={`early-star-cluster-${idx}`}
-                className={`pointer-events-none absolute rounded-full ${
-                  star.tint === 'cyan'
-                    ? 'bg-cyan-100'
-                    : star.tint === 'violet'
-                      ? 'bg-violet-100'
-                      : star.tint === 'amber'
-                        ? 'bg-amber-100'
-                        : 'bg-white'
-                }`}
-                style={{ left: star.left, top: star.top, width: star.size, height: star.size, opacity: star.opacity }}
-              />
-            ))}
-
-            {STARS.map((star, idx) => (
-              <div
-                key={`star-${idx}`}
-                className="pointer-events-none absolute rounded-full bg-white"
-                style={{ left: star.left, top: star.top, width: star.size, height: star.size, opacity: star.opacity }}
-              />
-            ))}
-
-            {ASTEROID_FIELDS.map((asteroid, idx) => (
-              <div
-                key={`asteroid-${idx}`}
-                className="pointer-events-none absolute rounded-full border border-slate-200/20 bg-slate-400/35"
-                style={{
-                  left: asteroid.left,
-                  top: asteroid.top,
-                  width: asteroid.size,
-                  height: asteroid.size,
-                  transform: `rotate(${asteroid.rotate}deg)`,
-                }}
-              />
-            ))}
-
-                        {COMETS.map((comet, idx) => (
-              <div
-                key={`comet-${idx}`}
-                className="pointer-events-none absolute h-[2px] w-16 rounded-full bg-gradient-to-r from-white/0 via-cyan-200/70 to-white/0"
-                style={{ left: comet.left, top: comet.top, transform: `rotate(${comet.rotate}deg)` }}
-              />
-            ))}
-
-            {BOTTOM_NEBULAE.map((nebula, idx) => (
-              <div
-                key={`bottom-nebula-${idx}`}
-                className={`pointer-events-none absolute rounded-full blur-2xl bg-gradient-to-br ${nebula.color}`}
-                style={{ left: nebula.left, top: nebula.top, width: nebula.w, height: nebula.h }}
-              />
-            ))}
-
-                        {BOTTOM_PLANETS.map((item, idx) => (
-              <div key={`bottom-planet-${idx}`} className="pointer-events-none absolute" style={{ left: item.left, top: item.top, width: item.size, height: item.size }}>
-                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${item.color} border border-white/18 shadow-[inset_-8px_-6px_14px_rgba(15,23,42,0.35)]`} />
-                <div className="absolute inset-[20%] rounded-full border border-white/20" />
-                {idx === 1 && <div className="absolute left-[-16%] top-1/2 h-[22%] w-[132%] -translate-y-1/2 rounded-full border border-white/25 bg-white/5" />}
-              </div>
-            ))}
-
-            {BOTTOM_COMETS.map((comet, idx) => (
-              <div
-                key={`bottom-comet-${idx}`}
-                className="pointer-events-none absolute h-[2px] w-20 rounded-full bg-gradient-to-r from-white/0 via-cyan-200/75 to-white/0"
-                style={{ left: comet.left, top: comet.top, transform: `rotate(${comet.rotate}deg)` }}
-              />
-            ))}
-
-            {BOTTOM_STARS.map((star, idx) => (
-              <div
-                key={`bottom-star-${idx}`}
-                className="pointer-events-none absolute rounded-full bg-white"
-                style={{ left: star.left, top: star.top, width: star.size, height: star.size, opacity: star.opacity }}
-              />
-            ))}            <svg className="pointer-events-none absolute inset-0" width={MAP_WIDTH} height={mapHeight} viewBox={`0 0 ${MAP_WIDTH} ${mapHeight}`} fill="none" aria-hidden="true">
+            <svg className="pointer-events-none absolute inset-0" width={MAP_WIDTH} height={mapHeight} viewBox={`0 0 ${MAP_WIDTH} ${mapHeight}`} fill="none" aria-hidden="true">
               <path d={pathD} stroke="rgba(148,163,184,0.34)" strokeWidth="14" strokeLinecap="round" />
               <path d={pathD} stroke="url(#roadGlow)" strokeWidth="8" strokeLinecap="round" />
               <defs>

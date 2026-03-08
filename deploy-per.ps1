@@ -2,6 +2,7 @@ param(
   [string]$SshHost = "37.140.192.43",
   [int]$Port = 22,
   [string]$User = "u3426655",
+  [string]$HostKey = "ssh-ed25519 255 SHA256:uaJGlBhU3sRYZI6ry3qe1p8P3vwjJuGCcP4XDG+7u40",
   [string]$SitePath = "/var/www/u3426655/data/www/nebulaclash.com",
   [string]$BackendPath = "/var/www/u3426655/data/nebulaclash-backend",
   [string]$Password = $env:NEBULACLASH_DEPLOY_PASSWORD,
@@ -24,6 +25,9 @@ function Invoke-Upload {
 
   if ($usePuttyWithPassword) {
     $args = @("-batch", "-pw", $Password, "-P", $Port)
+    if (-not [string]::IsNullOrWhiteSpace($HostKey)) {
+      $args += @("-hostkey", $HostKey)
+    }
     if ($Recurse) { $args += "-r" }
     $args += @($LocalPath, "$User@$SshHost`:$RemotePath")
     & pscp @args
@@ -40,7 +44,12 @@ function Invoke-Upload {
 
 function Invoke-Remote($command) {
   if ($usePuttyWithPassword) {
-    & plink -batch -pw $Password -P $Port "$User@$SshHost" $command
+    $args = @("-batch", "-pw", $Password, "-P", $Port)
+    if (-not [string]::IsNullOrWhiteSpace($HostKey)) {
+      $args += @("-hostkey", $HostKey)
+    }
+    $args += @("$User@$SshHost", $command)
+    & plink @args
   } else {
     & ssh -p $Port "$User@$SshHost" $command
   }
@@ -58,7 +67,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Uploading static files to $SitePath ..."
-Invoke-Upload -LocalPath "dist/." -RemotePath "$SitePath/" -Recurse
+# pscp and scp behave differently for local directory content patterns.
+# For PuTTY tools use wildcard to copy directory contents, for OpenSSH keep dist/. semantics.
+$distUploadPath = if ($usePuttyWithPassword) { "dist\\*" } else { "dist/." }
+Invoke-Upload -LocalPath $distUploadPath -RemotePath "$SitePath/" -Recurse
 Invoke-Remote "find '$SitePath' -type d -exec chmod 755 {} + && find '$SitePath' -type f -exec chmod 644 {} +"
 
 if ($UploadBackend) {
