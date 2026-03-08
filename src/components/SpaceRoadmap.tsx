@@ -233,30 +233,28 @@ export function SpaceRoadmap({
         </div>
 
         <div className="relative flex-1">
-          <div className="pointer-events-none absolute left-1/2 top-3 z-20 flex w-[calc(100%-1.5rem)] -translate-x-1/2 items-center justify-center gap-2">
+          <div className="absolute left-2 top-2 z-30 flex flex-col gap-1">
             <button
               type="button"
               onClick={onClaimDailyReward}
-              className={`pointer-events-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-all ${
+              className={`inline-flex h-5 w-5 items-center justify-center rounded-md border transition-all ${
                 dailyCanClaim
                   ? 'border-emerald-200/55 bg-emerald-300/25 text-emerald-50 shadow-[0_0_16px_rgba(74,222,128,0.28)]'
                   : 'border-white/20 bg-slate-900/70 text-white/80'
               }`}
-              title={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
-              aria-label={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
+              title={language === 'ru' ? `Ежедневная награда: день ${dailyStreak}, +${dailyNextReward}` : `Daily reward: day ${dailyStreak}, +${dailyNextReward}`}
+              aria-label={language === 'ru' ? `Ежедневная награда: день ${dailyStreak}, +${dailyNextReward}` : `Daily reward: day ${dailyStreak}, +${dailyNextReward}`}
             >
-              <Gift className="h-3.5 w-3.5" />
-              <span>{`D${dailyStreak} +${dailyNextReward}`}</span>
+              <Gift className="h-3 w-3" />
             </button>
             <button
               type="button"
               onClick={onOpenLeaderboard}
-              className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-cyan-200/45 bg-cyan-300/22 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] transition-all hover:bg-cyan-300/30"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-cyan-200/45 bg-cyan-300/22 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] transition-all hover:bg-cyan-300/30"
               title={language === 'ru' ? 'Рейтинг' : 'Ranking'}
               aria-label={language === 'ru' ? 'Рейтинг' : 'Ranking'}
             >
-              <Trophy className="h-3.5 w-3.5" />
-              <span>{language === 'ru' ? 'Топ' : 'Top'}</span>
+              <Trophy className="h-3 w-3" />
             </button>
           </div>
           <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-slate-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md">
