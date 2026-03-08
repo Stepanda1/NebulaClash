@@ -14,6 +14,40 @@ type UseWalletOptions = {
   onPackCheckout: (packId: string) => void;
 };
 
+type DailyRewardStatus = {
+  ok: boolean;
+  canClaim: boolean;
+  streak: number;
+  lastClaimDate: string | null;
+  nextReward: number;
+  nextClaimAt: string | null;
+};
+
+type DailyRewardClaimResult = {
+  ok: boolean;
+  granted: boolean;
+  reward: number;
+  streak: number;
+  balance: number;
+  nextClaimAt: string | null;
+};
+
+type LevelRewardClaimResult = {
+  ok: boolean;
+  granted: boolean;
+  reward: number;
+  level: number;
+  balance: number;
+};
+
+type LeaderboardEntry = {
+  rank: number;
+  displayName: string;
+  bestLevel: number;
+  bestScore: number;
+  totalStars: number;
+};
+
 export function useWallet({
   language,
   coinPacks,
@@ -49,6 +83,24 @@ export function useWallet({
       return true;
     } catch {
       return false;
+    }
+  }, [walletToken]);
+
+  const authedJson = useCallback(async <T>(path: string, init?: RequestInit): Promise<T | null> => {
+    if (!walletToken) return null;
+    try {
+      const response = await fetch(path, {
+        ...init,
+        headers: {
+          ...(init?.headers ?? {}),
+          Authorization: `Bearer ${walletToken}`,
+          ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+        },
+      });
+      if (!response.ok) return null;
+      return await response.json() as T;
+    } catch {
+      return null;
     }
   }, [walletToken]);
 
@@ -186,6 +238,52 @@ export function useWallet({
     setShopNotice(shopPackUnavailableMessage);
   }, [coinPacks, onPackCheckout, shopPackUnavailableMessage, walletReady, walletToken, walletUnavailableMessage]);
 
+  const getDailyRewardStatus = useCallback(async (): Promise<DailyRewardStatus | null> => {
+    return authedJson<DailyRewardStatus>('/api/rewards/daily-status');
+  }, [authedJson]);
+
+  const claimDailyReward = useCallback(async (): Promise<DailyRewardClaimResult | null> => {
+    const payload = await authedJson<DailyRewardClaimResult>('/api/rewards/daily-claim', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    if (payload && typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
+      setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
+    }
+    return payload;
+  }, [authedJson]);
+
+  const claimLevelCompletionReward = useCallback(async (
+    level: number,
+    score: number,
+    stars: number,
+  ): Promise<LevelRewardClaimResult | null> => {
+    const payload = await authedJson<LevelRewardClaimResult>('/api/rewards/level-complete', {
+      method: 'POST',
+      body: JSON.stringify({ level, score, stars }),
+    });
+    if (payload && typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
+      setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
+    }
+    return payload;
+  }, [authedJson]);
+
+  const submitLeaderboardEntry = useCallback(async (params: {
+    displayName?: string;
+    bestLevel: number;
+    bestScore: number;
+    totalStars: number;
+  }) => {
+    return authedJson<{ ok: boolean; entry?: LeaderboardEntry }>('/api/leaderboard/submit', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }, [authedJson]);
+
+  const getLeaderboardTop = useCallback(async (limit = 20) => {
+    return authedJson<{ ok: boolean; items: LeaderboardEntry[] }>(`/api/leaderboard/top?limit=${Math.max(1, Math.min(50, Math.floor(limit)))}`);
+  }, [authedJson]);
+
   useEffect(() => {
     let isDisposed = false;
     if (walletInitInFlightRef.current) return;
@@ -293,11 +391,17 @@ export function useWallet({
 
   return {
     buyCoinsPack,
+    claimDailyReward,
+    claimLevelCompletionReward,
+    getDailyRewardStatus,
+    getLeaderboardTop,
     playerId,
     setShopNotice,
     shopNotice,
     spaceCoins,
     spendCoins,
+    submitLeaderboardEntry,
     syncWalletBalance,
+    walletReady,
   };
 }

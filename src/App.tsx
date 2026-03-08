@@ -77,6 +77,13 @@ const SHOP_TIMING_VARIANT_KEY = 'match3_exp_shop_timing_v1_variant';
 const SHOP_TIMING_AUTO_SHOWN_KEY = 'match3_exp_shop_timing_v1_auto_shown';
 
 type ShopTimingVariant = 'a' | 'b';
+type LeaderboardItem = {
+  rank: number;
+  displayName: string;
+  bestLevel: number;
+  bestScore: number;
+  totalStars: number;
+};
 
 function getShopTimingVariant(): ShopTimingVariant {
   if (typeof window === 'undefined') return 'a';
@@ -173,6 +180,11 @@ function App() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [leaderboardItems, setLeaderboardItems] = useState<LeaderboardItem[]>([]);
+  const [dailyCanClaim, setDailyCanClaim] = useState(false);
+  const [dailyStreak, setDailyStreak] = useState(1);
+  const [dailyNextReward, setDailyNextReward] = useState(40);
   const [adminAccessToken, setAdminAccessToken] = useState(() => (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) || '' : ''));
   const [adminAuthLoading, setAdminAuthLoading] = useState(false);
   const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
@@ -192,6 +204,7 @@ function App() {
   const analyticsMovesRef = useRef(0);
   const analyticsBombCountRef = useRef(0);
   const analyticsLightningCountRef = useRef(0);
+  const levelRewardClaimRef = useRef('');
   const experimentAssignedTrackedRef = useRef(false);
   const autoShopPromptShownRef = useRef(wasShopTimingAutoShown());
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -365,12 +378,18 @@ function App() {
 
   const {
     buyCoinsPack,
+    claimDailyReward,
+    claimLevelCompletionReward,
+    getDailyRewardStatus,
+    getLeaderboardTop,
     playerId,
     setShopNotice,
     shopNotice,
     spaceCoins,
     spendCoins,
+    submitLeaderboardEntry,
     syncWalletBalance,
+    walletReady,
   } = useWallet({
     language,
     coinPacks,
@@ -438,6 +457,34 @@ function App() {
     : (language === 'ru' ? 'Экстренный буст времени' : 'Emergency time boost');
 
   const triggerQuickBoost = levelConfig.mode === 'moves' ? buyExtraMoves : buyExtraTime;
+
+  const openLeaderboard = async () => {
+    const payload = await getLeaderboardTop(20);
+    setLeaderboardItems(payload?.items ?? []);
+    setIsLeaderboardOpen(true);
+  };
+
+  const shareGame = async () => {
+    const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/play` : 'https://nebulaclash.com/play';
+    const shareTitle = 'Nebula Clash';
+    const shareText = language === 'ru'
+      ? 'Залетай в Nebula Clash: матч-3 с боссами, бустерами и космическим вайбом.'
+      : 'Join me in Nebula Clash: boss battles, boosters, and cosmic match-3 vibes.';
+
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        setShopNotice(language === 'ru' ? 'Ссылка отправлена' : 'Shared successfully');
+        return;
+      }
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        setShopNotice(language === 'ru' ? 'Ссылка скопирована' : 'Link copied');
+      }
+    } catch {
+      // Ignore cancelled share dialogs and clipboard failures.
+    }
+  };
 
   const openAdmin = () => {
     if (!(isAdminPath() && adminAccessToken)) return;
@@ -876,6 +923,42 @@ function App() {
     };
   }, [lowPerfMode]);
 
+  useEffect(() => {
+    if (!walletReady) return;
+    void (async () => {
+      const status = await getDailyRewardStatus();
+      if (!status) return;
+      setDailyCanClaim(Boolean(status.canClaim));
+      setDailyStreak(Math.max(1, Number(status.streak || 1)));
+      setDailyNextReward(Math.max(1, Number(status.nextReward || 40)));
+    })();
+  }, [getDailyRewardStatus, walletReady]);
+
+  useEffect(() => {
+    if (!isLevelUp || !walletReady || !playerId) return;
+    const rewardKey = `${playerId}:${level}:${score}`;
+    if (levelRewardClaimRef.current === rewardKey) return;
+    levelRewardClaimRef.current = rewardKey;
+
+    const stars = getStarsFromScore(score);
+    void (async () => {
+      const levelReward = await claimLevelCompletionReward(level, score, stars);
+      if (levelReward?.granted) {
+        setShopNotice(
+          language === 'ru'
+            ? `Награда за уровень: +${levelReward.reward} монет`
+            : `Level reward: +${levelReward.reward} coins`,
+        );
+      }
+
+      await submitLeaderboardEntry({
+        bestLevel: level,
+        bestScore: score,
+        totalStars: stars,
+      });
+    })();
+  }, [claimLevelCompletionReward, isLevelUp, language, level, playerId, score, setShopNotice, submitLeaderboardEntry, walletReady]);
+
   const getAudioCtx = () => {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new AudioContext();
@@ -1284,6 +1367,42 @@ function App() {
             onBuyPack={buyCoinsPack}
           />
         )}
+        {isLeaderboardOpen && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{language === 'ru' ? 'Рейтинг игроков' : 'Player Ranking'}</div>
+                <button
+                  type="button"
+                  onClick={() => setIsLeaderboardOpen(false)}
+                  className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12"
+                >
+                  {language === 'ru' ? 'Закрыть' : 'Close'}
+                </button>
+              </div>
+              <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
+                {leaderboardItems.length === 0 ? (
+                  <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Пока нет данных' : 'No entries yet'}</div>
+                ) : (
+                  <div className="space-y-2">
+                    {leaderboardItems.map((item) => (
+                      <div key={`${item.rank}-${item.displayName}`} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
+                        <div className="flex items-center gap-2 text-white">
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300/20 font-black text-cyan-100">#{item.rank}</span>
+                          <span className="max-w-[130px] truncate font-bold">{item.displayName}</span>
+                        </div>
+                        <div className="text-right text-[11px] text-white/80">
+                          <div>{language === 'ru' ? 'Уровень' : 'Level'}: <span className="font-black text-white">{item.bestLevel}</span></div>
+                          <div>{language === 'ru' ? 'Счёт' : 'Score'}: <span className="font-black text-white">{item.bestScore}</span></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         {isPaused && !isGameOver && (
           <PauseMenu
             onResume={() => setIsPaused(false)}
@@ -1423,6 +1542,58 @@ function App() {
           </button>
         </div>
         <div className="mt-1 flex items-center justify-end pr-2 sm:pr-3">
+          <div className="mr-auto ml-1 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={async () => {
+                const result = await claimDailyReward();
+                if (!result) {
+                  setShopNotice(language === 'ru' ? 'Daily reward недоступен' : 'Daily reward unavailable');
+                  return;
+                }
+                if (result.granted) {
+                  setDailyCanClaim(false);
+                  setDailyStreak(Math.max(1, result.streak));
+                  setDailyNextReward(Math.max(1, result.reward));
+                  setShopNotice(
+                    language === 'ru'
+                      ? `Ежедневная награда: +${result.reward} монет (день ${result.streak})`
+                      : `Daily reward: +${result.reward} coins (day ${result.streak})`,
+                  );
+                } else {
+                  setDailyCanClaim(false);
+                  setShopNotice(language === 'ru' ? 'Награда уже получена сегодня' : 'Daily reward already claimed');
+                }
+              }}
+              className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${
+                dailyCanClaim
+                  ? 'border-emerald-200/40 bg-emerald-300/20 text-emerald-100 shadow-[0_0_14px_rgba(74,222,128,0.18)]'
+                  : 'border-white/15 bg-white/8 text-white/75'
+              }`}
+              title={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
+              aria-label={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
+            >
+              {`D${dailyStreak} +${dailyNextReward}`}
+            </button>
+            <button
+              type="button"
+              onClick={openLeaderboard}
+              className="rounded-full border border-cyan-200/35 bg-cyan-300/18 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.16)] transition-all hover:bg-cyan-300/24"
+              title={language === 'ru' ? 'Рейтинг' : 'Ranking'}
+              aria-label={language === 'ru' ? 'Рейтинг' : 'Ranking'}
+            >
+              {language === 'ru' ? 'Топ' : 'Top'}
+            </button>
+            <button
+              type="button"
+              onClick={shareGame}
+              className="rounded-full border border-fuchsia-200/35 bg-fuchsia-300/14 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-100 transition-all hover:bg-fuchsia-300/22"
+              title={language === 'ru' ? 'Поделиться игрой' : 'Share game'}
+              aria-label={language === 'ru' ? 'Поделиться игрой' : 'Share game'}
+            >
+              {language === 'ru' ? 'Поделиться' : 'Share'}
+            </button>
+          </div>
           {isAdminPath() && adminAccessToken && (
             <button
               type="button"

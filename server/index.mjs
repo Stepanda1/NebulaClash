@@ -95,6 +95,28 @@ function initDatabase() {
     );
     CREATE INDEX IF NOT EXISTS idx_orders_player_id ON orders (player_id);
     CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status);
+    CREATE TABLE IF NOT EXISTS reward_claims (
+      player_id TEXT NOT NULL,
+      reward_key TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      claimed_at TEXT NOT NULL,
+      PRIMARY KEY (player_id, reward_key)
+    );
+    CREATE TABLE IF NOT EXISTS daily_rewards (
+      player_id TEXT PRIMARY KEY,
+      last_claim_date TEXT NOT NULL,
+      streak INTEGER NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS leaderboard_profiles (
+      player_id TEXT PRIMARY KEY,
+      display_name TEXT NOT NULL,
+      best_level INTEGER NOT NULL DEFAULT 1,
+      best_score INTEGER NOT NULL DEFAULT 0,
+      total_stars INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_leaderboard_rank ON leaderboard_profiles (best_level DESC, best_score DESC, total_stars DESC);
   `);
 
   const hasOrders = db.prepare('SELECT 1 AS ok FROM orders LIMIT 1').get();
@@ -487,6 +509,34 @@ function ensureWalletRow(playerId) {
   return Math.max(0, Math.floor(Number(row?.balance || 0)));
 }
 
+function grantCoins(playerId, amount) {
+  const normalizedPlayerId = String(playerId || '').trim();
+  const normalizedAmount = Math.max(0, Math.floor(Number(amount || 0)));
+  if (!normalizedPlayerId || normalizedAmount <= 0) {
+    return ensureWalletRow(normalizedPlayerId);
+  }
+
+  return withTransaction(() => {
+    const current = ensureWalletRow(normalizedPlayerId);
+    const next = current + normalizedAmount;
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, nowIso(), normalizedPlayerId);
+    return next;
+  });
+}
+
+function getUtcDateKey(offsetDays = 0) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+
+function getDefaultDisplayName(playerId) {
+  const normalized = String(playerId || '').trim();
+  if (!normalized) return 'Pilot';
+  return `Pilot-${normalized.slice(-4)}`;
+}
+
 function initSession(res, payload) {
   if (!authSecret) {
     json(res, 500, { error: 'API_AUTH_SECRET is required' });
@@ -800,6 +850,185 @@ function spendWallet(res, payload, playerId) {
   json(res, 200, { ok: true, playerId, balance: result.balance });
 }
 
+function claimLevelCompletionReward(res, payload, playerId) {
+  const level = Math.max(1, Math.floor(Number(payload.level || 1)));
+  const score = Math.max(0, Math.floor(Number(payload.score || 0)));
+  const stars = Math.max(0, Math.floor(Number(payload.stars || 0)));
+  const reward = Math.max(15, Math.min(140, 20 + level * 2 + Math.min(4, stars) * 3 + Math.min(10000, score) / 2000));
+  const rewardKey = `level_complete_${level}`;
+
+  const result = withTransaction(() => {
+    const existing = db.prepare(`
+      SELECT amount
+      FROM reward_claims
+      WHERE player_id = ? AND reward_key = ?
+    `).get(playerId, rewardKey);
+
+    const current = ensureWalletRow(playerId);
+    if (existing) {
+      return { granted: false, balance: current };
+    }
+
+    const next = current + reward;
+    const claimedAt = nowIso();
+
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, claimedAt, playerId);
+    db.prepare(`
+      INSERT INTO reward_claims (player_id, reward_key, amount, claimed_at)
+      VALUES (?, ?, ?, ?)
+    `).run(playerId, rewardKey, reward, claimedAt);
+
+    return { granted: true, balance: next };
+  });
+
+  json(res, 200, {
+    ok: true,
+    granted: result.granted,
+    reward,
+    level,
+    balance: result.balance,
+  });
+}
+
+function getDailyRewardStatus(res, playerId) {
+  const row = db.prepare(`
+    SELECT last_claim_date, streak
+    FROM daily_rewards
+    WHERE player_id = ?
+  `).get(playerId);
+
+  const today = getUtcDateKey(0);
+  const canClaim = !row || String(row.last_claim_date || '') !== today;
+  const streak = Math.max(1, Math.floor(Number(row?.streak || 1)));
+  const rewards = [40, 55, 70, 90, 110, 140, 180];
+  const nextStreak = canClaim
+    ? (() => {
+      const yesterday = getUtcDateKey(-1);
+      if (row && String(row.last_claim_date || '') === yesterday) {
+        return Math.min(rewards.length, streak + 1);
+      }
+      return 1;
+    })()
+    : streak;
+  const nextReward = rewards[Math.max(0, Math.min(rewards.length - 1, nextStreak - 1))];
+  const nextClaimAt = canClaim ? null : `${getUtcDateKey(1)}T00:00:00.000Z`;
+
+  json(res, 200, {
+    ok: true,
+    canClaim,
+    streak,
+    lastClaimDate: row ? String(row.last_claim_date || '') : null,
+    nextReward,
+    nextClaimAt,
+  });
+}
+
+function claimDailyReward(res, playerId) {
+  const rewards = [40, 55, 70, 90, 110, 140, 180];
+  const today = getUtcDateKey(0);
+  const yesterday = getUtcDateKey(-1);
+
+  const result = withTransaction(() => {
+    const row = db.prepare(`
+      SELECT last_claim_date, streak
+      FROM daily_rewards
+      WHERE player_id = ?
+    `).get(playerId);
+
+    const current = ensureWalletRow(playerId);
+    if (row && String(row.last_claim_date || '') === today) {
+      const streak = Math.max(1, Math.floor(Number(row.streak || 1)));
+      const reward = rewards[Math.max(0, Math.min(rewards.length - 1, streak - 1))];
+      return { granted: false, reward, streak, balance: current };
+    }
+
+    const previousStreak = Math.max(1, Math.floor(Number(row?.streak || 1)));
+    const streak = row && String(row.last_claim_date || '') === yesterday
+      ? Math.min(rewards.length, previousStreak + 1)
+      : 1;
+    const reward = rewards[Math.max(0, Math.min(rewards.length - 1, streak - 1))];
+    const next = current + reward;
+    const updatedAt = nowIso();
+
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, updatedAt, playerId);
+    db.prepare(`
+      INSERT INTO daily_rewards (player_id, last_claim_date, streak, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(player_id) DO UPDATE SET
+        last_claim_date = excluded.last_claim_date,
+        streak = excluded.streak,
+        updated_at = excluded.updated_at
+    `).run(playerId, today, streak, updatedAt);
+
+    return { granted: true, reward, streak, balance: next };
+  });
+
+  json(res, 200, {
+    ok: true,
+    granted: result.granted,
+    reward: result.reward,
+    streak: result.streak,
+    balance: result.balance,
+    nextClaimAt: `${getUtcDateKey(1)}T00:00:00.000Z`,
+  });
+}
+
+function submitLeaderboard(res, payload, playerId) {
+  const bestLevel = Math.max(1, Math.floor(Number(payload.bestLevel || 1)));
+  const bestScore = Math.max(0, Math.floor(Number(payload.bestScore || 0)));
+  const totalStars = Math.max(0, Math.floor(Number(payload.totalStars || 0)));
+  const incomingName = String(payload.displayName || '').trim();
+  const displayName = (incomingName || getDefaultDisplayName(playerId)).slice(0, 24);
+
+  withTransaction(() => {
+    const existing = db.prepare(`
+      SELECT display_name, best_level, best_score, total_stars
+      FROM leaderboard_profiles
+      WHERE player_id = ?
+    `).get(playerId);
+
+    const mergedLevel = Math.max(bestLevel, Math.floor(Number(existing?.best_level || 1)));
+    const mergedScore = Math.max(bestScore, Math.floor(Number(existing?.best_score || 0)));
+    const mergedStars = Math.max(totalStars, Math.floor(Number(existing?.total_stars || 0)));
+    const mergedName = displayName || String(existing?.display_name || getDefaultDisplayName(playerId)).slice(0, 24);
+
+    db.prepare(`
+      INSERT INTO leaderboard_profiles (player_id, display_name, best_level, best_score, total_stars, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(player_id) DO UPDATE SET
+        display_name = excluded.display_name,
+        best_level = excluded.best_level,
+        best_score = excluded.best_score,
+        total_stars = excluded.total_stars,
+        updated_at = excluded.updated_at
+    `).run(playerId, mergedName, mergedLevel, mergedScore, mergedStars, nowIso());
+  });
+
+  json(res, 200, { ok: true });
+}
+
+function getLeaderboardTop(res, requestedLimit) {
+  const limit = Math.max(1, Math.min(50, Math.floor(Number(requestedLimit || 20))));
+  const rows = db.prepare(`
+    SELECT display_name, best_level, best_score, total_stars
+    FROM leaderboard_profiles
+    ORDER BY best_level DESC, best_score DESC, total_stars DESC, updated_at ASC
+    LIMIT ?
+  `).all(limit);
+
+  const items = rows.map((row, index) => ({
+    rank: index + 1,
+    displayName: String(row.display_name || 'Pilot'),
+    bestLevel: Math.max(1, Math.floor(Number(row.best_level || 1))),
+    bestScore: Math.max(0, Math.floor(Number(row.best_score || 0))),
+    totalStars: Math.max(0, Math.floor(Number(row.total_stars || 0))),
+  }));
+
+  json(res, 200, { ok: true, items });
+}
+
 function parseRobokassaPayload(rawBody, urlObj) {
   const params = new URLSearchParams(rawBody);
   const source = params.size > 0 ? params : urlObj.searchParams;
@@ -935,6 +1164,65 @@ const server = createServer(async (req, res) => {
     const playerId = requireAuth(req, res);
     if (!playerId) return;
     getWallet(res, playerId);
+    return;
+  }
+
+  if (req.method === 'GET' && urlObj.pathname === '/api/rewards/daily-status') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'daily-status', 40)) return;
+    getDailyRewardStatus(res, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/rewards/daily-claim') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'daily-claim', 20)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    claimDailyReward(res, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/rewards/level-complete') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'level-reward', 30)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    claimLevelCompletionReward(res, payload, playerId);
+    return;
+  }
+
+  if (req.method === 'GET' && urlObj.pathname === '/api/leaderboard/top') {
+    if (!enforceRateLimit(req, res, 'leaderboard-top', 60)) return;
+    getLeaderboardTop(res, urlObj.searchParams.get('limit'));
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/leaderboard/submit') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'leaderboard-submit', 40)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    submitLeaderboard(res, payload, playerId);
     return;
   }
 
