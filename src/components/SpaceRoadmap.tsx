@@ -232,7 +232,7 @@ export function SpaceRoadmap({
           </div>
         </div>
 
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-h-0">
           <div className="absolute left-2 top-2 z-30 flex flex-col gap-2">
             <button
               type="button"
