@@ -23,7 +23,7 @@ import type { LegalSection } from './types/legal';
 import { COPY } from './i18n';
 import { initAnalytics, trackEvent } from './analytics';
 import { useWallet } from './hooks/useWallet';
-import { CoinGlyph, CompassGlyph, VaultGlyph } from './components/CosmicArtwork';
+import { BoosterGlyph, CoinGlyph, CompassGlyph, GiftGlyph, TimeGlyph, VaultGlyph } from './components/CosmicArtwork';
 import {
   BOOSTER_COST,
   MOVE_BOOST_AMOUNT,
@@ -1204,11 +1204,14 @@ function App() {
   }
 
   return (
-    <div className={`flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden p-1 sm:mx-auto sm:max-h-[900px] sm:max-w-lg sm:p-4 safe-area-inset relative bg-[radial-gradient(170%_130%_at_12%_0%,rgba(56,189,248,0.22)_0%,rgba(14,116,144,0.1)_24%,rgba(2,6,23,0.66)_58%,rgba(2,6,23,0.84)_100%)] backdrop-blur-none ${lowPerfMode ? 'sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-lg' : 'sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-cyan-100/24 sm:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_110px_rgba(2,6,23,0.86),0_0_44px_rgba(34,211,238,0.14)]'} ${shakeActive ? 'shake-soft' : ''}`}>
+    <div className={`flex h-full w-full max-w-none flex-col items-center justify-between overflow-hidden p-1 sm:mx-auto sm:max-h-[900px] sm:max-w-lg sm:p-4 safe-area-inset relative bg-[radial-gradient(180%_140%_at_14%_-6%,rgba(56,189,248,0.26)_0%,rgba(14,116,144,0.12)_23%,rgba(2,6,23,0.68)_56%,rgba(2,6,23,0.9)_100%)] backdrop-blur-none ${lowPerfMode ? 'sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-lg' : 'sm:backdrop-blur-md sm:rounded-[3rem] sm:border sm:border-cyan-100/24 sm:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_30px_90px_rgba(2,6,23,0.88),0_0_54px_rgba(34,211,238,0.18)]'} ${shakeActive ? 'shake-soft' : ''}`}>
       <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute -left-20 top-10 h-56 w-56 rounded-full bg-cyan-300/22 blur-3xl" />
-        <div className="absolute right-[-70px] top-24 h-64 w-64 rounded-full bg-blue-300/16 blur-3xl" />
+        <div className="absolute -left-20 top-8 h-56 w-56 rounded-full bg-cyan-300/22 blur-3xl" />
+        <div className="absolute right-[-70px] top-20 h-64 w-64 rounded-full bg-blue-300/16 blur-3xl" />
         <div className="absolute left-10 bottom-16 h-44 w-44 rounded-full bg-amber-300/14 blur-3xl" />
+        {!lowPerfMode && (
+          <div className="absolute inset-0 bg-[linear-gradient(118deg,transparent_0%,rgba(186,230,253,0.07)_32%,rgba(125,211,252,0.09)_48%,rgba(251,191,36,0.08)_68%,transparent_100%)] opacity-85" />
+        )}
         {!lowPerfMode && (
           <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:32px_32px,32px_32px]" />
         )}
@@ -1331,7 +1334,7 @@ function App() {
           <div className="ml-0.5 sm:ml-1 flex items-center mt-1 sm:mt-2">
             <button
               onClick={() => setIsPaused(true)}
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-2 sm:border-4 border-white shadow-lg text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 sm:border-[3px] border-cyan-100/75 bg-[linear-gradient(145deg,#38bdf8_0%,#2563eb_54%,#1d4ed8_100%)] shadow-[0_8px_22px_rgba(14,116,144,0.55)] text-white font-bold active:scale-95 transition-transform flex items-center justify-center p-0"
             >
               <CompassGlyph className="h-5 w-5 text-white sm:h-6 sm:w-6" />
             </button>
@@ -1344,9 +1347,9 @@ function App() {
               level={level}
               language={language}
             />
-            <div className="mt-2 w-full max-w-xs sm:max-w-sm px-4 py-2 rounded-2xl bg-sky-200 border border-white/80 shadow-[0_8px_20px_rgba(14,165,233,0.4)] text-slate-900 text-center">
-              <div className="text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase">{t.goal}</div>
-              <div className="text-xl sm:text-2xl font-extrabold leading-tight">{renderGoalContent()}</div>
+            <div className="mt-2 w-full max-w-xs sm:max-w-sm rounded-2xl border border-cyan-100/45 bg-[linear-gradient(150deg,rgba(186,230,253,0.96)_0%,rgba(125,211,252,0.9)_48%,rgba(147,197,253,0.88)_100%)] px-4 py-2 text-center text-slate-900 shadow-[0_14px_28px_rgba(14,116,144,0.34)]">
+              <div className="text-[10px] sm:text-xs font-black tracking-[0.22em] uppercase text-slate-800/82">{t.goal}</div>
+              <div className="text-xl sm:text-2xl font-extrabold leading-tight text-slate-950">{renderGoalContent()}</div>
             </div>
             {isBossLevel && (
               <div className="relative mt-2 w-full max-w-xs sm:max-w-sm px-2">
@@ -1401,7 +1404,7 @@ function App() {
           <button
             type="button"
             onClick={openShop}
-            className="mr-0.5 sm:mr-1 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500 border-2 sm:border-4 border-white/70 shadow-[0_8px_18px_rgba(59,130,246,0.55)] backdrop-blur-md flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
+            className="mr-0.5 sm:mr-1 mt-1 sm:mt-2 flex h-10 w-10 items-center justify-center rounded-full border-2 sm:h-12 sm:w-12 sm:border-[3px] border-cyan-100/70 bg-[linear-gradient(145deg,#38bdf8_0%,#1d4ed8_52%,#312e81_100%)] text-white shadow-[0_10px_22px_rgba(30,64,175,0.55)] transition-all hover:scale-105 active:scale-95"
             title={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
             aria-label={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
           >
@@ -1458,7 +1461,7 @@ function App() {
         </div>
 
         {/* Board Frame */}
-        <div className={`relative p-2 sm:p-3 mb-1 sm:mb-3 bg-white/15 sm:bg-white/20 backdrop-blur-none ${lowPerfMode ? '' : 'sm:backdrop-blur-xl'} rounded-3xl border-4 border-white/40 ${lowPerfMode ? 'shadow-lg' : 'shadow-2xl'} [transform:translateZ(0)] ${pulseActive ? 'frame-pulse' : ''}`}>
+        <div className={`relative mb-1 rounded-3xl border-4 border-cyan-100/38 bg-[linear-gradient(150deg,rgba(148,163,184,0.18),rgba(30,41,59,0.3),rgba(2,6,23,0.34))] p-2 sm:mb-3 sm:p-3 backdrop-blur-none ${lowPerfMode ? '' : 'sm:backdrop-blur-xl'} ${lowPerfMode ? 'shadow-lg' : 'shadow-[0_18px_44px_rgba(8,47,73,0.46),inset_0_1px_0_rgba(255,255,255,0.18)]'} [transform:translateZ(0)] ${pulseActive ? 'frame-pulse' : ''}`}>
           {!lowPerfMode && comboFlash && (
             <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle,rgba(255,255,255,0.45)_0%,rgba(59,130,246,0.15)_40%,rgba(0,0,0,0)_70%)] animate-[comboFlash_0.4s_ease-out]" />
           )}
@@ -1520,20 +1523,24 @@ function App() {
       <div className="w-full shrink-0 z-10 pb-1 sm:pb-6 px-2 sm:px-4 -mt-1 sm:mt-0">
         <div className="flex items-end justify-between max-w-md mx-auto relative">
           {/* Moves Counter (Bottom Left) */}
-          <div className="flex flex-col items-center justify-center bg-blue-600 w-14 h-14 sm:w-20 sm:h-20 rounded-2xl border-2 sm:border-4 border-white shadow-xl relative z-20">
-            <span className="text-white/80 text-[8px] sm:text-[10px] font-bold uppercase mt-1">
+          <div className="relative z-20 flex h-14 w-14 flex-col items-center justify-center rounded-2xl border-2 border-cyan-100/70 bg-[linear-gradient(155deg,#0ea5e9_0%,#2563eb_52%,#1e3a8a_100%)] shadow-[0_14px_28px_rgba(2,132,199,0.48)] sm:h-20 sm:w-20 sm:border-4">
+            <span className="mt-1 text-[8px] font-bold uppercase text-cyan-100/90 sm:text-[10px]">
               {levelConfig.mode === 'time' ? t.time : t.moves}
             </span>
-            <span className="text-xl sm:text-3xl font-black text-white leading-none drop-shadow-md">
+            <span className="text-xl font-black leading-none text-white drop-shadow-md sm:text-3xl">
               {levelConfig.mode === 'time' ? `${Math.max(0, timeLeft)}s` : moves}
             </span>
           </div>
 
           {/* Boosters (Right side) */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-1.5 flex items-center gap-1.5 shadow-xl mb-1 ml-2 sm:ml-4 flex-1 justify-end">
-            {[1, 2, 3].map((i) => (
-              <button key={i} className="w-7 h-7 sm:w-12 sm:h-12 bg-purple-500/20 hover:bg-purple-500/40 border-2 border-purple-400/30 rounded-xl flex items-center justify-center transition-all active:scale-95 group">
-                <div className="w-3 h-3 sm:w-6 sm:h-6 bg-purple-400/20 rounded-md rotate-45 border border-purple-300/20" />
+          <div className="mb-1 ml-2 flex flex-1 items-center justify-end gap-1.5 rounded-2xl border border-cyan-100/20 bg-[linear-gradient(140deg,rgba(2,6,23,0.5),rgba(15,23,42,0.42))] p-1.5 shadow-[0_10px_28px_rgba(2,6,23,0.4)] backdrop-blur-md sm:ml-4">
+            {[
+              { id: 'blast', Icon: BoosterGlyph },
+              { id: 'time', Icon: TimeGlyph },
+              { id: 'drop', Icon: GiftGlyph },
+            ].map(({ id, Icon }) => (
+              <button key={id} className="group flex h-7 w-7 items-center justify-center rounded-xl border-2 border-cyan-200/25 bg-cyan-300/10 text-cyan-100 transition-all active:scale-95 hover:bg-cyan-300/18 sm:h-12 sm:w-12">
+                <Icon className="h-3.5 w-3.5 sm:h-6 sm:w-6" />
               </button>
             ))}
           </div>

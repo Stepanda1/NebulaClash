@@ -33,7 +33,7 @@ body {
   min-height: 100svh;
 
   /* Deep Space Cosmic Base */
-  background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #0c0a09 100%);
+  background: radial-gradient(180% 160% at 12% -4%, #173f70 0%, #0f2748 26%, #08152f 54%, #050a17 100%);
   position: relative;
   overflow: hidden;
   user-select: none;
@@ -158,6 +158,12 @@ body.low-performance * {
 @keyframes starsDrift {
   0% { background-position: 0% 0%; }
   100% { background-position: 6% 4%; }
+}
+
+@keyframes auroraSweep {
+  0% { transform: translate3d(-3%, 0, 0) scale(1); opacity: 0.45; }
+  50% { transform: translate3d(1%, -2%, 0) scale(1.04); opacity: 0.72; }
+  100% { transform: translate3d(4%, 1%, 0) scale(1.08); opacity: 0.52; }
 }
 
 @keyframes softShake {

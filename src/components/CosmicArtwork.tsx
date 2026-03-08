@@ -14,7 +14,7 @@ function joinClassNames(...parts: Array<string | undefined>) {
 export function CosmicBackdrop({ variant, className }: CosmicBackdropProps) {
   const theme = {
     landing: {
-      base: 'bg-[radial-gradient(165%_140%_at_12%_0%,#204b8f_0%,#13295f_28%,#0a1130_56%,#040713_100%)]',
+      base: 'bg-[radial-gradient(176%_148%_at_12%_-4%,#2563a7_0%,#163971_26%,#0b1d44_52%,#040713_100%)]',
       stars: '[background-image:radial-gradient(circle_at_14%_16%,rgba(255,255,255,0.86)_1px,transparent_1.2px),radial-gradient(circle_at_72%_24%,rgba(186,230,253,0.62)_1px,transparent_1.3px),radial-gradient(circle_at_62%_74%,rgba(252,211,77,0.54)_1px,transparent_1.4px),radial-gradient(circle_at_32%_62%,rgba(255,255,255,0.22)_0.8px,transparent_1.1px)] [background-size:150px_150px,220px_220px,280px_280px,90px_90px]',
       haze: 'bg-[radial-gradient(circle_at_8%_26%,rgba(14,165,233,0.26),transparent_36%),radial-gradient(circle_at_82%_20%,rgba(56,189,248,0.2),transparent_34%),radial-gradient(circle_at_74%_72%,rgba(245,158,11,0.2),transparent_40%),radial-gradient(circle_at_36%_82%,rgba(59,130,246,0.16),transparent_36%)]',
       leftOrb: 'bg-sky-300/22',
@@ -22,7 +22,7 @@ export function CosmicBackdrop({ variant, className }: CosmicBackdropProps) {
       beam: 'bg-[linear-gradient(118deg,transparent_0%,rgba(125,211,252,0.06)_20%,rgba(186,230,253,0.12)_46%,rgba(253,224,71,0.08)_74%,transparent_100%)]',
     },
     roadmap: {
-      base: 'bg-[radial-gradient(170%_170%_at_8%_2%,#1f4d82_0%,#16325e_24%,#0b1a3b_54%,#050916_100%)]',
+      base: 'bg-[radial-gradient(180%_176%_at_8%_2%,#24518a_0%,#173762_24%,#0c2148_54%,#050916_100%)]',
       stars: '[background-image:radial-gradient(circle_at_12%_12%,rgba(255,255,255,0.86)_1px,transparent_1.2px),radial-gradient(circle_at_84%_18%,rgba(125,211,252,0.64)_1px,transparent_1.3px),radial-gradient(circle_at_66%_76%,rgba(148,163,184,0.56)_1px,transparent_1.4px),radial-gradient(circle_at_36%_58%,rgba(255,255,255,0.2)_0.8px,transparent_1.2px)] [background-size:170px_170px,230px_230px,310px_310px,92px_92px]',
       haze: 'bg-[radial-gradient(circle_at_16%_22%,rgba(34,211,238,0.26),transparent_38%),radial-gradient(circle_at_82%_66%,rgba(59,130,246,0.2),transparent_38%),radial-gradient(circle_at_52%_16%,rgba(245,158,11,0.16),transparent_30%),radial-gradient(circle_at_50%_86%,rgba(16,185,129,0.12),transparent_34%)]',
       leftOrb: 'bg-cyan-300/22',
@@ -30,7 +30,7 @@ export function CosmicBackdrop({ variant, className }: CosmicBackdropProps) {
       beam: 'bg-[linear-gradient(112deg,transparent_0%,rgba(56,189,248,0.06)_18%,rgba(125,211,252,0.14)_50%,rgba(59,130,246,0.08)_82%,transparent_100%)]',
     },
     shop: {
-      base: 'bg-[radial-gradient(146%_150%_at_50%_0%,#1a4d80_0%,#123464_24%,#0b1d42_52%,#050917_100%)]',
+      base: 'bg-[radial-gradient(156%_160%_at_50%_0%,#1d548b_0%,#153c70_24%,#0c234b_52%,#050917_100%)]',
       stars: '[background-image:radial-gradient(circle_at_12%_16%,rgba(255,255,255,0.82)_1px,transparent_1.2px),radial-gradient(circle_at_82%_26%,rgba(125,211,252,0.62)_1px,transparent_1.3px),radial-gradient(circle_at_46%_76%,rgba(251,191,36,0.52)_1px,transparent_1.4px),radial-gradient(circle_at_64%_50%,rgba(255,255,255,0.2)_0.8px,transparent_1.1px)] [background-size:150px_150px,220px_220px,300px_300px,90px_90px]',
       haze: 'bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.24),transparent_38%),radial-gradient(circle_at_84%_70%,rgba(59,130,246,0.18),transparent_36%),radial-gradient(circle_at_18%_78%,rgba(245,158,11,0.18),transparent_34%)]',
       leftOrb: 'bg-cyan-300/20',
@@ -47,6 +47,7 @@ export function CosmicBackdrop({ variant, className }: CosmicBackdropProps) {
       <div className={joinClassNames('absolute -left-24 top-12 h-72 w-72 rounded-full blur-3xl', theme.leftOrb)} />
       <div className={joinClassNames('absolute -right-20 bottom-12 h-72 w-72 rounded-full blur-3xl', theme.rightOrb)} />
       <div className={joinClassNames('absolute inset-0 opacity-80', theme.beam)} />
+      <div className="absolute inset-0 opacity-65 bg-[linear-gradient(122deg,transparent_10%,rgba(255,255,255,0.05)_36%,rgba(125,211,252,0.06)_52%,rgba(250,204,21,0.05)_74%,transparent_92%)] animate-[auroraSweep_18s_ease-in-out_infinite_alternate]" />
       <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:84px_84px,84px_84px]" />
       <div className="absolute inset-x-[12%] top-[8%] h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
     </div>
