@@ -206,38 +206,7 @@ export function SpaceRoadmap({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#050a17] text-white">
-
-      <div
-        className="absolute left-1/2 z-30 flex w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 items-center justify-center gap-2"
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 10px)' }}
-      >
-        <button
-          type="button"
-          onClick={onClaimDailyReward}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-all ${
-            dailyCanClaim
-              ? 'border-emerald-200/55 bg-emerald-300/25 text-emerald-50 shadow-[0_0_16px_rgba(74,222,128,0.28)]'
-              : 'border-white/20 bg-slate-900/70 text-white/80'
-          }`}
-          title={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
-          aria-label={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
-        >
-          <Gift className="h-3.5 w-3.5" />
-          <span>{`D${dailyStreak} +${dailyNextReward}`}</span>
-        </button>
-        <button
-          type="button"
-          onClick={onOpenLeaderboard}
-          className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200/45 bg-cyan-300/22 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] transition-all hover:bg-cyan-300/30"
-          title={language === 'ru' ? 'Рейтинг' : 'Ranking'}
-          aria-label={language === 'ru' ? 'Рейтинг' : 'Ranking'}
-        >
-          <Trophy className="h-3.5 w-3.5" />
-          <span>{language === 'ru' ? 'Топ' : 'Top'}</span>
-        </button>
-      </div>
-
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-16">
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-5">
         <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-[linear-gradient(145deg,rgba(2,6,23,0.52),rgba(15,23,42,0.36))] px-4 py-3 backdrop-blur-md">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-cyan-200/80">
@@ -263,7 +232,34 @@ export function SpaceRoadmap({
           </div>
         </div>
 
-        <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-slate-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md">
+        <div className="relative flex-1">
+          <div className="pointer-events-none absolute left-1/2 top-3 z-20 flex w-[calc(100%-1.5rem)] -translate-x-1/2 items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={onClaimDailyReward}
+              className={`pointer-events-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-all ${
+                dailyCanClaim
+                  ? 'border-emerald-200/55 bg-emerald-300/25 text-emerald-50 shadow-[0_0_16px_rgba(74,222,128,0.28)]'
+                  : 'border-white/20 bg-slate-900/70 text-white/80'
+              }`}
+              title={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
+              aria-label={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
+            >
+              <Gift className="h-3.5 w-3.5" />
+              <span>{`D${dailyStreak} +${dailyNextReward}`}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenLeaderboard}
+              className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-cyan-200/45 bg-cyan-300/22 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] transition-all hover:bg-cyan-300/30"
+              title={language === 'ru' ? 'Рейтинг' : 'Ranking'}
+              aria-label={language === 'ru' ? 'Рейтинг' : 'Ranking'}
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              <span>{language === 'ru' ? 'Топ' : 'Top'}</span>
+            </button>
+          </div>
+          <div ref={scrollerRef} className="relative flex-1 overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-slate-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md">
           <div className="relative mx-auto w-[340px]" style={{ height: mapHeight }}>
             <img
               src="/roadmap-space-bg.svg"
@@ -349,6 +345,7 @@ export function SpaceRoadmap({
               );
             })}
           </div>
+        </div>
         </div>
       </div>
 
