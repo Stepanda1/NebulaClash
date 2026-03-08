@@ -458,6 +458,27 @@ function App() {
 
   const triggerQuickBoost = levelConfig.mode === 'moves' ? buyExtraMoves : buyExtraTime;
 
+  const handleClaimDailyReward = async () => {
+    const result = await claimDailyReward();
+    if (!result) {
+      setShopNotice(language === 'ru' ? 'Daily reward недоступен' : 'Daily reward unavailable');
+      return;
+    }
+    if (result.granted) {
+      setDailyCanClaim(false);
+      setDailyStreak(Math.max(1, result.streak));
+      setDailyNextReward(Math.max(1, result.reward));
+      setShopNotice(
+        language === 'ru'
+          ? `Ежедневная награда: +${result.reward} монет (день ${result.streak})`
+          : `Daily reward: +${result.reward} coins (day ${result.streak})`,
+      );
+    } else {
+      setDailyCanClaim(false);
+      setShopNotice(language === 'ru' ? 'Награда уже получена сегодня' : 'Daily reward already claimed');
+    }
+  };
+
   const openLeaderboard = async () => {
     const payload = await getLeaderboardTop(20);
     setLeaderboardItems(payload?.items ?? []);
@@ -1268,6 +1289,12 @@ function App() {
           isMuted={isMuted}
           onToggleMute={onToggleMute}
           volume={volume}
+          dailyCanClaim={dailyCanClaim}
+          dailyStreak={dailyStreak}
+          dailyNextReward={dailyNextReward}
+          onClaimDailyReward={handleClaimDailyReward}
+          onOpenLeaderboard={openLeaderboard}
+          onShareGame={shareGame}
           onVolumeChange={(v) => {
             setVolume(v);
             if (v > 0 && isMuted) setIsMuted(false);
@@ -1410,6 +1437,7 @@ function App() {
             onClose={() => setIsPaused(false)}
             onOpenLegal={openLegal}
             onOpenGuide={openGuide}
+            onShareGame={shareGame}
             isMuted={isMuted}
             onToggleMute={onToggleMute}
             volume={volume}
@@ -1542,58 +1570,7 @@ function App() {
           </button>
         </div>
         <div className="mt-1 flex items-center justify-end pr-2 sm:pr-3">
-          <div className="mr-auto ml-1 flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={async () => {
-                const result = await claimDailyReward();
-                if (!result) {
-                  setShopNotice(language === 'ru' ? 'Daily reward недоступен' : 'Daily reward unavailable');
-                  return;
-                }
-                if (result.granted) {
-                  setDailyCanClaim(false);
-                  setDailyStreak(Math.max(1, result.streak));
-                  setDailyNextReward(Math.max(1, result.reward));
-                  setShopNotice(
-                    language === 'ru'
-                      ? `Ежедневная награда: +${result.reward} монет (день ${result.streak})`
-                      : `Daily reward: +${result.reward} coins (day ${result.streak})`,
-                  );
-                } else {
-                  setDailyCanClaim(false);
-                  setShopNotice(language === 'ru' ? 'Награда уже получена сегодня' : 'Daily reward already claimed');
-                }
-              }}
-              className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] transition-all ${
-                dailyCanClaim
-                  ? 'border-emerald-200/40 bg-emerald-300/20 text-emerald-100 shadow-[0_0_14px_rgba(74,222,128,0.18)]'
-                  : 'border-white/15 bg-white/8 text-white/75'
-              }`}
-              title={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
-              aria-label={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
-            >
-              {`D${dailyStreak} +${dailyNextReward}`}
-            </button>
-            <button
-              type="button"
-              onClick={openLeaderboard}
-              className="rounded-full border border-cyan-200/35 bg-cyan-300/18 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.16)] transition-all hover:bg-cyan-300/24"
-              title={language === 'ru' ? 'Рейтинг' : 'Ranking'}
-              aria-label={language === 'ru' ? 'Рейтинг' : 'Ranking'}
-            >
-              {language === 'ru' ? 'Топ' : 'Top'}
-            </button>
-            <button
-              type="button"
-              onClick={shareGame}
-              className="rounded-full border border-fuchsia-200/35 bg-fuchsia-300/14 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-100 transition-all hover:bg-fuchsia-300/22"
-              title={language === 'ru' ? 'Поделиться игрой' : 'Share game'}
-              aria-label={language === 'ru' ? 'Поделиться игрой' : 'Share game'}
-            >
-              {language === 'ru' ? 'Поделиться' : 'Share'}
-            </button>
-          </div>
+          <div className="mr-auto ml-1" />
           {isAdminPath() && adminAccessToken && (
             <button
               type="button"

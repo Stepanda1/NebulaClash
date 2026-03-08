@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Play, RotateCcw, Volume2, VolumeX, X, Sparkles, PauseCircle } from 'lucide-react';
+import { Play, RotateCcw, Share2, Volume2, VolumeX, X, Sparkles, PauseCircle } from 'lucide-react';
 import type { Language } from '../i18n';
 import type { LegalSection } from '../types/legal';
 import { COPY } from '../i18n';
@@ -11,6 +11,7 @@ interface PauseMenuProps {
     onClose: () => void;
     onOpenLegal: (section: LegalSection) => void;
     onOpenGuide: () => void;
+    onShareGame: () => void;
     isMuted: boolean;
     onToggleMute: () => void;
     volume: number;
@@ -19,7 +20,7 @@ interface PauseMenuProps {
     onLanguageChange: (language: Language) => void;
 }
 
-export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClose, onOpenLegal, onOpenGuide, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
+export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClose, onOpenLegal, onOpenGuide, onShareGame, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
     const t = COPY[language];
 
     return (
@@ -125,6 +126,13 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
                 <div className="relative z-10 w-full p-3 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner shadow-black/20">
                     <div className="text-left text-white/80 text-sm font-bold tracking-wide mb-2">{t.legal}</div>
                     <div className="grid grid-cols-1 gap-2">
+                        <button
+                            onClick={onShareGame}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl px-2 py-2 border bg-fuchsia-300/12 border-fuchsia-200/30 text-fuchsia-100 hover:bg-fuchsia-300/22 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"
+                        >
+                            <Share2 size={14} />
+                            {language === 'ru' ? 'Поделиться игрой' : 'Share game'}
+                        </button>
                         <button
                             onClick={onOpenGuide}
                             className="rounded-xl px-2 py-2 border bg-cyan-300/15 border-cyan-200/25 text-cyan-100 hover:bg-cyan-300/25 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"

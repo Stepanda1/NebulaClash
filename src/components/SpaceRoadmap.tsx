@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Lock, LogOut, Star, Volume2, VolumeX, X } from 'lucide-react';
+import { Gift, Lock, LogOut, Share2, Star, Trophy, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import type { LegalSection } from '../types/legal';
 import { COPY } from '../i18n';
@@ -18,6 +18,12 @@ type SpaceRoadmapProps = {
   onToggleMute: () => void;
   volume: number;
   onVolumeChange: (volume: number) => void;
+  dailyCanClaim: boolean;
+  dailyStreak: number;
+  dailyNextReward: number;
+  onClaimDailyReward: () => void;
+  onOpenLeaderboard: () => void;
+  onShareGame: () => void;
 };
 
 type Point = {
@@ -45,6 +51,12 @@ export function SpaceRoadmap({
   onToggleMute,
   volume,
   onVolumeChange,
+  dailyCanClaim,
+  dailyStreak,
+  dailyNextReward,
+  onClaimDailyReward,
+  onOpenLeaderboard,
+  onShareGame,
 }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -195,7 +207,37 @@ export function SpaceRoadmap({
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#050a17] text-white">
 
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-5">
+      <div
+        className="absolute left-1/2 z-30 flex w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 items-center justify-center gap-2"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 10px)' }}
+      >
+        <button
+          type="button"
+          onClick={onClaimDailyReward}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-all ${
+            dailyCanClaim
+              ? 'border-emerald-200/55 bg-emerald-300/25 text-emerald-50 shadow-[0_0_16px_rgba(74,222,128,0.28)]'
+              : 'border-white/20 bg-slate-900/70 text-white/80'
+          }`}
+          title={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
+          aria-label={language === 'ru' ? 'Ежедневная награда' : 'Daily reward'}
+        >
+          <Gift className="h-3.5 w-3.5" />
+          <span>{`D${dailyStreak} +${dailyNextReward}`}</span>
+        </button>
+        <button
+          type="button"
+          onClick={onOpenLeaderboard}
+          className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200/45 bg-cyan-300/22 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] transition-all hover:bg-cyan-300/30"
+          title={language === 'ru' ? 'Рейтинг' : 'Ranking'}
+          aria-label={language === 'ru' ? 'Рейтинг' : 'Ranking'}
+        >
+          <Trophy className="h-3.5 w-3.5" />
+          <span>{language === 'ru' ? 'Топ' : 'Top'}</span>
+        </button>
+      </div>
+
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-16">
         <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-[linear-gradient(145deg,rgba(2,6,23,0.52),rgba(15,23,42,0.36))] px-4 py-3 backdrop-blur-md">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-cyan-200/80">
@@ -393,6 +435,17 @@ export function SpaceRoadmap({
             </button>
 
             <div className="mt-4 grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSettingsOpen(false);
+                  onShareGame();
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-xl py-2 border border-fuchsia-200/30 bg-fuchsia-300/12 text-fuchsia-100 hover:bg-fuchsia-300/22 transition-all active:scale-95 text-xs font-semibold"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                {language === 'ru' ? 'Поделиться игрой' : 'Share game'}
+              </button>
               <button
                 type="button"
                 onClick={() => {
