@@ -8,45 +8,46 @@ interface StarProgressProps {
     score: number;
     level: number;
     language: Language;
+    lowPerfMode?: boolean;
 }
 
 const STAR_THRESHOLDS = [700, 1400, 2200] as const;
 
-export const StarProgress: React.FC<StarProgressProps> = ({ score, level, language }) => {
+export const StarProgress: React.FC<StarProgressProps> = ({ score, level, language, lowPerfMode = false }) => {
     const t = COPY[language];
     const progress = Math.min(100, (score / STAR_THRESHOLDS[2]) * 100);
 
     return (
         <div className="w-full max-w-xs flex flex-col items-center gap-1 relative z-20">
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-1 rounded-full border-2 border-white/20 shadow-lg mb-1">
+            <div className="mt-1 sm:mt-2 bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-1 rounded-full border-2 border-white/20 shadow-lg mb-1">
                 <span className="text-white font-black text-sm uppercase tracking-widest drop-shadow-sm">{t.level(level)}</span>
             </div>
 
-            <div className="w-full h-8 bg-black/30 rounded-full border-4 border-white/20 backdrop-blur-md relative overflow-hidden">
+            <div className={`w-full h-8 bg-black/30 rounded-full border-4 border-white/20 relative overflow-hidden ${lowPerfMode ? '' : 'backdrop-blur-md'}`}>
                 <div className="absolute inset-0 rounded-full overflow-hidden">
                     <motion.div
                         className="h-full bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 shadow-[0_0_15px_rgba(234,179,8,0.6)]"
-                        initial={{ width: 0 }}
+                        initial={lowPerfMode ? false : { width: 0 }}
                         animate={{ width: `${progress}%` }}
-                        transition={{ type: 'spring', stiffness: 50, damping: 15 }}
+                        transition={lowPerfMode ? { duration: 0.16 } : { type: 'spring', stiffness: 50, damping: 15 }}
                     />
                 </div>
 
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-1/2 -translate-y-1/2" style={{ left: '33%' }}>
                         <div className="-translate-x-1/2">
-                            <StarMarker active={score >= STAR_THRESHOLDS[0]} />
+                            <StarMarker active={score >= STAR_THRESHOLDS[0]} lowPerfMode={lowPerfMode} />
                         </div>
                     </div>
 
                     <div className="absolute top-1/2 -translate-y-1/2" style={{ left: '66%' }}>
                         <div className="-translate-x-1/2">
-                            <StarMarker active={score >= STAR_THRESHOLDS[1]} />
+                            <StarMarker active={score >= STAR_THRESHOLDS[1]} lowPerfMode={lowPerfMode} />
                         </div>
                     </div>
 
                     <div className="absolute top-1/2 -translate-y-1/2" style={{ right: '4px' }}>
-                        <StarMarker active={score >= STAR_THRESHOLDS[2]} />
+                        <StarMarker active={score >= STAR_THRESHOLDS[2]} lowPerfMode={lowPerfMode} />
                     </div>
                 </div>
             </div>
@@ -54,7 +55,7 @@ export const StarProgress: React.FC<StarProgressProps> = ({ score, level, langua
     );
 };
 
-const StarMarker = ({ active }: { active: boolean }) => {
+const StarMarker = ({ active, lowPerfMode }: { active: boolean; lowPerfMode: boolean }) => {
     return (
         <div className={clsx(
             'relative w-10 h-10 flex items-center justify-center transition-all duration-500',
@@ -67,7 +68,7 @@ const StarMarker = ({ active }: { active: boolean }) => {
                     active ? 'fill-yellow-300 text-yellow-600' : 'fill-slate-800 text-slate-500',
                 )}
             />
-            {active && (
+            {active && !lowPerfMode && (
                 <motion.div
                     layoutId="star-burst"
                     className="absolute inset-0 bg-yellow-400 rounded-full blur-md opacity-50"

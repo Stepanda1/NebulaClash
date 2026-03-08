@@ -1351,11 +1351,12 @@ function App() {
           </div>
 
                     {/* Star Progress Bar */}
-          <div className="flex-1 flex flex-col items-center -mt-0.5 sm:-mt-1">
+          <div className="flex-1 flex flex-col items-center mt-1 sm:mt-2">
             <StarProgress
               score={score}
               level={level}
               language={language}
+              lowPerfMode={lowPerfMode}
             />
             <div className="mt-2 w-full max-w-xs sm:max-w-sm rounded-2xl border border-cyan-100/45 bg-[linear-gradient(150deg,rgba(186,230,253,0.96)_0%,rgba(125,211,252,0.9)_48%,rgba(147,197,253,0.88)_100%)] px-4 py-2 text-center text-slate-900 shadow-[0_14px_28px_rgba(14,116,144,0.34)]">
               <div className="text-[10px] sm:text-xs font-black tracking-[0.22em] uppercase text-slate-800/82">{t.goal}</div>
