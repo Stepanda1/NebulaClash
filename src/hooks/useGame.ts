@@ -43,10 +43,10 @@ type PersistedGameState = {
 };
 
 const BOSS_DEBRIS_CAP = 14;
-const VICTORY_BONUS_EXPLOSION_MS = 140;
-const VICTORY_BONUS_REMOVE_MS = 80;
-const VICTORY_BONUS_GRAVITY_MS = 110;
-const VICTORY_BONUS_AUTO_MATCH_MS = 120;
+const VICTORY_BONUS_EXPLOSION_MS = 120;
+const VICTORY_BONUS_REMOVE_MS = 70;
+const VICTORY_BONUS_GRAVITY_MS = 95;
+const VICTORY_BONUS_AUTO_MATCH_MS = 105;
 const LEVEL_CONFIGS: LevelConfig[] = buildLevelConfigs();
 const GAME_STATE_STORAGE_KEY = 'match3_game_state_snapshot';
 

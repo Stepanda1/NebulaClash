@@ -35,3 +35,5 @@ Original prompt: ускорь дополнительные ходы, при эт
   - игровой экран с туториалом: `output/web-game/bg-roadmap/shot-0.png`
   - roadmap на `/play`: `output/web-game/bg-roadmap-map.png`
 - 2026-03-06: В console-errors Playwright на локальном dev сохраняется `Failed to load resource: ... 500 (Internal Server Error)` (в `errors-0.json`), вероятно связано с отсутствующим локальным backend API в dev-окружении; на редизайн фонов не влияет.
+- 2026-03-07: По запросу убран фон игрового поля в src/components/GameBoard.tsx: удалены декоративные gradient/grid overlay-слои и фон контейнера поля (bg-* и backdrop-blur), чтобы снизить риск поломки UI на телефонах.
+- 2026-03-07: Немного ускорена финальная конвертация оставшихся ходов в runVictoryMoveBonus (src/hooks/useGame.ts): VICTORY_BONUS_EXPLOSION_MS 140->120, VICTORY_BONUS_REMOVE_MS 80->70, VICTORY_BONUS_GRAVITY_MS 110->95, VICTORY_BONUS_AUTO_MATCH_MS 120->105. Логика списания ходов/времени не изменялась.

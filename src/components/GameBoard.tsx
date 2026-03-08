@@ -132,28 +132,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
 
     const boardContent = (
         <>
-            <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    background:
-                        'radial-gradient(140% 120% at 16% 10%, rgba(56,189,248,0.2) 0%, rgba(14,116,144,0.1) 26%, rgba(7,12,30,0.58) 58%, rgba(2,6,23,0.9) 100%), radial-gradient(70% 70% at 84% 82%, rgba(245,158,11,0.18) 0%, rgba(30,41,59,0) 72%)',
-                }}
-            />
-            {!lowPerfMode && (
-                <div className="absolute inset-0 pointer-events-none opacity-60 mix-blend-screen bg-[radial-gradient(circle_at_22%_24%,rgba(186,230,253,0.24)_0%,transparent_34%),radial-gradient(circle_at_76%_68%,rgba(251,191,36,0.2)_0%,transparent_36%),radial-gradient(circle_at_56%_42%,rgba(125,211,252,0.14)_0%,transparent_30%)]" />
-            )}
-            {!lowPerfMode && (
-                <div className="absolute inset-0 pointer-events-none opacity-[0.11] [background-image:linear-gradient(rgba(255,255,255,0.45)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:22px_22px,22px_22px]" />
-            )}
-            {!lowPerfMode && (
-                <div
-                    className="absolute inset-0 opacity-[0.02] pointer-events-none"
-                    style={{
-                        backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                        backgroundSize: `${ITEM_SIZE}px ${ITEM_SIZE}px`
-                    }}
-                />
-            )}
             <AnimatePresence mode={lowPerfMode ? "sync" : "popLayout"}>
                 {tiles.filter(t => t.type).map(tile => (
                     <TileComponent
@@ -299,7 +277,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, selectedTile, explod
 
     return (
         <div
-            className={`relative ${lowPerfMode ? 'bg-slate-900/72' : 'bg-slate-950/66 backdrop-blur-xl'} rounded-2xl border border-cyan-100/20 ${lowPerfMode ? 'shadow-lg' : 'shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_20px_34px_rgba(2,6,23,0.6),0_0_40px_rgba(34,211,238,0.16)]'} overflow-hidden touch-none`}
+            className={`relative bg-transparent rounded-2xl border border-cyan-100/20 ${lowPerfMode ? 'shadow-lg' : 'shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_20px_34px_rgba(2,6,23,0.6),0_0_40px_rgba(34,211,238,0.16)]'} overflow-hidden touch-none`}
             style={{
                 width: BOARD_WIDTH,
                 height: BOARD_HEIGHT,
