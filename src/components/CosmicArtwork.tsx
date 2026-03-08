@@ -127,34 +127,40 @@ export function CoinGlyph({ className }: GlyphProps) {
   return (
     <svg viewBox="0 0 32 32" className={joinClassNames('h-5 w-5', className)} aria-hidden="true">
       <defs>
-        <radialGradient id="coinAura" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fde68a" stopOpacity="0.7" />
-          <stop offset="55%" stopColor="#f59e0b" stopOpacity="0.18" />
+        <radialGradient id="coinAura" cx="50%" cy="50%" r="54%">
+          <stop offset="0%" stopColor="#fde68a" stopOpacity="0.76" />
+          <stop offset="58%" stopColor="#f59e0b" stopOpacity="0.2" />
           <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id="coinFill" cx="34%" cy="24%" r="76%">
-          <stop offset="0%" stopColor="#fff7d6" />
-          <stop offset="24%" stopColor="#fde68a" />
+        <radialGradient id="coinMetal" cx="32%" cy="20%" r="82%">
+          <stop offset="0%" stopColor="#fff9de" />
+          <stop offset="22%" stopColor="#fde68a" />
           <stop offset="52%" stopColor="#fbbf24" />
           <stop offset="76%" stopColor="#f59e0b" />
-          <stop offset="100%" stopColor="#92400e" />
+          <stop offset="100%" stopColor="#713f12" />
         </radialGradient>
         <linearGradient id="coinRim" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#fffbeb" />
-          <stop offset="30%" stopColor="#fde68a" />
-          <stop offset="64%" stopColor="#f59e0b" />
+          <stop offset="28%" stopColor="#fde68a" />
+          <stop offset="62%" stopColor="#f59e0b" />
           <stop offset="100%" stopColor="#78350f" />
+        </linearGradient>
+        <linearGradient id="coinCenterGlyph" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#422006" />
+          <stop offset="55%" stopColor="#78350f" />
+          <stop offset="100%" stopColor="#fef3c7" />
         </linearGradient>
       </defs>
       <circle cx="16" cy="16" r="15" fill="url(#coinAura)" />
-      <circle cx="16" cy="16" r="10.8" fill="url(#coinRim)" />
-      <circle cx="16" cy="16" r="8.9" fill="url(#coinFill)" />
-      <circle cx="16" cy="16" r="6.9" fill="none" stroke="rgba(120,53,15,0.36)" strokeWidth="1.5" />
-      <path d="M16 10.7 18.2 13.8 21.9 14.6 19.3 17.1 19.7 20.8 16 18.9 12.3 20.8 12.7 17.1 10.1 14.6 13.8 13.8Z" fill="#5b2a06" />
-      <path d="M16 12.2 17.3 14 19.5 14.5 18 16 18.2 18.2 16 17.1 13.8 18.2 14 16 12.5 14.5 14.7 14Z" fill="rgba(255,243,199,0.55)" />
-      <path d="M9.8 10.6c1.2-2.3 3.4-3.7 6.6-4.2" fill="none" stroke="rgba(255,255,255,0.62)" strokeWidth="1.3" strokeLinecap="round" />
-      <ellipse cx="12.1" cy="10.9" rx="3.3" ry="1.6" fill="rgba(255,255,255,0.42)" />
-      <circle cx="21.2" cy="20.5" r="1.2" fill="rgba(255,255,255,0.24)" />
+      <circle cx="16" cy="16" r="11.2" fill="url(#coinRim)" />
+      <circle cx="16" cy="16" r="9.35" fill="url(#coinMetal)" />
+      <circle cx="16" cy="16" r="7.25" fill="none" stroke="rgba(120,53,15,0.42)" strokeWidth="1.35" />
+      <path d="M16 11.2 18.5 13.6 21.8 13.8 19.4 16 19.9 19.2 16.9 18.1 14.6 20.4 14.2 17.1 11.4 15.4 14.2 14.2Z" fill="url(#coinCenterGlyph)" />
+      <path d="M16 12.3 17.5 13.8 19.5 14 18 15.4 18.4 17.4 16.5 16.7 15.1 18.1 14.8 16.1 13.1 15 14.8 14.3Z" fill="rgba(255,245,210,0.54)" />
+      <path d="M9.4 11.1c1.4-2.5 3.9-4 7.3-4.4" fill="none" stroke="rgba(255,255,255,0.66)" strokeWidth="1.35" strokeLinecap="round" />
+      <ellipse cx="12.2" cy="10.6" rx="3.2" ry="1.5" fill="rgba(255,255,255,0.48)" />
+      <circle cx="21.1" cy="20.2" r="1.25" fill="rgba(255,255,255,0.3)" />
+      <path d="M6.9 16a9.1 9.1 0 0 1 0-.2m18.2 0a9.1 9.1 0 0 1 0 .2M16 6.9h.2M15.8 25.1h.2" stroke="rgba(120,53,15,0.28)" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }

@@ -23,7 +23,7 @@ import type { LegalSection } from './types/legal';
 import { COPY } from './i18n';
 import { initAnalytics, trackEvent } from './analytics';
 import { useWallet } from './hooks/useWallet';
-import { BoosterGlyph, CoinGlyph, CompassGlyph, GiftGlyph, TimeGlyph, VaultGlyph } from './components/CosmicArtwork';
+import { BoosterGlyph, CoinGlyph, CompassGlyph, GiftGlyph, SignalGlyph, TimeGlyph, VaultGlyph } from './components/CosmicArtwork';
 import {
   BOOSTER_COST,
   MOVE_BOOST_AMOUNT,
@@ -428,6 +428,16 @@ function App() {
   const openShop = useCallback(() => {
     openShopWithSource('manual_button');
   }, [openShopWithSource]);
+
+  const quickBoostLabel = levelConfig.mode === 'moves'
+    ? (language === 'ru' ? `+${MOVE_BOOST_AMOUNT} ходов` : `+${MOVE_BOOST_AMOUNT} moves`)
+    : (language === 'ru' ? `+${TIME_BOOST_SECONDS} сек` : `+${TIME_BOOST_SECONDS}s`);
+
+  const quickBoostHint = levelConfig.mode === 'moves'
+    ? (language === 'ru' ? 'Экстренный буст ходов' : 'Emergency move boost')
+    : (language === 'ru' ? 'Экстренный буст времени' : 'Emergency time boost');
+
+  const triggerQuickBoost = levelConfig.mode === 'moves' ? buyExtraMoves : buyExtraTime;
 
   const openAdmin = () => {
     if (!(isAdminPath() && adminAccessToken)) return;
@@ -1426,9 +1436,9 @@ function App() {
           <button
             type="button"
             onClick={openShop}
-            className="relative z-30 pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-amber-200/35 bg-gradient-to-r from-amber-300/20 via-yellow-300/15 to-orange-300/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.14)] transition-all hover:from-amber-300/30 hover:via-yellow-300/22 hover:to-orange-300/30"
-            title={language === 'ru' ? 'Пополнить монеты' : 'Add coins'}
-            aria-label={language === 'ru' ? 'Пополнить монеты' : 'Add coins'}
+            className="relative z-30 pointer-events-auto inline-flex items-center gap-2 rounded-full border border-amber-200/35 bg-[linear-gradient(140deg,rgba(251,191,36,0.24),rgba(251,191,36,0.12),rgba(251,146,60,0.2))] px-3 py-1.5 text-[11px] font-bold tracking-[0.1em] text-amber-50 shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all hover:from-amber-300/30 hover:via-yellow-300/22 hover:to-orange-300/30 sm:px-3.5 sm:py-1.5 sm:text-xs"
+            title={language === 'ru' ? 'Открыть магазин монет' : 'Open coin shop'}
+            aria-label={language === 'ru' ? 'Открыть магазин монет' : 'Open coin shop'}
           >
             <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-emerald-200/50 bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.38)]">
               <span className="relative block h-2.5 w-2.5">
@@ -1436,10 +1446,11 @@ function App() {
                 <span className="absolute left-0 top-1/2 h-[2px] w-full -translate-y-1/2 rounded-full bg-emerald-950" />
               </span>
             </span>
-            <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white/10">
-              <CoinGlyph className="h-3 w-3" />
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
+              <CoinGlyph className="h-4.5 w-4.5" />
             </span>
-            <span>{spaceCoins}</span>
+            <span className="hidden text-amber-100/88 sm:inline">{language === 'ru' ? 'Монеты' : 'Coins'}</span>
+            <span className="min-w-[2.2rem] text-right text-sm font-black tabular-nums text-amber-50 sm:min-w-[2.8rem] sm:text-base">{spaceCoins}</span>
           </button>
         </div>
       </div>
@@ -1534,15 +1545,35 @@ function App() {
 
           {/* Boosters (Right side) */}
           <div className="mb-1 ml-2 flex flex-1 items-center justify-end gap-1.5 rounded-2xl border border-cyan-100/20 bg-[linear-gradient(140deg,rgba(2,6,23,0.5),rgba(15,23,42,0.42))] p-1.5 shadow-[0_10px_28px_rgba(2,6,23,0.4)] backdrop-blur-md sm:ml-4">
-            {[
-              { id: 'blast', Icon: BoosterGlyph },
-              { id: 'time', Icon: TimeGlyph },
-              { id: 'drop', Icon: GiftGlyph },
-            ].map(({ id, Icon }) => (
-              <button key={id} className="group flex h-7 w-7 items-center justify-center rounded-xl border-2 border-cyan-200/25 bg-cyan-300/10 text-cyan-100 transition-all active:scale-95 hover:bg-cyan-300/18 sm:h-12 sm:w-12">
-                <Icon className="h-3.5 w-3.5 sm:h-6 sm:w-6" />
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={triggerQuickBoost}
+              title={quickBoostHint}
+              aria-label={quickBoostHint}
+              className="group flex h-7 min-w-[72px] items-center justify-center gap-1 rounded-xl border-2 border-emerald-200/30 bg-emerald-300/12 px-1 text-[9px] font-black text-emerald-100 transition-all active:scale-95 hover:bg-emerald-300/18 sm:h-12 sm:min-w-[118px] sm:gap-1.5 sm:px-2 sm:text-xs"
+            >
+              {levelConfig.mode === 'moves' ? <BoosterGlyph className="h-3.5 w-3.5 sm:h-5 sm:w-5" /> : <TimeGlyph className="h-3.5 w-3.5 sm:h-5 sm:w-5" />}
+              <span>{quickBoostLabel}</span>
+              <span className="rounded-full bg-black/20 px-1 py-[1px] text-[8px] font-bold sm:px-1.5 sm:text-[10px]">-{BOOSTER_COST}</span>
+            </button>
+            <button
+              type="button"
+              onClick={openShop}
+              title={language === 'ru' ? 'Магазин' : 'Shop'}
+              aria-label={language === 'ru' ? 'Магазин' : 'Shop'}
+              className="group flex h-7 w-7 items-center justify-center rounded-xl border-2 border-amber-200/30 bg-amber-300/12 text-amber-100 transition-all active:scale-95 hover:bg-amber-300/18 sm:h-12 sm:w-12"
+            >
+              <GiftGlyph className="h-3.5 w-3.5 sm:h-6 sm:w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={openGuide}
+              title={language === 'ru' ? 'Гайд' : 'Guide'}
+              aria-label={language === 'ru' ? 'Гайд' : 'Guide'}
+              className="group flex h-7 w-7 items-center justify-center rounded-xl border-2 border-cyan-200/25 bg-cyan-300/10 text-cyan-100 transition-all active:scale-95 hover:bg-cyan-300/18 sm:h-12 sm:w-12"
+            >
+              <SignalGlyph className="h-3.5 w-3.5 sm:h-6 sm:w-6" />
+            </button>
           </div>
         </div>
         {shopNotice && (
