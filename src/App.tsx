@@ -180,7 +180,9 @@ function App() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isDailyRewardsOpen, setIsDailyRewardsOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(false);
   const [leaderboardItems, setLeaderboardItems] = useState<LeaderboardItem[]>([]);
   const [dailyCanClaim, setDailyCanClaim] = useState(false);
   const [dailyStreak, setDailyStreak] = useState(1);
@@ -480,9 +482,18 @@ function App() {
   };
 
   const openLeaderboard = async () => {
-    const payload = await getLeaderboardTop(20);
-    setLeaderboardItems(payload?.items ?? []);
     setIsLeaderboardOpen(true);
+    setIsLeaderboardLoading(true);
+    try {
+      const payload = await getLeaderboardTop(20);
+      setLeaderboardItems(payload?.items ?? []);
+    } finally {
+      setIsLeaderboardLoading(false);
+    }
+  };
+
+  const openDailyRewards = () => {
+    setIsDailyRewardsOpen(true);
   };
 
   const shareGame = async () => {
@@ -1219,6 +1230,80 @@ function App() {
               onClose={() => setIsFeedbackOpen(false)}
             />
           )}
+          {isDailyRewardsOpen && (
+            <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
+              <div className="w-full max-w-sm rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)]">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{language === 'ru' ? 'Ежедневная награда' : 'Daily Reward'}</div>
+                  <button
+                    type="button"
+                    onClick={() => setIsDailyRewardsOpen(false)}
+                    className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12"
+                  >
+                    {language === 'ru' ? 'Закрыть' : 'Close'}
+                  </button>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center text-white">
+                  <div className="text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Серия' : 'Streak'}</div>
+                  <div className="mt-1 text-2xl font-black">{dailyStreak}</div>
+                  <div className="mt-3 text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Следующая награда' : 'Next reward'}</div>
+                  <div className="mt-1 text-xl font-black">+{dailyNextReward}</div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await handleClaimDailyReward();
+                      setIsDailyRewardsOpen(false);
+                    }}
+                    className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide transition-all ${
+                      dailyCanClaim
+                        ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 hover:from-emerald-300 hover:to-teal-400'
+                        : 'bg-white/10 text-white/70'
+                    }`}
+                  >
+                    {dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {isLeaderboardOpen && (
+            <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
+              <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{language === 'ru' ? 'Рейтинг игроков' : 'Player Ranking'}</div>
+                  <button
+                    type="button"
+                    onClick={() => setIsLeaderboardOpen(false)}
+                    className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12"
+                  >
+                    {language === 'ru' ? 'Закрыть' : 'Close'}
+                  </button>
+                </div>
+                <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
+                  {isLeaderboardLoading ? (
+                    <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Загрузка...' : 'Loading...'}</div>
+                  ) : leaderboardItems.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Пока нет данных' : 'No entries yet'}</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {leaderboardItems.map((item) => (
+                        <div key={`${item.rank}-${item.displayName}`} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
+                          <div className="flex items-center gap-2 text-white">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300/20 font-black text-cyan-100">#{item.rank}</span>
+                            <span className="max-w-[130px] truncate font-bold">{item.displayName}</span>
+                          </div>
+                          <div className="text-right text-[11px] text-white/80">
+                            <div>{language === 'ru' ? 'Уровень' : 'Level'}: <span className="font-black text-white">{item.bestLevel}</span></div>
+                            <div>{language === 'ru' ? 'Счёт' : 'Score'}: <span className="font-black text-white">{item.bestScore}</span></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </AnimatePresence>
         <MarketingLanding
           language={language}
@@ -1292,7 +1377,7 @@ function App() {
           dailyCanClaim={dailyCanClaim}
           dailyStreak={dailyStreak}
           dailyNextReward={dailyNextReward}
-          onClaimDailyReward={handleClaimDailyReward}
+          onOpenDailyRewards={openDailyRewards}
           onOpenLeaderboard={openLeaderboard}
           onShareGame={shareGame}
           onVolumeChange={(v) => {
@@ -1300,6 +1385,41 @@ function App() {
             if (v > 0 && isMuted) setIsMuted(false);
           }}
         />
+        {isDailyRewardsOpen && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)]">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{language === 'ru' ? 'Ежедневная награда' : 'Daily Reward'}</div>
+                <button type="button" onClick={() => setIsDailyRewardsOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">{language === 'ru' ? 'Закрыть' : 'Close'}</button>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center text-white">
+                <div className="text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Серия' : 'Streak'}</div>
+                <div className="mt-1 text-2xl font-black">{dailyStreak}</div>
+                <button type="button" onClick={async () => { await handleClaimDailyReward(); setIsDailyRewardsOpen(false); }} className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide transition-all ${dailyCanClaim ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 hover:from-emerald-300 hover:to-teal-400' : 'bg-white/10 text-white/70'}`}>{dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {isLeaderboardOpen && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{language === 'ru' ? 'Рейтинг игроков' : 'Player Ranking'}</div>
+                <button type="button" onClick={() => setIsLeaderboardOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">{language === 'ru' ? 'Закрыть' : 'Close'}</button>
+              </div>
+              <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
+                {isLeaderboardLoading ? <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Загрузка...' : 'Loading...'}</div> : leaderboardItems.length === 0 ? <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Пока нет данных' : 'No entries yet'}</div> : (
+                  <div className="space-y-2">{leaderboardItems.map((item) => (
+                    <div key={`${item.rank}-${item.displayName}`} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
+                      <div className="flex items-center gap-2 text-white"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300/20 font-black text-cyan-100">#{item.rank}</span><span className="max-w-[130px] truncate font-bold">{item.displayName}</span></div>
+                      <div className="text-right text-[11px] text-white/80"><div>{language === 'ru' ? 'Уровень' : 'Level'}: <span className="font-black text-white">{item.bestLevel}</span></div><div>{language === 'ru' ? 'Счёт' : 'Score'}: <span className="font-black text-white">{item.bestScore}</span></div></div>
+                    </div>
+                  ))}</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         <AudioPlayer isMuted={isMuted} volume={volume} mode="lobby" />
         <AnimatePresence>
           {levelToLaunch !== null && (
@@ -1394,6 +1514,42 @@ function App() {
             onBuyPack={buyCoinsPack}
           />
         )}
+        {isDailyRewardsOpen && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)]">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{language === 'ru' ? 'Ежедневная награда' : 'Daily Reward'}</div>
+                <button
+                  type="button"
+                  onClick={() => setIsDailyRewardsOpen(false)}
+                  className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12"
+                >
+                  {language === 'ru' ? 'Закрыть' : 'Close'}
+                </button>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center text-white">
+                <div className="text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Серия' : 'Streak'}</div>
+                <div className="mt-1 text-2xl font-black">{dailyStreak}</div>
+                <div className="mt-3 text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Следующая награда' : 'Next reward'}</div>
+                <div className="mt-1 text-xl font-black">+{dailyNextReward}</div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await handleClaimDailyReward();
+                    setIsDailyRewardsOpen(false);
+                  }}
+                  className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide transition-all ${
+                    dailyCanClaim
+                      ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 hover:from-emerald-300 hover:to-teal-400'
+                      : 'bg-white/10 text-white/70'
+                  }`}
+                >
+                  {dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {isLeaderboardOpen && (
           <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
@@ -1408,7 +1564,9 @@ function App() {
                 </button>
               </div>
               <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
-                {leaderboardItems.length === 0 ? (
+                {isLeaderboardLoading ? (
+                  <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Загрузка...' : 'Loading...'}</div>
+                ) : leaderboardItems.length === 0 ? (
                   <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Пока нет данных' : 'No entries yet'}</div>
                 ) : (
                   <div className="space-y-2">
