@@ -25,7 +25,7 @@ import { COPY } from './i18n';
 import { initAnalytics, trackEvent } from './analytics';
 import { useWallet } from './hooks/useWallet';
 import { BoosterGlyph, CoinGlyph, CompassGlyph, GiftGlyph, SignalGlyph, TimeGlyph, VaultGlyph } from './components/CosmicArtwork';
-import { buildLevelConfigs, type Goal, type LevelConfig } from './logic/levelProgress';
+import { buildLevelConfigs, type LevelConfig } from './logic/levelProgress';
 import {
   BOOSTER_COST,
   MOVE_BOOST_AMOUNT,
@@ -60,81 +60,6 @@ function getLevelConfigPreview(targetLevel: number): LevelConfig {
   const sanitizedLevel = Math.max(1, Math.floor(targetLevel));
   return APP_LEVEL_CONFIGS[(sanitizedLevel - 1) % APP_LEVEL_CONFIGS.length];
 }
-
-function getGoalPreviewText(goal: Goal, language: Language): string {
-  const gemNames: Record<Language, Record<GemType, string>> = {
-    en: {
-      red: 'red crystals',
-      blue: 'blue crystals',
-      green: 'green crystals',
-      yellow: 'yellow crystals',
-      purple: 'purple crystals',
-      orange: 'orange crystals',
-    },
-    ru: {
-      red: 'красные кристаллы',
-      blue: 'синие кристаллы',
-      green: 'зелёные кристаллы',
-      yellow: 'жёлтые кристаллы',
-      purple: 'фиолетовые кристаллы',
-      orange: 'оранжевые кристаллы',
-    },
-  };
-  const specialNames: Record<Language, Record<'bomb' | 'lightning' | 'cross' | 'pulse' | 'nova' | 'smash', string>> = {
-    en: {
-      bomb: 'bombs',
-      lightning: 'lightnings',
-      cross: 'cross blasts',
-      pulse: 'pulse charges',
-      nova: 'nova bursts',
-      smash: 'smash events',
-    },
-    ru: {
-      bomb: 'бомбы',
-      lightning: 'молнии',
-      cross: 'крест-взрывы',
-      pulse: 'импульсы',
-      nova: 'новы',
-      smash: 'smash-события',
-    },
-  };
-
-  if (goal.type === 'collect') {
-    return language === 'ru'
-      ? `Собери ${goal.value} ${gemNames.ru[goal.color]}`
-      : `Collect ${goal.value} ${gemNames.en[goal.color]}`;
-  }
-  if (goal.type === 'collect_multi') {
-    const parts = Object.entries(goal.targets)
-      .filter(([, value]) => (value ?? 0) > 0)
-      .map(([color, value]) => {
-        const gemColor = color as GemType;
-        return language === 'ru'
-          ? `${value} ${gemNames.ru[gemColor]}`
-          : `${value} ${gemNames.en[gemColor]}`;
-      });
-    return language === 'ru' ? `Собери ${parts.join(' + ')}` : `Collect ${parts.join(' + ')}`;
-  }
-  if (goal.type === 'bombs') {
-    return language === 'ru' ? `Активируй ${goal.value} бомбы` : `Trigger ${goal.value} bombs`;
-  }
-  if (goal.type === 'lightning') {
-    return language === 'ru' ? `Активируй ${goal.value} молнии` : `Trigger ${goal.value} lightnings`;
-  }
-  if (goal.type === 'special') {
-    return language === 'ru'
-      ? `Активируй ${goal.value} ${specialNames.ru[goal.special]}`
-      : `Trigger ${goal.value} ${specialNames.en[goal.special]}`;
-  }
-  if (goal.type === 'combo_x5') {
-    return language === 'ru' ? `Сделай ${goal.value} комбо x4+` : `Make ${goal.value} combo x4+`;
-  }
-  if (goal.type === 'trash') {
-    return language === 'ru' ? `Убери ${goal.value} космического мусора` : `Clear ${goal.value} debris blocks`;
-  }
-  return language === 'ru' ? `Сними щит босса: ${goal.value}` : `Break the boss shield: ${goal.value}`;
-}
-
 
 type LevelStarsMap = Record<number, number>;
 const TUTORIAL_MODAL_STEPS = [0, 1, 3, 5, 7] as const;
@@ -316,7 +241,61 @@ function App() {
   );
   const selectedLevelGoalPreview = useMemo<ReactNode>(() => {
     if (!selectedLevelConfig) return null;
-    return getGoalPreviewText(selectedLevelConfig.goal, language);
+    if (selectedLevelConfig.goal.type === 'collect') {
+      return (
+        <span className="inline-flex items-center gap-2">
+          <GoalGemIcon color={selectedLevelConfig.goal.color} />
+          <span>0/{selectedLevelConfig.goal.value}</span>
+        </span>
+      );
+    }
+
+    if (selectedLevelConfig.goal.type === 'collect_multi') {
+      const targets = Object.entries(selectedLevelConfig.goal.targets) as Array<[GemType, number | undefined]>;
+      return (
+        <span className="inline-flex flex-wrap justify-center gap-2 text-sm sm:text-base">
+          {targets.map(([color, target]) => {
+            const required = target ?? 0;
+            return (
+              <span key={color} className="inline-flex items-center gap-1 rounded-full bg-slate-900/10 px-2 py-1">
+                <GoalGemIcon color={color} />
+                <span>0/{required}</span>
+              </span>
+            );
+          })}
+        </span>
+      );
+    }
+
+    if (selectedLevelConfig.goal.type === 'bombs') {
+      return <span>{language === 'ru' ? 'Бомбы' : 'Bombs'}: 0/{selectedLevelConfig.goal.value}</span>;
+    }
+
+    if (selectedLevelConfig.goal.type === 'lightning') {
+      return <span>{language === 'ru' ? 'Молнии' : 'Lightnings'}: 0/{selectedLevelConfig.goal.value}</span>;
+    }
+
+    if (selectedLevelConfig.goal.type === 'special') {
+      const specialLabel = (() => {
+        if (selectedLevelConfig.goal.special === 'bomb') return language === 'ru' ? 'Бомбы' : 'Bombs';
+        if (selectedLevelConfig.goal.special === 'lightning') return language === 'ru' ? 'Молнии' : 'Lightnings';
+        if (selectedLevelConfig.goal.special === 'cross') return language === 'ru' ? 'Кресты' : 'Cross';
+        if (selectedLevelConfig.goal.special === 'pulse') return language === 'ru' ? 'Импульсы' : 'Pulse';
+        if (selectedLevelConfig.goal.special === 'nova') return language === 'ru' ? 'Новы' : 'Nova';
+        return language === 'ru' ? 'Smash-события' : 'Smash Events';
+      })();
+      return <span>{specialLabel}: 0/{selectedLevelConfig.goal.value}</span>;
+    }
+
+    if (selectedLevelConfig.goal.type === 'combo_x5') {
+      return <span>{language === 'ru' ? 'Комбо x4+' : 'Combo x4+'}: 0/{selectedLevelConfig.goal.value}</span>;
+    }
+
+    if (selectedLevelConfig.goal.type === 'boss') {
+      return <span>{language === 'ru' ? 'Босс' : 'Boss'}: {selectedLevelConfig.goal.value}/{selectedLevelConfig.goal.value}</span>;
+    }
+
+    return <span>{language === 'ru' ? 'Космический мусор' : 'Space debris'}: 0/{selectedLevelConfig.goal.value}</span>;
   }, [language, selectedLevelConfig]);
   const selectedLevelPacePreview = useMemo(() => {
     if (!selectedLevelConfig) return '';

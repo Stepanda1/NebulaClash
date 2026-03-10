@@ -54,9 +54,6 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
           <div className="mt-3 rounded-2xl border border-cyan-200/20 bg-cyan-300/8 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-100/80">
             {pacePreview}
           </div>
-          <div className="mt-3 text-sm text-white/85">
-            {language === 'ru' ? 'Сначала цель, потом старт.' : 'Review the goal, then start.'}
-          </div>
         </div>
 
         <button
