@@ -1,16 +1,28 @@
 import { motion } from 'framer-motion';
-import { RotateCcw, TriangleAlert } from 'lucide-react';
+import { Coins, RotateCcw, TimerReset, TriangleAlert } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
 interface GameOverMenuProps {
     score: number;
+    mode: 'moves' | 'time';
+    boostCost: number;
+    boostAmountLabel: string;
+    canAffordContinue: boolean;
     onRestart: () => void;
+    onBuyContinue: () => void;
+    onOpenShop: () => void;
     language: Language;
 }
 
-export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, onRestart, language }) => {
+export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCost, boostAmountLabel, canAffordContinue, onRestart, onBuyContinue, onOpenShop, language }) => {
     const t = COPY[language];
+    const continueLabel = mode === 'moves'
+      ? (language === 'ru' ? `Взять ${boostAmountLabel}` : `Get ${boostAmountLabel}`)
+      : (language === 'ru' ? `Добавить ${boostAmountLabel}` : `Add ${boostAmountLabel}`);
+    const continueHint = canAffordContinue
+      ? (language === 'ru' ? 'Продолжить за монеты' : 'Continue for coins')
+      : (language === 'ru' ? 'Не хватает монет, открой магазин' : 'Not enough coins, open the shop');
 
     return (
         <motion.div
@@ -42,7 +54,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, onRestart, la
                         {language === 'ru' ? 'Сигнал тревоги' : 'Distress Signal'}
                     </div>
                     <h2 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-lg">{t.outOfMoves}</h2>
-                    <p className="text-slate-300/85 font-medium">{t.shufflePrompt}</p>
+                    <p className="text-slate-300/85 font-medium">{continueHint}</p>
                 </div>
 
                 <div className="relative z-10 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 shadow-inner shadow-black/30">
@@ -55,6 +67,35 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, onRestart, la
                         {language === 'ru' ? 'Перезапустить сектор' : 'Reboot Sector'}
                     </div>
                 </div>
+
+                <div className="relative z-10 w-full rounded-2xl border border-emerald-200/15 bg-emerald-400/10 px-4 py-4 text-left shadow-[0_12px_34px_rgba(16,185,129,0.12)]">
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <div className="text-[11px] uppercase tracking-[0.22em] text-emerald-100/75">
+                                {language === 'ru' ? 'Последний шанс' : 'Last chance'}
+                            </div>
+                            <div className="mt-1 text-base font-black text-white">{continueLabel}</div>
+                        </div>
+                        <div className="rounded-full border border-emerald-200/20 bg-black/20 px-3 py-1 text-sm font-black text-emerald-100">
+                            -{boostCost}
+                        </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-emerald-50/80">
+                        {mode === 'moves' ? <RotateCcw size={16} /> : <TimerReset size={16} />}
+                        <span>{language === 'ru' ? 'Сразу вернёт тебя в матч' : 'Drops you straight back into the run'}</span>
+                    </div>
+                </div>
+
+                <button
+                    onClick={canAffordContinue ? onBuyContinue : onOpenShop}
+                    className="flex items-center justify-center gap-3 w-full py-4 bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-500 hover:from-emerald-300 hover:via-cyan-300 hover:to-sky-400 active:scale-[0.98] transition-all rounded-2xl shadow-[0_10px_30px_rgba(34,211,238,0.28)] border border-white/15 group relative overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.24)_45%,transparent_65%)] translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-700" />
+                    <Coins size={24} className="text-white relative z-10" />
+                    <span className="text-lg font-bold text-white uppercase tracking-[0.18em] relative z-10">
+                        {canAffordContinue ? continueLabel : (language === 'ru' ? 'Купить монеты' : 'Get coins')}
+                    </span>
+                </button>
 
                 <button
                     onClick={onRestart}

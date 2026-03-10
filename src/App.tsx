@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { useGame } from './hooks/useGame';
 import { PauseMenu } from './components/PauseMenu';
@@ -24,6 +25,7 @@ import { COPY } from './i18n';
 import { initAnalytics, trackEvent } from './analytics';
 import { useWallet } from './hooks/useWallet';
 import { BoosterGlyph, CoinGlyph, CompassGlyph, GiftGlyph, SignalGlyph, TimeGlyph, VaultGlyph } from './components/CosmicArtwork';
+import { buildLevelConfigs, type Goal, type LevelConfig } from './logic/levelProgress';
 import {
   BOOSTER_COST,
   MOVE_BOOST_AMOUNT,
@@ -54,6 +56,85 @@ function GoalGemIcon({ color }: { color: GemType }) {
   );
 }
 
+function getLevelConfigPreview(targetLevel: number): LevelConfig {
+  const sanitizedLevel = Math.max(1, Math.floor(targetLevel));
+  return APP_LEVEL_CONFIGS[(sanitizedLevel - 1) % APP_LEVEL_CONFIGS.length];
+}
+
+function getGoalPreviewText(goal: Goal, language: Language): string {
+  const gemNames: Record<Language, Record<GemType, string>> = {
+    en: {
+      red: 'red crystals',
+      blue: 'blue crystals',
+      green: 'green crystals',
+      yellow: 'yellow crystals',
+      purple: 'purple crystals',
+      orange: 'orange crystals',
+    },
+    ru: {
+      red: 'красные кристаллы',
+      blue: 'синие кристаллы',
+      green: 'зелёные кристаллы',
+      yellow: 'жёлтые кристаллы',
+      purple: 'фиолетовые кристаллы',
+      orange: 'оранжевые кристаллы',
+    },
+  };
+  const specialNames: Record<Language, Record<'bomb' | 'lightning' | 'cross' | 'pulse' | 'nova' | 'smash', string>> = {
+    en: {
+      bomb: 'bombs',
+      lightning: 'lightnings',
+      cross: 'cross blasts',
+      pulse: 'pulse charges',
+      nova: 'nova bursts',
+      smash: 'smash events',
+    },
+    ru: {
+      bomb: 'бомбы',
+      lightning: 'молнии',
+      cross: 'крест-взрывы',
+      pulse: 'импульсы',
+      nova: 'новы',
+      smash: 'smash-события',
+    },
+  };
+
+  if (goal.type === 'collect') {
+    return language === 'ru'
+      ? `Собери ${goal.value} ${gemNames.ru[goal.color]}`
+      : `Collect ${goal.value} ${gemNames.en[goal.color]}`;
+  }
+  if (goal.type === 'collect_multi') {
+    const parts = Object.entries(goal.targets)
+      .filter(([, value]) => (value ?? 0) > 0)
+      .map(([color, value]) => {
+        const gemColor = color as GemType;
+        return language === 'ru'
+          ? `${value} ${gemNames.ru[gemColor]}`
+          : `${value} ${gemNames.en[gemColor]}`;
+      });
+    return language === 'ru' ? `Собери ${parts.join(' + ')}` : `Collect ${parts.join(' + ')}`;
+  }
+  if (goal.type === 'bombs') {
+    return language === 'ru' ? `Активируй ${goal.value} бомбы` : `Trigger ${goal.value} bombs`;
+  }
+  if (goal.type === 'lightning') {
+    return language === 'ru' ? `Активируй ${goal.value} молнии` : `Trigger ${goal.value} lightnings`;
+  }
+  if (goal.type === 'special') {
+    return language === 'ru'
+      ? `Активируй ${goal.value} ${specialNames.ru[goal.special]}`
+      : `Trigger ${goal.value} ${specialNames.en[goal.special]}`;
+  }
+  if (goal.type === 'combo_x5') {
+    return language === 'ru' ? `Сделай ${goal.value} комбо x4+` : `Make ${goal.value} combo x4+`;
+  }
+  if (goal.type === 'trash') {
+    return language === 'ru' ? `Убери ${goal.value} космического мусора` : `Clear ${goal.value} debris blocks`;
+  }
+  return language === 'ru' ? `Сними щит босса: ${goal.value}` : `Break the boss shield: ${goal.value}`;
+}
+
 
 type LevelStarsMap = Record<number, number>;
 const TUTORIAL_MODAL_STEPS = [0, 1, 3, 5, 7] as const;
@@ -75,6 +156,7 @@ const ADMIN_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 const SHOP_TIMING_EXPERIMENT_ID = 'shop_timing_v1';
 const SHOP_TIMING_VARIANT_KEY = 'match3_exp_shop_timing_v1_variant';
 const SHOP_TIMING_AUTO_SHOWN_KEY = 'match3_exp_shop_timing_v1_auto_shown';
+const APP_LEVEL_CONFIGS = buildLevelConfigs();
 
 type ShopTimingVariant = 'a' | 'b';
 type LeaderboardItem = {
@@ -228,6 +310,20 @@ function App() {
   const isBossLevel = levelConfig.goal.type === 'boss';
   const bossShieldPercent = Math.max(0, Math.min(100, bossMaxHp > 0 ? (bossHp / bossMaxHp) * 100 : 0));
   const bossAttackLabel = language === 'ru' ? 'Мусор после хода' : 'Debris After Move';
+  const selectedLevelConfig = useMemo(
+    () => (levelToLaunch == null ? null : getLevelConfigPreview(levelToLaunch)),
+    [levelToLaunch],
+  );
+  const selectedLevelGoalPreview = useMemo<ReactNode>(() => {
+    if (!selectedLevelConfig) return null;
+    return getGoalPreviewText(selectedLevelConfig.goal, language);
+  }, [language, selectedLevelConfig]);
+  const selectedLevelPacePreview = useMemo(() => {
+    if (!selectedLevelConfig) return '';
+    return selectedLevelConfig.mode === 'moves'
+      ? (language === 'ru' ? `${selectedLevelConfig.limit} ходов на чистый ран` : `${selectedLevelConfig.limit} moves for a clean run`)
+      : (language === 'ru' ? `${selectedLevelConfig.limit} секунд на быстрый забег` : `${selectedLevelConfig.limit} seconds for a fast clear`);
+  }, [language, selectedLevelConfig]);
 
   const renderGoalContent = () => {
     if (levelConfig.goal.type === 'collect') {
@@ -1215,7 +1311,7 @@ function App() {
       : ['Great!', 'Super!', 'Unbelievable!', 'Excellent!', 'Spectacular!'];
     const picked = phrases[(goalClearId - 1) % phrases.length];
     setGoalClearText(picked);
-    const t1 = window.setTimeout(() => setGoalClearText(null), 900);
+    const t1 = window.setTimeout(() => setGoalClearText(null), 420);
     return () => clearTimeout(t1);
   }, [goalClearId]);
 
@@ -1425,6 +1521,8 @@ function App() {
           {levelToLaunch !== null && (
             <LevelStartModal
               level={levelToLaunch}
+              goalPreview={selectedLevelGoalPreview}
+              pacePreview={selectedLevelPacePreview}
               language={language}
               onPlay={onPlaySelectedLevel}
               onClose={onCloseLevelStart}
@@ -1608,7 +1706,17 @@ function App() {
           />
         )}
         {isGameOver && (
-          <GameOverMenu score={score} onRestart={onRestart} language={language} />
+          <GameOverMenu
+            score={score}
+            mode={levelConfig.mode}
+            boostCost={BOOSTER_COST}
+            boostAmountLabel={levelConfig.mode === 'moves' ? `+${MOVE_BOOST_AMOUNT} ${language === 'ru' ? 'ходов' : 'moves'}` : `+${TIME_BOOST_SECONDS}${language === 'ru' ? ' сек' : 's'}`}
+            canAffordContinue={spaceCoins >= BOOSTER_COST}
+            onRestart={onRestart}
+            onBuyContinue={triggerQuickBoost}
+            onOpenShop={openShop}
+            language={language}
+          />
         )}
         {isLevelUp && (
           <LevelUpModal level={level} score={score} starsEarned={getStarsFromScore(score)} onNextLevel={onNextLevel} language={language} />

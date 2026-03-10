@@ -6,12 +6,14 @@ import { COPY } from '../i18n';
 
 type LevelStartModalProps = {
   level: number;
+  goalPreview: React.ReactNode;
+  pacePreview: string;
   language: Language;
   onPlay: () => void;
   onClose: () => void;
 };
 
-export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, language, onPlay, onClose }) => {
+export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPreview, pacePreview, language, onPlay, onClose }) => {
   const t = COPY[language];
   const title = language === 'ru' ? 'Подготовка к запуску' : 'Prepare for Launch';
   const subtitle = language === 'ru' ? 'Проверь цель и начни уровень' : 'Check your goal and start the level';
@@ -46,8 +48,14 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, languag
 
         <div className="rounded-2xl border border-white/15 bg-white/5 p-4 text-center">
           <div className="text-xs uppercase tracking-[0.2em] text-cyan-100/80">{t.goal}</div>
-          <div className="mt-2 text-sm text-white/85">
-            {language === 'ru' ? 'Нажмите Play, чтобы начать.' : 'Press Play to start.'}
+          <div className="mt-3 text-lg font-black leading-tight text-white">
+            {goalPreview}
+          </div>
+          <div className="mt-3 rounded-2xl border border-cyan-200/20 bg-cyan-300/8 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-100/80">
+            {pacePreview}
+          </div>
+          <div className="mt-3 text-sm text-white/85">
+            {language === 'ru' ? 'Сначала цель, потом старт.' : 'Review the goal, then start.'}
           </div>
         </div>
 

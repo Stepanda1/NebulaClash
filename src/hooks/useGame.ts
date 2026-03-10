@@ -43,6 +43,14 @@ type PersistedGameState = {
 };
 
 const BOSS_DEBRIS_CAP = 14;
+const BOARD_MATCH_REVEAL_MS = 220;
+const BOARD_REMOVE_MS = 190;
+const BOARD_GRAVITY_MS = 240;
+const AUTO_MATCH_DELAY_MS = 170;
+const SPECIAL_TRIGGER_PAUSE_MS = 120;
+const SPECIAL_EXPLOSION_MS = 260;
+const INVALID_SWAP_REBOUND_MS = 170;
+const GOAL_COMPLETE_PAUSE_MS = 360;
 const VICTORY_BONUS_EXPLOSION_MS = 120;
 const VICTORY_BONUS_REMOVE_MS = 70;
 const VICTORY_BONUS_GRAVITY_MS = 95;
@@ -623,7 +631,7 @@ export const useGame = () => {
     const runRemovalAndGravity = useCallback(async (
         baseGrid: Grid,
         removeSet: Set<string>,
-        timings: { remove: number; gravity: number } = { remove: 320, gravity: 460 },
+        timings: { remove: number; gravity: number } = { remove: BOARD_REMOVE_MS, gravity: BOARD_GRAVITY_MS },
     ): Promise<Grid> => {
         let nextGrid = removeMatches(baseGrid, removeSet);
         setGrid(nextGrid);
@@ -658,7 +666,7 @@ export const useGame = () => {
         return scoreGain;
     }, []);
 
-    const resolveAutoMatches = useCallback(async (startGrid: Grid, delayMs: number = 320): Promise<Grid> => {
+    const resolveAutoMatches = useCallback(async (startGrid: Grid, delayMs: number = AUTO_MATCH_DELAY_MS): Promise<Grid> => {
         let activeGrid = startGrid;
         let matchMap = findMatches(activeGrid);
         let iteration = 0;
@@ -724,7 +732,7 @@ export const useGame = () => {
             setGrid(activeGrid);
             setSmashId((id) => id + 1);
             setLevelSmashEvents((prev) => prev + 1);
-            await new Promise(r => setTimeout(r, 260));
+            await new Promise(r => setTimeout(r, 180));
         }
         return activeGrid;
     }, [placeRandomSpecialOnGrid]);
@@ -848,7 +856,7 @@ export const useGame = () => {
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
             setScore(prev => prev + getMatchScoreGain(matchMap, extraTriggeredCount));
 
-            await waitForBoardDelay(320);
+            await waitForBoardDelay(BOARD_MATCH_REVEAL_MS);
 
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
             clearTrashByImpact(activeGrid, removeSet, allMatched);
@@ -859,7 +867,7 @@ export const useGame = () => {
         }
 
         activeGrid = await applyComboRewards(activeGrid, comboCount, false);
-        activeGrid = await resolveAutoMatches(activeGrid, 260);
+        activeGrid = await resolveAutoMatches(activeGrid, AUTO_MATCH_DELAY_MS);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
@@ -888,7 +896,7 @@ export const useGame = () => {
         void (async () => {
             setIsProcessing(true);
             setGoalClearId((id) => id + 1);
-            await new Promise(r => setTimeout(r, 900));
+            await new Promise(r => setTimeout(r, GOAL_COMPLETE_PAUSE_MS));
             const bonusBursts = levelConfig.mode === 'moves'
                 ? Math.max(0, moves)
                 : Math.max(0, Math.floor(timeLeft / 5));
@@ -968,7 +976,7 @@ export const useGame = () => {
         explodeTimeoutRef.current = window.setTimeout(() => {
             setExplodingIds(new Set());
             explodeTimeoutRef.current = null;
-        }, 380);
+        }, SPECIAL_EXPLOSION_MS);
 
         if (toRemove.size >= 10) {
             setBigBlastId(id => id + 1);
@@ -979,7 +987,7 @@ export const useGame = () => {
 
         setScore(prev => prev + toRemove.size * 10);
 
-        await waitForBoardDelay(180);
+        await waitForBoardDelay(SPECIAL_TRIGGER_PAUSE_MS);
 
         clearTrashByImpact(activeGrid, toRemove);
         activeGrid = await runRemovalAndGravity(activeGrid, toRemove);
@@ -1006,7 +1014,7 @@ export const useGame = () => {
             const extraTriggeredCount = [...totalRemoved].filter(id => !allMatched.has(id)).length;
             setScore(prev => prev + getMatchScoreGain(matchMap, extraTriggeredCount));
 
-            await waitForBoardDelay(320);
+            await waitForBoardDelay(BOARD_MATCH_REVEAL_MS);
 
             const allRegularMatches = new Set<string>();
             matchMap.forEach((type, tileId) => {
@@ -1024,7 +1032,7 @@ export const useGame = () => {
         }
 
         activeGrid = await applyComboRewards(activeGrid, comboCount, true);
-        activeGrid = await resolveAutoMatches(activeGrid, 260);
+        activeGrid = await resolveAutoMatches(activeGrid, AUTO_MATCH_DELAY_MS);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
@@ -1064,7 +1072,7 @@ export const useGame = () => {
         explodeTimeoutRef.current = window.setTimeout(() => {
             setExplodingIds(new Set());
             explodeTimeoutRef.current = null;
-        }, 380);
+        }, SPECIAL_EXPLOSION_MS);
 
         if (toRemove.size >= 10) {
             setBigBlastId(id => id + 1);
@@ -1075,19 +1083,19 @@ export const useGame = () => {
 
         setScore(prev => prev + toRemove.size * 10);
 
-        await new Promise(r => setTimeout(r, 180));
+        await new Promise(r => setTimeout(r, SPECIAL_TRIGGER_PAUSE_MS));
 
         clearTrashByImpact(activeGrid, toRemove);
         activeGrid = removeMatches(activeGrid, toRemove);
         setGrid(activeGrid);
 
-        await new Promise(r => setTimeout(r, 320));
+        await new Promise(r => setTimeout(r, BOARD_REMOVE_MS));
 
         const { grid: gravityGrid } = applyGravity(activeGrid);
         activeGrid = gravityGrid;
         setGrid(activeGrid);
 
-        await new Promise(r => setTimeout(r, 460));
+        await new Promise(r => setTimeout(r, BOARD_GRAVITY_MS));
 
         let matchMap = findMatches(activeGrid);
         let iteration = 0;
@@ -1123,7 +1131,7 @@ export const useGame = () => {
             }
             setScore(prev => prev + scoreGain);
 
-            await new Promise(r => setTimeout(r, 320));
+            await new Promise(r => setTimeout(r, BOARD_MATCH_REVEAL_MS));
 
             const allRegularMatches = new Set<string>();
             matchMap.forEach((type, tileId) => {
@@ -1137,20 +1145,20 @@ export const useGame = () => {
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
 
-            await new Promise(r => setTimeout(r, 320));
+            await new Promise(r => setTimeout(r, BOARD_REMOVE_MS));
 
             const { grid: gravityGrid2 } = applyGravity(activeGrid);
             activeGrid = gravityGrid2;
             setGrid(activeGrid);
 
-            await new Promise(r => setTimeout(r, 460));
+            await new Promise(r => setTimeout(r, BOARD_GRAVITY_MS));
 
             matchMap = findMatches(activeGrid);
             iteration++;
         }
 
         activeGrid = await applyComboRewards(activeGrid, comboCount, true);
-        activeGrid = await resolveAutoMatches(activeGrid, 260);
+        activeGrid = await resolveAutoMatches(activeGrid, AUTO_MATCH_DELAY_MS);
         const playableGrid = ensurePlayableGrid(activeGrid);
         if (playableGrid !== activeGrid) {
             activeGrid = playableGrid;
@@ -1224,7 +1232,7 @@ export const useGame = () => {
             }
         } else {
             setIsProcessing(true);
-            await waitForBoardDelay(300);
+            await waitForBoardDelay(INVALID_SWAP_REBOUND_MS);
             setGrid(grid);
             setIsProcessing(false);
         }
