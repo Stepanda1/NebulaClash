@@ -300,8 +300,8 @@ function App() {
   const selectedLevelPacePreview = useMemo(() => {
     if (!selectedLevelConfig) return '';
     return selectedLevelConfig.mode === 'moves'
-      ? (language === 'ru' ? `${selectedLevelConfig.limit} ходов на чистый ран` : `${selectedLevelConfig.limit} moves for a clean run`)
-      : (language === 'ru' ? `${selectedLevelConfig.limit} секунд на быстрый забег` : `${selectedLevelConfig.limit} seconds for a fast clear`);
+      ? (language === 'ru' ? `Доступно ${selectedLevelConfig.limit} ходов` : `${selectedLevelConfig.limit} moves available`)
+      : (language === 'ru' ? `Доступно ${selectedLevelConfig.limit} секунд` : `${selectedLevelConfig.limit} seconds available`);
   }, [language, selectedLevelConfig]);
 
   const renderGoalContent = () => {
