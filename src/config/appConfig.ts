@@ -19,7 +19,7 @@ export function getLegalContactsFromEnv(): LegalContacts {
     email: import.meta.env.VITE_CONTACT_EMAIL || 'stepanda3@yandex.ru',
     tiktok: import.meta.env.VITE_CONTACT_TIKTOK || 'https://www.tiktok.com/@nebulaclash',
     telegram: import.meta.env.VITE_CONTACT_TELEGRAM || 'https://t.me/nebulaclash1',
-    facebook: import.meta.env.VITE_CONTACT_FACEBOOK || 'https://www.facebook.com/share/g/18Ga81upEL/',
+    facebook: import.meta.env.VITE_CONTACT_FACEBOOK || 'https://www.facebook.com/share/g/18W9KdnGEn/',
     instagram: import.meta.env.VITE_CONTACT_INSTAGRAM || 'https://www.instagram.com/nebulaclash/',
     sellerName: import.meta.env.VITE_SELLER_NAME || 'Козлов Степан Александрович',
     sellerInn: import.meta.env.VITE_SELLER_INN || '591608402468',
