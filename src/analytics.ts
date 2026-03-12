@@ -12,6 +12,14 @@ declare global {
     dataLayer?: unknown[];
     gtag?: (...args: unknown[]) => void;
     ym?: YmFunction;
+    ttq?: {
+      page?: () => void;
+      track?: (event: string, payload?: Record<string, unknown>) => void;
+      load?: (pixelId: string) => void;
+      _i?: Record<string, unknown>;
+      _t?: unknown[];
+      [key: string]: unknown;
+    };
   }
 }
 
@@ -19,6 +27,7 @@ const GA_MEASUREMENT_ID = ((import.meta.env.VITE_GA_MEASUREMENT_ID as string | u
 const GTM_CONTAINER_ID = ((import.meta.env.VITE_GTM_CONTAINER_ID as string | undefined) || 'GTM-54KD4D8H').trim();
 const YM_COUNTER_ID_RAW = ((import.meta.env.VITE_YM_COUNTER_ID as string | undefined) || '').trim();
 const YM_COUNTER_ID = YM_COUNTER_ID_RAW ? Number(YM_COUNTER_ID_RAW) : NaN;
+const TIKTOK_PIXEL_ID = ((import.meta.env.VITE_TIKTOK_PIXEL_ID as string | undefined) || '').trim();
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
 const POSTHOG_HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://us.i.posthog.com';
 
@@ -96,6 +105,43 @@ function initYandexMetrica() {
     accurateTrackBounce: true,
     webvisor: true,
   });
+}
+
+function initTikTokPixel() {
+  if (!isBrowser() || !TIKTOK_PIXEL_ID) return;
+  if (document.getElementById('tiktok-pixel-script')) return;
+
+  const ttq = (window.ttq = window.ttq || {});
+  const queueTarget = ttq as Record<string, unknown> & {
+    _t?: unknown[];
+    _i?: Record<string, unknown>;
+    load?: (pixelId: string) => void;
+  };
+
+  if (typeof ttq.page !== 'function') {
+    const methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'] as const;
+
+    queueTarget._t = queueTarget._t || [];
+    queueTarget._i = queueTarget._i || {};
+
+    methods.forEach((method) => {
+      (queueTarget as Record<string, unknown>)[method] = (...args: unknown[]) => {
+        queueTarget._t?.push([method, ...args]);
+      };
+    });
+
+    queueTarget.load = (pixelId: string) => {
+      queueTarget._i![pixelId] = [];
+      const script = document.createElement('script');
+      script.id = 'tiktok-pixel-script';
+      script.async = true;
+      script.src = `https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=${pixelId}&lib=ttq`;
+      document.head.appendChild(script);
+    };
+  }
+
+  ttq.load?.(TIKTOK_PIXEL_ID);
+  ttq.page?.();
 }
 
 function initPostHog() {
@@ -221,6 +267,7 @@ export function initAnalytics() {
   initGTM();
   initGA4Direct();
   initYandexMetrica();
+  initTikTokPixel();
   initPostHog();
   emitGaDebugProbe();
   initialized = true;
