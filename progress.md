@@ -5,6 +5,12 @@ Original prompt: ускорь дополнительные ходы, при эт
 - 2026-03-10: `npm run build` успешен после правок старта уровня и темпа. Playwright-прогон по skill не выполнялся в этом заходе.
 - 2026-03-10: Экран поражения теперь предлагает продолжить матч за монеты (`src/components/GameOverMenu.tsx`, `src/App.tsx`): для move-level даёт `+5 moves`, для time-level `+30s`; при нехватке монет кнопка ведёт в магазин.
 - 2026-03-10: Локальная browser-проверка через Playwright подтвердила оба сценария `game over -> continue`: move-режим и time-режим возвращают игрока в матч и списывают монеты. Артефакты: `output/gameover-moves.png`, `output/gameover-moves-continued.png`, `output/gameover-time.png`, `output/gameover-time-continued.png`.
+- 2026-03-10: Для видеоматериалов в `../Videos` убран неудачный `zoompan` из `render_reels.py`; текущая автоматическая нарезка больше не делает ползущий fake-zoom в начале роликов.
+- 2026-03-10: Подготовлены новые hook-фразы для 8 рилсов в `../Videos/reels_hook_rewrites.md` и storyboard трейлера на 70-85 секунд в `../Videos/trailer_storyboard.md`; направление: меньше generic suspense, больше конкретного визуального payoff.
+- 2026-03-10: Рилсы в `../Videos/output/reels_final` пересобраны с новыми hook-текстами и без zoom-crawl.
+- 2026-03-10: Добавлены браузерные утилиты захвата трейлерных материалов: `scripts/capture_trailer_shots.cjs` и `scripts/capture_trailer_clips.cjs`.
+- 2026-03-10: Автоматически снят shot pack для трейлера в `output/trailer-shots` (landing, tutorial/start, roadmap, level-start modal, daily, leaderboard) и короткий b-roll pack в `output/trailer-clips` (landing->tutorial, roadmap->level-start, daily, leaderboard).
+- TODO: Для полноценного трейлера всё ещё нужно вручную записать авторские gameplay-моменты, которых нельзя гарантированно воспроизвести браузерной автоматизацией: сильные каскады, boss hit, clutch/continue, level complete/goal complete.
 
 - 2026-03-04: Ускорена только финальная анимация конвертации оставшихся ходов в `runVictoryMoveBonus`; игровая логика начисления/списания ходов не менялась.
 - 2026-03-04: Сокращены локальные тайминги взрыва, удаления, падения и автосовпадений для бонусных добивок уровня, чтобы уменьшить риск регрессий вне этого сценария.
