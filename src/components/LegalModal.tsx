@@ -97,7 +97,7 @@ export function LegalModal({
               >
                 <span className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${item.style} ${item.glow} transition-transform duration-200 group-hover:scale-105`}>
                   <span className="flex h-[3.15rem] w-[3.15rem] items-center justify-center rounded-full border border-white/30 bg-slate-950 text-white">
-                    <Icon size={20} />
+                    <Icon size={item.id === 'tiktok' ? 16 : 20} />
                   </span>
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/90">{item.label}</span>
