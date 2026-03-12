@@ -158,7 +158,7 @@ export function MarketingLanding({
             <span className="text-white/28">•</span>
             <a href={`mailto:${contacts.email}`} className="transition hover:text-white">{language === 'ru' ? 'Почта' : 'Email'}</a>
             <span className="text-white/28">•</span>
-            <a href={`tel:${contacts.phone}`} className="transition hover:text-white">{language === 'ru' ? 'Телефон' : 'Phone'}</a>
+            <a href={contacts.tiktok} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">TikTok</a>
             <span className="text-white/28">•</span>
             <a href={contacts.telegram} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">{language === 'ru' ? 'Телеграм' : 'Telegram'}</a>
             <span className="text-white/28">•</span>

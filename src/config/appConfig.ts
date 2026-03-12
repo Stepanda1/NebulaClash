@@ -17,10 +17,10 @@ export type MarketingLinks = {
 export function getLegalContactsFromEnv(): LegalContacts {
   return {
     email: import.meta.env.VITE_CONTACT_EMAIL || 'stepanda3@yandex.ru',
-    phone: import.meta.env.VITE_CONTACT_PHONE || '+79124869347',
-    telegram: import.meta.env.VITE_CONTACT_TELEGRAM || 'https://t.me/your_username',
-    facebook: import.meta.env.VITE_CONTACT_FACEBOOK || 'https://facebook.com/your.profile',
-    instagram: import.meta.env.VITE_CONTACT_INSTAGRAM || 'https://instagram.com/your.profile',
+    tiktok: import.meta.env.VITE_CONTACT_TIKTOK || 'https://www.tiktok.com/@nebulaclash',
+    telegram: import.meta.env.VITE_CONTACT_TELEGRAM || 'https://t.me/nebulaclash1',
+    facebook: import.meta.env.VITE_CONTACT_FACEBOOK || 'https://www.facebook.com/share/g/18Ga81upEL/',
+    instagram: import.meta.env.VITE_CONTACT_INSTAGRAM || 'https://www.instagram.com/nebulaclash/',
     sellerName: import.meta.env.VITE_SELLER_NAME || 'Козлов Степан Александрович',
     sellerInn: import.meta.env.VITE_SELLER_INN || '591608402468',
   };

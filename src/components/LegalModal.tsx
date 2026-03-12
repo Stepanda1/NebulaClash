@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Facebook, Instagram, Mail, Phone, Send, X } from 'lucide-react';
+import { Facebook, Instagram, Mail, Send, X } from 'lucide-react';
+import type { LucideProps } from 'lucide-react';
 import type { Language } from '../i18n';
 import type { LegalContacts } from '../types/legal';
 import { COPY } from '../i18n';
@@ -9,6 +10,14 @@ type LegalModalProps = {
   contacts: LegalContacts;
   onClose: () => void;
 };
+
+function TikTokIcon(props: LucideProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M14.23 3c.2 1.7 1.16 3.29 2.58 4.24a6.1 6.1 0 0 0 3.19 1v3.05a9.1 9.1 0 0 1-2.93-.48 9.3 9.3 0 0 1-2.84-1.42v6.34a5.9 5.9 0 1 1-5.9-5.9c.34 0 .67.03 1 .08v3.1a2.84 2.84 0 1 0 1.84 2.66V3h3.06Z" />
+    </svg>
+  );
+}
 
 export function LegalModal({
   language,
@@ -27,13 +36,13 @@ export function LegalModal({
       glow: 'shadow-[0_0_20px_rgba(56,189,248,0.45)]',
     },
     {
-      id: 'phone',
-      label: language === 'ru' ? 'Телефон' : 'Phone',
-      href: `tel:${contacts.phone}`,
-      value: contacts.phone,
-      icon: Phone,
-      style: 'from-emerald-300 via-green-500 to-teal-700',
-      glow: 'shadow-[0_0_20px_rgba(16,185,129,0.45)]',
+      id: 'tiktok',
+      label: 'TikTok',
+      href: contacts.tiktok,
+      value: contacts.tiktok,
+      icon: TikTokIcon,
+      style: 'from-fuchsia-300 via-pink-500 to-cyan-400',
+      glow: 'shadow-[0_0_20px_rgba(217,70,239,0.45)]',
     },
     {
       id: 'telegram',
