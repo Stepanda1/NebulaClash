@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Language } from '../i18n';
 import type { MarketingLinks } from '../config/appConfig';
 import type { LegalContacts } from '../types/legal';
@@ -13,6 +13,11 @@ type MarketingLandingProps = {
   onOpenFeedback: () => void;
 };
 
+function shouldUseCompactLandingLayout() {
+  if (typeof window === 'undefined') return false;
+  return window.innerHeight < 760 || (window.innerWidth < 400 && window.innerHeight < 880);
+}
+
 export function MarketingLanding({
   language,
   marketingLinks,
@@ -20,6 +25,7 @@ export function MarketingLanding({
   onPlayNow,
   onOpenFeedback,
 }: MarketingLandingProps) {
+  const [isCompactViewport, setIsCompactViewport] = useState(() => shouldUseCompactLandingLayout());
   const heroTitle = language === 'ru' ? 'Матч-3 с боссами прямо в браузере' : 'Boss match-3 you can play in your browser';
   const heroBody = language === 'ru'
     ? 'Без установки. Первый уровень запускается сразу: быстрые комбо, спец-фигуры, щиты босса и магазин монет уже в первой сессии.'
@@ -44,6 +50,18 @@ export function MarketingLanding({
 
   useEffect(() => {
     trackEvent('landing_view', { entry: 'marketing_landing' });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const syncViewportMode = () => {
+      setIsCompactViewport(shouldUseCompactLandingLayout());
+    };
+
+    syncViewportMode();
+    window.addEventListener('resize', syncViewportMode);
+    return () => window.removeEventListener('resize', syncViewportMode);
   }, []);
 
   const buildTrackedUrl = useCallback((targetUrl: string, medium: string) => {
@@ -87,71 +105,73 @@ export function MarketingLanding({
     <div className="relative h-full w-full overflow-x-hidden overflow-y-auto bg-slate-950 text-white">
       <CosmicBackdrop variant="landing" />
 
-      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-md flex-col justify-start gap-3 px-4 py-3 min-[700px]:justify-center min-[700px]:gap-4 min-[700px]:px-5 min-[700px]:py-6">
-        <div className="relative mt-1 overflow-hidden rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(152deg,rgba(7,17,38,0.94)_0%,rgba(10,28,57,0.9)_30%,rgba(16,32,68,0.86)_58%,rgba(7,14,32,0.96)_100%)] p-3 shadow-[0_0_44px_rgba(34,211,238,0.16)] backdrop-blur-md min-[700px]:mt-4 min-[700px]:rounded-[2.2rem] min-[700px]:p-5">
+      <div className={`relative z-10 mx-auto flex min-h-full w-full max-w-md flex-col px-4 ${isCompactViewport ? 'justify-start gap-3 py-3' : 'justify-center gap-4 px-5 py-6'}`}>
+        <div className={`relative overflow-hidden border border-cyan-200/20 bg-[linear-gradient(152deg,rgba(7,17,38,0.94)_0%,rgba(10,28,57,0.9)_30%,rgba(16,32,68,0.86)_58%,rgba(7,14,32,0.96)_100%)] shadow-[0_0_44px_rgba(34,211,238,0.16)] backdrop-blur-md ${isCompactViewport ? 'mt-1 rounded-[2rem] p-3' : 'mt-4 rounded-[2.2rem] p-5'}`}>
           <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-cyan-300/12 blur-2xl" />
           <div className="pointer-events-none absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-amber-300/10 blur-2xl" />
           <div className="pointer-events-none absolute right-6 top-6 h-20 w-20 rounded-full border border-cyan-100/18 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.24)_0%,rgba(125,211,252,0.12)_34%,rgba(14,116,144,0.05)_60%,rgba(0,0,0,0)_72%)]" />
-          <div className="pointer-events-none absolute left-5 top-5 text-[9px] font-black uppercase tracking-[0.24em] text-cyan-200/80 min-[700px]:left-6 min-[700px]:top-6 min-[700px]:text-[10px] min-[700px]:tracking-[0.28em]">
+          <div className={`pointer-events-none absolute font-black uppercase text-cyan-200/80 ${isCompactViewport ? 'left-5 top-5 text-[9px] tracking-[0.24em]' : 'left-6 top-6 text-[10px] tracking-[0.28em]'}`}>
             Nebula Clash
           </div>
 
-          <div className="relative mt-5 rounded-[1.7rem] border border-white/10 bg-[linear-gradient(160deg,rgba(2,6,23,0.4),rgba(15,23,42,0.28))] p-3 min-[700px]:mt-6 min-[700px]:rounded-3xl min-[700px]:p-5">
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70 min-[700px]:mb-3 min-[700px]:px-3 min-[700px]:text-[11px] min-[700px]:tracking-[0.16em]">
+          <div className={`relative border border-white/10 bg-[linear-gradient(160deg,rgba(2,6,23,0.4),rgba(15,23,42,0.28))] ${isCompactViewport ? 'mt-5 rounded-[1.7rem] p-3' : 'mt-6 rounded-3xl p-5'}`}>
+            <div className={`inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] font-bold uppercase text-white/70 ${isCompactViewport ? 'mb-2 px-2.5 py-1 text-[10px] tracking-[0.14em]' : 'mb-3 px-3 py-1 text-[11px] tracking-[0.16em]'}`}>
               <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
               {language === 'ru' ? 'Играй сразу в браузере' : 'Play instantly in your browser'}
             </div>
-            <div className="mb-2 flex items-center justify-center min-[700px]:mb-4">
-              <div className="relative flex h-16 w-16 items-center justify-center min-[700px]:h-24 min-[700px]:w-24">
+            <div className={`flex items-center justify-center ${isCompactViewport ? 'mb-2' : 'mb-4'}`}>
+              <div className={`relative flex items-center justify-center ${isCompactViewport ? 'h-16 w-16' : 'h-24 w-24'}`}>
                 <div className="absolute inset-0 rounded-full border border-cyan-200/20 bg-[radial-gradient(circle_at_50%_50%,rgba(125,211,252,0.12),rgba(0,0,0,0)_70%)]" />
                 <div className="absolute inset-[8px] rounded-full border border-white/8 bg-slate-950/18" />
-                <NebulaCoreIcon className="h-14 w-14 text-cyan-200 drop-shadow-[0_0_18px_rgba(34,211,238,0.22)] min-[700px]:h-20 min-[700px]:w-20" />
+                <NebulaCoreIcon className={`text-cyan-200 drop-shadow-[0_0_18px_rgba(34,211,238,0.22)] ${isCompactViewport ? 'h-14 w-14' : 'h-20 w-20'}`} />
               </div>
             </div>
-            <div className="max-w-[96%] text-[1.65rem] font-black leading-[1.05] text-white min-[700px]:max-w-[92%] min-[700px]:text-2xl sm:text-3xl">
+            <div className={`font-black leading-[1.05] text-white ${isCompactViewport ? 'max-w-[96%] text-[1.65rem]' : 'max-w-[92%] text-2xl sm:text-3xl'}`}>
               {heroTitle}
             </div>
-            <p className="mt-2 text-[13px] leading-relaxed text-white/72 min-[700px]:mt-3 min-[700px]:text-sm">
+            <p className={`leading-relaxed text-white/72 ${isCompactViewport ? 'mt-2 text-[13px]' : 'mt-3 text-sm'}`}>
               {heroBody}
             </p>
 
-            <div className="mt-3 flex flex-wrap gap-1.5 min-[700px]:mt-4 min-[700px]:gap-2">
+            <div className={`flex flex-wrap ${isCompactViewport ? 'mt-3 gap-1.5' : 'mt-4 gap-2'}`}>
               {proofBadges.map((badge) => (
-                <div key={badge} className="rounded-full border border-cyan-200/18 bg-cyan-300/[0.08] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100/90 min-[700px]:px-3 min-[700px]:py-1.5 min-[700px]:text-[10px] min-[700px]:tracking-[0.16em]">
+                <div key={badge} className={`rounded-full border border-cyan-200/18 bg-cyan-300/[0.08] font-black uppercase text-cyan-100/90 ${isCompactViewport ? 'px-2.5 py-1 text-[9px] tracking-[0.12em]' : 'px-3 py-1.5 text-[10px] tracking-[0.16em]'}`}>
                   {badge}
                 </div>
               ))}
             </div>
 
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center min-[700px]:mt-4">
+            <div className={`grid grid-cols-3 gap-2 text-center ${isCompactViewport ? 'mt-3' : 'mt-4'}`}>
               {featureCards.map((item) => (
-                <div key={item.label} className="rounded-xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2 min-[700px]:rounded-2xl">
-                  <div className="text-[9px] uppercase tracking-[0.12em] text-white/45 min-[700px]:text-[10px] min-[700px]:tracking-[0.16em]">{item.label}</div>
-                  <div className="mt-1 text-[13px] font-black leading-tight text-cyan-100 min-[700px]:text-sm">{item.value}</div>
+                <div key={item.label} className={`border border-cyan-200/12 bg-white/[0.03] px-2 py-2 ${isCompactViewport ? 'rounded-xl' : 'rounded-2xl'}`}>
+                  <div className={`uppercase text-white/45 ${isCompactViewport ? 'text-[9px] tracking-[0.12em]' : 'text-[10px] tracking-[0.16em]'}`}>{item.label}</div>
+                  <div className={`mt-1 font-black leading-tight text-cyan-100 ${isCompactViewport ? 'text-[13px]' : 'text-sm'}`}>{item.value}</div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-3 space-y-2 max-[699px]:hidden min-[700px]:mt-4">
+            {!isCompactViewport && (
+              <div className="mt-4 space-y-2">
               {secondaryProof.map((item) => (
                 <div key={item} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-white/72">
                   <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
                   <span>{item}</span>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
 
-            <div className="mt-3 grid gap-2 min-[700px]:mt-4 min-[700px]:gap-3">
+            <div className={`grid ${isCompactViewport ? 'mt-3 gap-2' : 'mt-4 gap-3'}`}>
               <button
                 type="button"
                 onClick={() => {
                   trackEvent('landing_play_click', { entry: 'marketing_landing' });
                   onPlayNow();
                 }}
-                className="inline-flex w-full items-center justify-center gap-2.5 rounded-[1.4rem] border border-cyan-100/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.22)_0%,rgba(59,130,246,0.22)_46%,rgba(251,191,36,0.14)_100%)] px-4 py-3 text-sm font-black uppercase tracking-[0.16em] text-cyan-50 shadow-[0_0_26px_rgba(34,211,238,0.18)] transition-all hover:scale-[1.01] min-[700px]:gap-3 min-[700px]:rounded-3xl min-[700px]:px-5 min-[700px]:py-3.5 min-[700px]:tracking-[0.22em]"
+                className={`inline-flex w-full items-center justify-center border border-cyan-100/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.22)_0%,rgba(59,130,246,0.22)_46%,rgba(251,191,36,0.14)_100%)] text-sm font-black uppercase text-cyan-50 shadow-[0_0_26px_rgba(34,211,238,0.18)] transition-all hover:scale-[1.01] ${isCompactViewport ? 'gap-2.5 rounded-[1.4rem] px-4 py-3 tracking-[0.16em]' : 'gap-3 rounded-3xl px-5 py-3.5 tracking-[0.22em]'}`}
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-white/10 min-[700px]:h-10 min-[700px]:w-10 min-[700px]:rounded-2xl">
-                  <LaunchGlyph className="h-4.5 w-4.5 text-cyan-100 min-[700px]:h-5 min-[700px]:w-5" />
+                <span className={`flex items-center justify-center border border-white/15 bg-white/10 ${isCompactViewport ? 'h-9 w-9 rounded-xl' : 'h-10 w-10 rounded-2xl'}`}>
+                  <LaunchGlyph className={`text-cyan-100 ${isCompactViewport ? 'h-4.5 w-4.5' : 'h-5 w-5'}`} />
                 </span>
                 {language === 'ru' ? 'Запустить первый уровень' : 'Play the first level now'}
               </button>
@@ -160,7 +180,7 @@ export function MarketingLanding({
                 <button
                   type="button"
                   onClick={() => openTrackedLink('landing_join_tg_click', marketingLinks.telegramUrl, 'telegram')}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200/20 bg-sky-300/[0.08] px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100 min-[700px]:py-3 min-[700px]:tracking-[0.16em]"
+                  className={`inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200/20 bg-sky-300/[0.08] px-3 text-[10px] font-black uppercase text-cyan-100 ${isCompactViewport ? 'py-2.5 tracking-[0.12em]' : 'py-3 tracking-[0.16em]'}`}
                 >
                   <NebulaCoreIcon className="h-4 w-4 text-cyan-100" />
                   TG
@@ -171,7 +191,7 @@ export function MarketingLanding({
                     trackEvent('landing_feedback_open', { entry: 'marketing_landing' });
                     onOpenFeedback();
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200/20 bg-amber-300/[0.08] px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-amber-100 min-[700px]:py-3 min-[700px]:tracking-[0.16em]"
+                  className={`inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200/20 bg-amber-300/[0.08] px-3 text-[10px] font-black uppercase text-amber-100 ${isCompactViewport ? 'py-2.5 tracking-[0.12em]' : 'py-3 tracking-[0.16em]'}`}
                 >
                   <SignalGlyph className="h-4 w-4 text-amber-100" />
                   {language === 'ru' ? 'Отзыв' : 'Feedback'}
@@ -181,7 +201,8 @@ export function MarketingLanding({
           </div>
         </div>
 
-        <div className="mb-2 rounded-[1.4rem] border border-white/8 bg-slate-950/42 px-3 py-3 shadow-[0_0_24px_rgba(0,0,0,0.16)] backdrop-blur-md max-[699px]:hidden">
+        {!isCompactViewport && (
+          <div className="mb-2 rounded-[1.4rem] border border-white/8 bg-slate-950/42 px-3 py-3 shadow-[0_0_24px_rgba(0,0,0,0.16)] backdrop-blur-md">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] leading-none text-white/62">
             <span>{language === 'ru' ? '99 / 199 / 499 ₽' : '99 / 199 / 499 RUB'}</span>
             <span className="text-white/28">•</span>
@@ -211,7 +232,8 @@ export function MarketingLanding({
               </a>
             ))}
           </div>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
