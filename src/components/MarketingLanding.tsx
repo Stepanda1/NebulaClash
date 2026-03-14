@@ -87,52 +87,52 @@ export function MarketingLanding({
     <div className="relative h-full w-full overflow-x-hidden overflow-y-auto bg-slate-950 text-white">
       <CosmicBackdrop variant="landing" />
 
-      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-md flex-col justify-center gap-4 px-5 py-4 sm:py-6">
-        <div className="relative mt-4 overflow-hidden rounded-[2.2rem] border border-cyan-200/20 bg-[linear-gradient(152deg,rgba(7,17,38,0.94)_0%,rgba(10,28,57,0.9)_30%,rgba(16,32,68,0.86)_58%,rgba(7,14,32,0.96)_100%)] p-4 sm:p-5 shadow-[0_0_44px_rgba(34,211,238,0.16)] backdrop-blur-md">
+      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-md flex-col justify-start gap-3 px-4 py-3 min-[700px]:justify-center min-[700px]:gap-4 min-[700px]:px-5 min-[700px]:py-6">
+        <div className="relative mt-1 overflow-hidden rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(152deg,rgba(7,17,38,0.94)_0%,rgba(10,28,57,0.9)_30%,rgba(16,32,68,0.86)_58%,rgba(7,14,32,0.96)_100%)] p-3 shadow-[0_0_44px_rgba(34,211,238,0.16)] backdrop-blur-md min-[700px]:mt-4 min-[700px]:rounded-[2.2rem] min-[700px]:p-5">
           <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-cyan-300/12 blur-2xl" />
           <div className="pointer-events-none absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-amber-300/10 blur-2xl" />
           <div className="pointer-events-none absolute right-6 top-6 h-20 w-20 rounded-full border border-cyan-100/18 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.24)_0%,rgba(125,211,252,0.12)_34%,rgba(14,116,144,0.05)_60%,rgba(0,0,0,0)_72%)]" />
-          <div className="pointer-events-none absolute left-6 top-6 text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200/80">
+          <div className="pointer-events-none absolute left-5 top-5 text-[9px] font-black uppercase tracking-[0.24em] text-cyan-200/80 min-[700px]:left-6 min-[700px]:top-6 min-[700px]:text-[10px] min-[700px]:tracking-[0.28em]">
             Nebula Clash
           </div>
 
-          <div className="relative mt-6 rounded-3xl border border-white/10 bg-[linear-gradient(160deg,rgba(2,6,23,0.4),rgba(15,23,42,0.28))] p-4 sm:p-5">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">
+          <div className="relative mt-5 rounded-[1.7rem] border border-white/10 bg-[linear-gradient(160deg,rgba(2,6,23,0.4),rgba(15,23,42,0.28))] p-3 min-[700px]:mt-6 min-[700px]:rounded-3xl min-[700px]:p-5">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70 min-[700px]:mb-3 min-[700px]:px-3 min-[700px]:text-[11px] min-[700px]:tracking-[0.16em]">
               <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
               {language === 'ru' ? 'Играй сразу в браузере' : 'Play instantly in your browser'}
             </div>
-            <div className="mb-4 flex items-center justify-center">
-              <div className="relative flex h-24 w-24 items-center justify-center">
+            <div className="mb-2 flex items-center justify-center min-[700px]:mb-4">
+              <div className="relative flex h-16 w-16 items-center justify-center min-[700px]:h-24 min-[700px]:w-24">
                 <div className="absolute inset-0 rounded-full border border-cyan-200/20 bg-[radial-gradient(circle_at_50%_50%,rgba(125,211,252,0.12),rgba(0,0,0,0)_70%)]" />
                 <div className="absolute inset-[8px] rounded-full border border-white/8 bg-slate-950/18" />
-                <NebulaCoreIcon className="h-20 w-20 text-cyan-200 drop-shadow-[0_0_18px_rgba(34,211,238,0.22)]" />
+                <NebulaCoreIcon className="h-14 w-14 text-cyan-200 drop-shadow-[0_0_18px_rgba(34,211,238,0.22)] min-[700px]:h-20 min-[700px]:w-20" />
               </div>
             </div>
-            <div className="max-w-[92%] text-2xl font-black leading-tight text-white sm:text-3xl">
+            <div className="max-w-[96%] text-[1.65rem] font-black leading-[1.05] text-white min-[700px]:max-w-[92%] min-[700px]:text-2xl sm:text-3xl">
               {heroTitle}
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-white/72">
+            <p className="mt-2 text-[13px] leading-relaxed text-white/72 min-[700px]:mt-3 min-[700px]:text-sm">
               {heroBody}
             </p>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-1.5 min-[700px]:mt-4 min-[700px]:gap-2">
               {proofBadges.map((badge) => (
-                <div key={badge} className="rounded-full border border-cyan-200/18 bg-cyan-300/[0.08] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100/90">
+                <div key={badge} className="rounded-full border border-cyan-200/18 bg-cyan-300/[0.08] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100/90 min-[700px]:px-3 min-[700px]:py-1.5 min-[700px]:text-[10px] min-[700px]:tracking-[0.16em]">
                   {badge}
                 </div>
               ))}
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center min-[700px]:mt-4">
               {featureCards.map((item) => (
-                <div key={item.label} className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{item.label}</div>
-                  <div className="mt-1 text-sm font-black text-cyan-100">{item.value}</div>
+                <div key={item.label} className="rounded-xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2 min-[700px]:rounded-2xl">
+                  <div className="text-[9px] uppercase tracking-[0.12em] text-white/45 min-[700px]:text-[10px] min-[700px]:tracking-[0.16em]">{item.label}</div>
+                  <div className="mt-1 text-[13px] font-black leading-tight text-cyan-100 min-[700px]:text-sm">{item.value}</div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-4 space-y-2">
+            <div className="mt-3 space-y-2 max-[699px]:hidden min-[700px]:mt-4">
               {secondaryProof.map((item) => (
                 <div key={item} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-white/72">
                   <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
@@ -141,17 +141,17 @@ export function MarketingLanding({
               ))}
             </div>
 
-            <div className="mt-4 grid gap-3">
+            <div className="mt-3 grid gap-2 min-[700px]:mt-4 min-[700px]:gap-3">
               <button
                 type="button"
                 onClick={() => {
                   trackEvent('landing_play_click', { entry: 'marketing_landing' });
                   onPlayNow();
                 }}
-                className="inline-flex w-full items-center justify-center gap-3 rounded-3xl border border-cyan-100/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.22)_0%,rgba(59,130,246,0.22)_46%,rgba(251,191,36,0.14)_100%)] px-5 py-3.5 text-sm font-black uppercase tracking-[0.22em] text-cyan-50 shadow-[0_0_26px_rgba(34,211,238,0.18)] transition-all hover:scale-[1.01]"
+                className="inline-flex w-full items-center justify-center gap-2.5 rounded-[1.4rem] border border-cyan-100/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.22)_0%,rgba(59,130,246,0.22)_46%,rgba(251,191,36,0.14)_100%)] px-4 py-3 text-sm font-black uppercase tracking-[0.16em] text-cyan-50 shadow-[0_0_26px_rgba(34,211,238,0.18)] transition-all hover:scale-[1.01] min-[700px]:gap-3 min-[700px]:rounded-3xl min-[700px]:px-5 min-[700px]:py-3.5 min-[700px]:tracking-[0.22em]"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
-                  <LaunchGlyph className="h-5 w-5 text-cyan-100" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-white/10 min-[700px]:h-10 min-[700px]:w-10 min-[700px]:rounded-2xl">
+                  <LaunchGlyph className="h-4.5 w-4.5 text-cyan-100 min-[700px]:h-5 min-[700px]:w-5" />
                 </span>
                 {language === 'ru' ? 'Запустить первый уровень' : 'Play the first level now'}
               </button>
@@ -160,7 +160,7 @@ export function MarketingLanding({
                 <button
                   type="button"
                   onClick={() => openTrackedLink('landing_join_tg_click', marketingLinks.telegramUrl, 'telegram')}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200/20 bg-sky-300/[0.08] px-3 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200/20 bg-sky-300/[0.08] px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100 min-[700px]:py-3 min-[700px]:tracking-[0.16em]"
                 >
                   <NebulaCoreIcon className="h-4 w-4 text-cyan-100" />
                   TG
@@ -171,7 +171,7 @@ export function MarketingLanding({
                     trackEvent('landing_feedback_open', { entry: 'marketing_landing' });
                     onOpenFeedback();
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200/20 bg-amber-300/[0.08] px-3 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200/20 bg-amber-300/[0.08] px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-amber-100 min-[700px]:py-3 min-[700px]:tracking-[0.16em]"
                 >
                   <SignalGlyph className="h-4 w-4 text-amber-100" />
                   {language === 'ru' ? 'Отзыв' : 'Feedback'}
@@ -181,7 +181,7 @@ export function MarketingLanding({
           </div>
         </div>
 
-        <div className="mb-2 rounded-[1.4rem] border border-white/8 bg-slate-950/42 px-3 py-3 shadow-[0_0_24px_rgba(0,0,0,0.16)] backdrop-blur-md">
+        <div className="mb-2 rounded-[1.4rem] border border-white/8 bg-slate-950/42 px-3 py-3 shadow-[0_0_24px_rgba(0,0,0,0.16)] backdrop-blur-md max-[699px]:hidden">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] leading-none text-white/62">
             <span>{language === 'ru' ? '99 / 199 / 499 ₽' : '99 / 199 / 499 RUB'}</span>
             <span className="text-white/28">•</span>
