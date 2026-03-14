@@ -62,7 +62,7 @@ function getLevelConfigPreview(targetLevel: number): LevelConfig {
 }
 
 type LevelStarsMap = Record<number, number>;
-const TUTORIAL_MODAL_STEPS = [0, 1, 3, 5, 7] as const;
+const TUTORIAL_MODAL_STEPS = [1, 3, 5, 7] as const;
 const TUTORIAL_TOTAL_STEPS = TUTORIAL_MODAL_STEPS.length;
 
 const PROGRESS_RESET_VERSION = 5;
@@ -78,12 +78,13 @@ const MAX_ADMIN_UNLOCK_LEVEL = 60;
 const ADMIN_ACCESS_TOKEN_KEY = 'match3_admin_access_token';
 const ADMIN_LAST_ACTIVE_KEY = 'match3_admin_last_active_at';
 const ADMIN_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
-const SHOP_TIMING_EXPERIMENT_ID = 'shop_timing_v1';
-const SHOP_TIMING_VARIANT_KEY = 'match3_exp_shop_timing_v1_variant';
-const SHOP_TIMING_AUTO_SHOWN_KEY = 'match3_exp_shop_timing_v1_auto_shown';
+const SHOP_TIMING_EXPERIMENT_ID = 'shop_timing_v2';
+const SHOP_TIMING_VARIANT_KEY = 'match3_exp_shop_timing_v2_variant';
+const SHOP_TIMING_AUTO_SHOWN_KEY = 'match3_exp_shop_timing_v2_auto_shown';
 const APP_LEVEL_CONFIGS = buildLevelConfigs();
 
-type ShopTimingVariant = 'a' | 'b';
+type ShopTimingVariant = 'a' | 'b' | 'c';
+type ShopOpenSource = 'manual_button' | 'level_1_complete_auto' | 'level_1_fail_auto';
 type LeaderboardItem = {
   rank: number;
   displayName: string;
@@ -95,11 +96,12 @@ type LeaderboardItem = {
 function getShopTimingVariant(): ShopTimingVariant {
   if (typeof window === 'undefined') return 'a';
   const stored = window.localStorage.getItem(SHOP_TIMING_VARIANT_KEY);
-  if (stored === 'a' || stored === 'b') {
+  if (stored === 'a' || stored === 'b' || stored === 'c') {
     return stored;
   }
 
-  const assigned: ShopTimingVariant = Math.random() < 0.5 ? 'a' : 'b';
+  const roll = Math.random();
+  const assigned: ShopTimingVariant = roll < 0.34 ? 'a' : roll < 0.67 ? 'b' : 'c';
   window.localStorage.setItem(SHOP_TIMING_VARIANT_KEY, assigned);
   return assigned;
 }
@@ -381,7 +383,7 @@ function App() {
     handleRestart();
     if (level === 1 && !hasSeenTutorial) {
       setShowTutorial(true);
-      setTutorialStep(0);
+      setTutorialStep(1);
       setPendingSpawn(null);
       match3Ref.current = match3Moves;
       bombRef.current = bombDoubleActivations;
@@ -414,10 +416,6 @@ function App() {
   };
   const onAdvanceTutorial = () => {
     if (!tutorialActive) return;
-    if (tutorialStep === 0) {
-      setTutorialStep(1);
-      return;
-    }
     if (tutorialStep === 1) {
       setTutorialStep(2);
       return;
@@ -509,7 +507,7 @@ function App() {
     trackEvent('shop_spend_coins', { item: 'extra_time', cost: BOOSTER_COST, value: TIME_BOOST_SECONDS, level, mode: levelConfig.mode });
   };
 
-  const openShopWithSource = useCallback((source: 'manual_button' | 'level_1_complete_auto') => {
+  const openShopWithSource = useCallback((source: ShopOpenSource) => {
     setIsShopOpen(true);
     trackEvent('shop_prompt_shown', {
       source,
@@ -906,10 +904,24 @@ function App() {
     if (!analyticsInitRef.current) return;
     if (isGameOver && !prevGameOverRef.current) {
       trackEvent('game_over', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
+
+      if (
+        level === 1 &&
+        shopTimingVariant === 'c' &&
+        !tutorialActive &&
+        !autoShopPromptShownRef.current &&
+        !isShopOpen
+      ) {
+        autoShopPromptShownRef.current = true;
+        window.localStorage.setItem(SHOP_TIMING_AUTO_SHOWN_KEY, '1');
+        window.setTimeout(() => {
+          openShopWithSource('level_1_fail_auto');
+        }, 320);
+      }
     }
 
     prevGameOverRef.current = isGameOver;
-  }, [isGameOver, level, score, moves, timeLeft, levelConfig.mode]);
+  }, [isGameOver, isShopOpen, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, shopTimingVariant, tutorialActive]);
 
   useEffect(() => {
     if (!analyticsInitRef.current) return;
@@ -942,7 +954,7 @@ function App() {
   useEffect(() => {
     if (level === 1 && !hasSeenTutorial) {
       setShowTutorial(true);
-      setTutorialStep(0);
+      setTutorialStep(1);
       setPendingSpawn(null);
       match3Ref.current = match3Moves;
       bombRef.current = bombDoubleActivations;

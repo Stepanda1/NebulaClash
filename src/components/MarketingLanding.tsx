@@ -20,6 +20,28 @@ export function MarketingLanding({
   onPlayNow,
   onOpenFeedback,
 }: MarketingLandingProps) {
+  const heroTitle = language === 'ru' ? 'Матч-3 с боссами прямо в браузере' : 'Boss match-3 you can play in your browser';
+  const heroBody = language === 'ru'
+    ? 'Без установки. Первый уровень запускается сразу: быстрые комбо, спец-фигуры, щиты босса и магазин монет уже в первой сессии.'
+    : 'No install. Jump into the first level right away: fast combos, special pieces, boss shields, and the coin shop all show up in the first session.';
+  const proofBadges = language === 'ru'
+    ? ['Без установки', 'Первый уровень за минуту', 'Монеты и бустеры сразу']
+    : ['No install', 'First level in under a minute', 'Coins and boosters live'];
+  const featureCards = language === 'ru'
+    ? [
+      { label: 'Первые секунды', value: 'Быстрый payoff' },
+      { label: 'Спец-фигуры', value: 'Бомба + молния' },
+      { label: 'Бои', value: 'Боссы и щиты' },
+    ]
+    : [
+      { label: 'First seconds', value: 'Fast payoff' },
+      { label: 'Special pieces', value: 'Bomb + lightning' },
+      { label: 'Battles', value: 'Bosses and shields' },
+    ];
+  const secondaryProof = language === 'ru'
+    ? ['Играй бесплатно на сайте', 'Покупки монет за пару тапов', 'Цель уровня видна с первого экрана']
+    : ['Play free on the site', 'Coin purchases in a couple taps', 'Goal is readable from the first screen'];
+
   useEffect(() => {
     trackEvent('landing_view', { entry: 'marketing_landing' });
   }, []);
@@ -77,7 +99,7 @@ export function MarketingLanding({
           <div className="relative mt-6 rounded-3xl border border-white/10 bg-[linear-gradient(160deg,rgba(2,6,23,0.4),rgba(15,23,42,0.28))] p-4 sm:p-5">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">
               <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
-              {language === 'ru' ? 'Матч-3 с боссами' : 'Boss Match-3'}
+              {language === 'ru' ? 'Играй сразу в браузере' : 'Play instantly in your browser'}
             </div>
             <div className="mb-4 flex items-center justify-center">
               <div className="relative flex h-24 w-24 items-center justify-center">
@@ -86,28 +108,37 @@ export function MarketingLanding({
                 <NebulaCoreIcon className="h-20 w-20 text-cyan-200 drop-shadow-[0_0_18px_rgba(34,211,238,0.22)]" />
               </div>
             </div>
-            <div className="max-w-[84%] text-2xl font-black leading-tight text-white sm:text-3xl">
-              {language === 'ru' ? 'Играть' : 'Play Now'}
+            <div className="max-w-[92%] text-2xl font-black leading-tight text-white sm:text-3xl">
+              {heroTitle}
             </div>
             <p className="mt-3 text-sm leading-relaxed text-white/72">
-              {language === 'ru'
-                ? 'Космический матч-3 с боссами, щитами и особыми фигурами. Запускайте уровень сразу и проверяйте, цепляет ли игра с первых секунд.'
-                : 'A sci-fi match-3 with bosses, shields, and shape-based specials. Jump straight into the level flow and see if the game hooks on first contact.'}
+              {heroBody}
             </p>
 
+            <div className="mt-4 flex flex-wrap gap-2">
+              {proofBadges.map((badge) => (
+                <div key={badge} className="rounded-full border border-cyan-200/18 bg-cyan-300/[0.08] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100/90">
+                  {badge}
+                </div>
+              ))}
+            </div>
+
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{language === 'ru' ? 'Формы' : 'Shapes'}</div>
-                <div className="mt-1 text-sm font-black text-cyan-100">{language === 'ru' ? 'Нова' : 'Nova'}</div>
-              </div>
-              <div className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{language === 'ru' ? 'Бои' : 'Bosses'}</div>
-                <div className="mt-1 text-sm font-black text-cyan-100">60</div>
-              </div>
-              <div className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{language === 'ru' ? 'Стиль' : 'Mode'}</div>
-                <div className="mt-1 text-sm font-black text-cyan-100">{language === 'ru' ? 'Космос' : 'Sci-Fi'}</div>
-              </div>
+              {featureCards.map((item) => (
+                <div key={item.label} className="rounded-2xl border border-cyan-200/12 bg-white/[0.03] px-2 py-2">
+                  <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{item.label}</div>
+                  <div className="mt-1 text-sm font-black text-cyan-100">{item.value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {secondaryProof.map((item) => (
+                <div key={item} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-white/72">
+                  <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
+                  <span>{item}</span>
+                </div>
+              ))}
             </div>
 
             <div className="mt-4 grid gap-3">
@@ -122,7 +153,7 @@ export function MarketingLanding({
                 <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
                   <LaunchGlyph className="h-5 w-5 text-cyan-100" />
                 </span>
-                {language === 'ru' ? 'Играть сейчас' : 'Play Now'}
+                {language === 'ru' ? 'Запустить первый уровень' : 'Play the first level now'}
               </button>
 
               <div className="grid grid-cols-2 gap-2">
