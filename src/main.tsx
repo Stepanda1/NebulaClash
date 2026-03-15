@@ -3,10 +3,8 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
 import { initAnalytics } from './analytics';
-import { initMonitoring } from './monitoring';
 
 initAnalytics();
-initMonitoring();
 
 const rootElement = document.getElementById('root');
 
@@ -19,3 +17,7 @@ createRoot(rootElement).render(
     <App />
   </StrictMode>,
 );
+
+void import('./monitoring').then(({ initMonitoring }) => {
+  initMonitoring();
+});
