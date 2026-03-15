@@ -60,11 +60,19 @@ function Invoke-Remote($command) {
 
 Set-Location $projectDir
 
+if (Test-Path ".\dist") {
+  Write-Host "Removing local dist before build..."
+  Remove-Item ".\dist" -Recurse -Force
+}
+
 Write-Host "Building frontend..."
 npm run build
 if ($LASTEXITCODE -ne 0) {
   throw "Frontend build failed"
 }
+
+Write-Host "Cleaning previous hashed frontend assets on $SitePath ..."
+Invoke-Remote "mkdir -p '$SitePath/assets' && find '$SitePath/assets' -mindepth 1 -maxdepth 1 -type f -delete"
 
 Write-Host "Uploading static files to $SitePath ..."
 # pscp and scp behave differently for local directory content patterns.
