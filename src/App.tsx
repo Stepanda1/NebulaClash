@@ -78,6 +78,9 @@ const MAX_ADMIN_UNLOCK_LEVEL = 60;
 const ADMIN_ACCESS_TOKEN_KEY = 'match3_admin_access_token';
 const ADMIN_LAST_ACTIVE_KEY = 'match3_admin_last_active_at';
 const ADMIN_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+const BEST_SCORE_STORAGE_KEY = `match3_best_score_v${PROGRESS_RESET_VERSION}`;
+const WEEKLY_LOOP_STORAGE_KEY = `match3_weekly_loop_v${PROGRESS_RESET_VERSION}`;
+const WEEKLY_LEVEL_TARGET = 3;
 const SHOP_TIMING_EXPERIMENT_ID = 'shop_timing_v2';
 const SHOP_TIMING_VARIANT_KEY = 'match3_exp_shop_timing_v2_variant';
 const SHOP_TIMING_AUTO_SHOWN_KEY = 'match3_exp_shop_timing_v2_auto_shown';
@@ -85,12 +88,20 @@ const APP_LEVEL_CONFIGS = buildLevelConfigs();
 
 type ShopTimingVariant = 'a' | 'b' | 'c';
 type ShopOpenSource = 'manual_button' | 'level_1_complete_auto' | 'level_1_fail_auto';
+type ShopOfferContext = 'manual' | 'momentum' | 'recovery';
 type LeaderboardItem = {
   rank: number;
   displayName: string;
   bestLevel: number;
   bestScore: number;
   totalStars: number;
+};
+type WeeklyLoopState = {
+  weekKey: string;
+  dailyClaimed: boolean;
+  levelsCompleted: number;
+  challengeTargetScore: number;
+  challengeCompleted: boolean;
 };
 
 function getShopTimingVariant(): ShopTimingVariant {
@@ -122,6 +133,68 @@ function getStarsFromScore(score: number): number {
   if (score >= 700) return 1;
   return 0;
 }
+
+function getStoredBestScore(): number {
+  if (typeof window === 'undefined') return 0;
+  const raw = Number(window.localStorage.getItem(BEST_SCORE_STORAGE_KEY) || '0');
+  return Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0;
+}
+
+function getCurrentWeekKey(now = new Date()): string {
+  const local = new Date(now);
+  const day = local.getDay();
+  const mondayShift = (day + 6) % 7;
+  local.setHours(0, 0, 0, 0);
+  local.setDate(local.getDate() - mondayShift);
+  return local.toISOString().slice(0, 10);
+}
+
+function getDefaultWeeklyChallengeScore(bestScore: number): number {
+  const baseline = bestScore > 0 ? bestScore + 350 : 1800;
+  return Math.max(1800, Math.ceil(baseline / 100) * 100);
+}
+
+function normalizeWeeklyLoopState(raw: Partial<WeeklyLoopState> | null | undefined, bestScore: number): WeeklyLoopState {
+  const weekKey = getCurrentWeekKey();
+  if (!raw || raw.weekKey !== weekKey) {
+    return {
+      weekKey,
+      dailyClaimed: false,
+      levelsCompleted: 0,
+      challengeTargetScore: getDefaultWeeklyChallengeScore(bestScore),
+      challengeCompleted: false,
+    };
+  }
+
+  const challengeTargetScore = Math.max(
+    1200,
+    Math.floor(Number(raw.challengeTargetScore) || getDefaultWeeklyChallengeScore(bestScore)),
+  );
+  const challengeCompleted = Boolean(raw.challengeCompleted) || bestScore >= challengeTargetScore;
+
+  return {
+    weekKey,
+    dailyClaimed: Boolean(raw.dailyClaimed),
+    levelsCompleted: Math.max(0, Math.floor(Number(raw.levelsCompleted) || 0)),
+    challengeTargetScore,
+    challengeCompleted,
+  };
+}
+
+function getStoredWeeklyLoopState(bestScore: number): WeeklyLoopState {
+  if (typeof window === 'undefined') {
+    return normalizeWeeklyLoopState(null, bestScore);
+  }
+
+  try {
+    const raw = window.localStorage.getItem(WEEKLY_LOOP_STORAGE_KEY);
+    if (!raw) return normalizeWeeklyLoopState(null, bestScore);
+    return normalizeWeeklyLoopState(JSON.parse(raw) as Partial<WeeklyLoopState>, bestScore);
+  } catch {
+    return normalizeWeeklyLoopState(null, bestScore);
+  }
+}
+
 function getDefaultLanguage(): Language {
   if (typeof window !== 'undefined') {
     const savedLanguage = window.localStorage.getItem('match3_language');
@@ -196,6 +269,9 @@ function App() {
   const [dailyCanClaim, setDailyCanClaim] = useState(false);
   const [dailyStreak, setDailyStreak] = useState(1);
   const [dailyNextReward, setDailyNextReward] = useState(40);
+  const [bestScore, setBestScore] = useState(getStoredBestScore);
+  const [weeklyLoop, setWeeklyLoop] = useState<WeeklyLoopState>(() => getStoredWeeklyLoopState(getStoredBestScore()));
+  const [shopOfferContext, setShopOfferContext] = useState<ShopOfferContext>('manual');
   const [adminAccessToken, setAdminAccessToken] = useState(() => (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) || '' : ''));
   const [adminAuthLoading, setAdminAuthLoading] = useState(false);
   const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
@@ -215,6 +291,7 @@ function App() {
   const analyticsMovesRef = useRef(0);
   const analyticsBombCountRef = useRef(0);
   const analyticsLightningCountRef = useRef(0);
+  const weeklyChallengeUnlockedNoticeRef = useRef(false);
   const levelRewardClaimRef = useRef('');
   const experimentAssignedTrackedRef = useRef(false);
   const autoShopPromptShownRef = useRef(wasShopTimingAutoShown());
@@ -236,6 +313,8 @@ function App() {
     : levelConfig.goal.value;
   const isBossLevel = levelConfig.goal.type === 'boss';
   const bossShieldPercent = Math.max(0, Math.min(100, bossMaxHp > 0 ? (bossHp / bossMaxHp) * 100 : 0));
+  const weeklyLevelsCompleted = Math.min(WEEKLY_LEVEL_TARGET, weeklyLoop.levelsCompleted);
+  const weeklyTasksCompleted = Number(weeklyLoop.dailyClaimed) + Number(weeklyLoop.challengeCompleted) + Number(weeklyLoop.levelsCompleted >= WEEKLY_LEVEL_TARGET);
   const bossAttackLabel = language === 'ru' ? 'Мусор после хода' : 'Debris After Move';
   const selectedLevelConfig = useMemo(
     () => (levelToLaunch == null ? null : getLevelConfigPreview(levelToLaunch)),
@@ -508,6 +587,13 @@ function App() {
   };
 
   const openShopWithSource = useCallback((source: ShopOpenSource) => {
+    setShopOfferContext(
+      source === 'level_1_fail_auto'
+        ? 'recovery'
+        : source === 'level_1_complete_auto'
+          ? 'momentum'
+          : 'manual',
+    );
     setIsShopOpen(true);
     trackEvent('shop_prompt_shown', {
       source,
@@ -533,6 +619,64 @@ function App() {
 
   const triggerQuickBoost = levelConfig.mode === 'moves' ? buyExtraMoves : buyExtraTime;
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(BEST_SCORE_STORAGE_KEY, String(bestScore));
+  }, [bestScore]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(WEEKLY_LOOP_STORAGE_KEY, JSON.stringify(weeklyLoop));
+  }, [weeklyLoop]);
+
+  useEffect(() => {
+    setWeeklyLoop((prev) => normalizeWeeklyLoopState(prev, bestScore));
+  }, [bestScore]);
+
+  useEffect(() => {
+    if (weeklyLoop.challengeCompleted && !weeklyChallengeUnlockedNoticeRef.current) {
+      weeklyChallengeUnlockedNoticeRef.current = true;
+      setShopNotice(
+        language === 'ru'
+          ? `Челлендж недели закрыт: ${weeklyLoop.challengeTargetScore} очков побито`
+          : `Weekly challenge done: beat ${weeklyLoop.challengeTargetScore}`,
+      );
+      return;
+    }
+
+    if (!weeklyLoop.challengeCompleted) {
+      weeklyChallengeUnlockedNoticeRef.current = false;
+    }
+  }, [language, setShopNotice, weeklyLoop.challengeCompleted, weeklyLoop.challengeTargetScore]);
+
+  const refreshLeaderboardSnapshot = useCallback(async (limit = 20, openModal = false) => {
+    if (openModal) {
+      setIsLeaderboardOpen(true);
+    }
+    setIsLeaderboardLoading(true);
+    try {
+      const payload = await getLeaderboardTop(limit);
+      const items = payload?.items ?? [];
+      setLeaderboardItems(items);
+      setWeeklyLoop((prev) => {
+        const normalized = normalizeWeeklyLoopState(prev, bestScore);
+        if (normalized.challengeCompleted) {
+          return normalized;
+        }
+
+        const nextHigherScore = items.find((item) => item.bestScore > bestScore)?.bestScore;
+        const challengeTargetScore = nextHigherScore ?? normalized.challengeTargetScore ?? getDefaultWeeklyChallengeScore(bestScore);
+        return {
+          ...normalized,
+          challengeTargetScore,
+          challengeCompleted: bestScore >= challengeTargetScore,
+        };
+      });
+    } finally {
+      setIsLeaderboardLoading(false);
+    }
+  }, [bestScore, getLeaderboardTop]);
+
   const handleClaimDailyReward = async () => {
     const result = await claimDailyReward();
     if (!result) {
@@ -543,6 +687,10 @@ function App() {
       setDailyCanClaim(false);
       setDailyStreak(Math.max(1, result.streak));
       setDailyNextReward(Math.max(1, result.reward));
+      setWeeklyLoop((prev) => ({
+        ...normalizeWeeklyLoopState(prev, bestScore),
+        dailyClaimed: true,
+      }));
       setShopNotice(
         language === 'ru'
           ? `Ежедневная награда: +${result.reward} монет (день ${result.streak})`
@@ -555,14 +703,7 @@ function App() {
   };
 
   const openLeaderboard = async () => {
-    setIsLeaderboardOpen(true);
-    setIsLeaderboardLoading(true);
-    try {
-      const payload = await getLeaderboardTop(20);
-      setLeaderboardItems(payload?.items ?? []);
-    } finally {
-      setIsLeaderboardLoading(false);
-    }
+    await refreshLeaderboardSnapshot(20, true);
   };
 
   const openDailyRewards = () => {
@@ -658,6 +799,8 @@ function App() {
   const adminResetLocalProgress = () => {
     setUnlockedLevel(1);
     setLevelStars({});
+    setBestScore(0);
+    setWeeklyLoop(normalizeWeeklyLoopState(null, 0));
     setHasSeenTutorial(false);
     setShowTutorial(false);
     setLevelToLaunch(null);
@@ -666,6 +809,8 @@ function App() {
     localStorage.removeItem(LEVEL_STARS_STORAGE_KEY);
     localStorage.removeItem(GAME_STATE_SNAPSHOT_STORAGE_KEY);
     localStorage.removeItem(TUTORIAL_SEEN_KEY);
+    localStorage.removeItem(BEST_SCORE_STORAGE_KEY);
+    localStorage.removeItem(WEEKLY_LOOP_STORAGE_KEY);
     setShopNotice(language === 'ru' ? 'Админ: локальный прогресс сброшен' : 'Admin: local progress reset');
   };
 
@@ -1054,12 +1199,28 @@ function App() {
   }, [getDailyRewardStatus, walletReady]);
 
   useEffect(() => {
+    if (!walletReady || !isMapOpen) return;
+    void refreshLeaderboardSnapshot(10, false);
+  }, [isMapOpen, refreshLeaderboardSnapshot, walletReady]);
+
+  useEffect(() => {
     if (!isLevelUp || !walletReady || !playerId) return;
     const rewardKey = `${playerId}:${level}:${score}`;
     if (levelRewardClaimRef.current === rewardKey) return;
     levelRewardClaimRef.current = rewardKey;
 
     const stars = getStarsFromScore(score);
+    const nextBestScore = Math.max(bestScore, score);
+    setBestScore(nextBestScore);
+    setWeeklyLoop((prev) => {
+      const normalized = normalizeWeeklyLoopState(prev, nextBestScore);
+      const challengeCompleted = normalized.challengeCompleted || score >= normalized.challengeTargetScore;
+      return {
+        ...normalized,
+        levelsCompleted: normalized.levelsCompleted + 1,
+        challengeCompleted,
+      };
+    });
     void (async () => {
       const levelReward = await claimLevelCompletionReward(level, score, stars);
       if (levelReward?.granted) {
@@ -1076,7 +1237,7 @@ function App() {
         totalStars: stars,
       });
     })();
-  }, [claimLevelCompletionReward, isLevelUp, language, level, playerId, score, setShopNotice, submitLeaderboardEntry, walletReady]);
+  }, [bestScore, claimLevelCompletionReward, isLevelUp, language, level, playerId, score, setShopNotice, submitLeaderboardEntry, walletReady]);
 
   const getAudioCtx = () => {
     if (!audioCtxRef.current) {
@@ -1464,6 +1625,13 @@ function App() {
           dailyCanClaim={dailyCanClaim}
           dailyStreak={dailyStreak}
           dailyNextReward={dailyNextReward}
+          weeklyDailyClaimed={weeklyLoop.dailyClaimed}
+          bestScore={bestScore}
+          weeklyChallengeScore={weeklyLoop.challengeTargetScore}
+          weeklyChallengeCompleted={weeklyLoop.challengeCompleted}
+          weeklyLevelsCompleted={weeklyLevelsCompleted}
+          weeklyLevelTarget={WEEKLY_LEVEL_TARGET}
+          weeklyTasksCompleted={weeklyTasksCompleted}
           onOpenDailyRewards={openDailyRewards}
           onOpenLeaderboard={openLeaderboard}
           onShareGame={shareGame}
@@ -1592,6 +1760,7 @@ function App() {
           <ShopModal
             language={language}
             isTimeMode={levelConfig.mode === 'time'}
+            offerContext={shopOfferContext}
             coinsBalance={spaceCoins}
             boosterCost={BOOSTER_COST}
             moveBoostAmount={MOVE_BOOST_AMOUNT}

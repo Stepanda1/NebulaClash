@@ -7,6 +7,7 @@ import { BoosterGlyph, CloseGlyph, CoinGlyph, CosmicBackdrop, GiftGlyph, NebulaC
 type ShopModalProps = {
   language: Language;
   isTimeMode: boolean;
+  offerContext: 'manual' | 'momentum' | 'recovery';
   coinsBalance: number;
   boosterCost: number;
   moveBoostAmount: number;
@@ -21,6 +22,7 @@ type ShopModalProps = {
 export function ShopModal({
   language,
   isTimeMode,
+  offerContext,
   coinsBalance,
   boosterCost,
   moveBoostAmount,
@@ -34,13 +36,23 @@ export function ShopModal({
   const t = COPY[language];
   const coinLabel = language === 'ru' ? 'Космический магазин' : 'Space Shop';
   const boostersLabel = language === 'ru' ? 'Бустеры за монеты' : 'Boosters for coins';
-  const hookLine = language === 'ru' ? 'Заряди запас и не выходи из ритма' : 'Load up and keep the streak alive';
-  const premiumLine = language === 'ru' ? 'Самые редкие и красивые монеты во всей галактике' : 'The hottest currency in your galaxy';
-  const hotDealLabel = language === 'ru' ? 'Самый сочный пак' : 'Best Value';
+  const hookLine = offerContext === 'recovery'
+    ? (language === 'ru' ? 'Вернись в матч без паузы и не теряй прогресс' : 'Jump back in now and keep the run alive')
+    : offerContext === 'momentum'
+      ? (language === 'ru' ? 'Поймай темп после победы и дожми следующую волну' : 'Keep the momentum after a win and push the next wave')
+      : (language === 'ru' ? 'Заряди запас и не выходи из ритма' : 'Load up and keep the streak alive');
+  const premiumLine = offerContext === 'recovery'
+    ? (language === 'ru' ? 'Монеты сразу дают запас на продолжения, бусты и ещё один шанс прямо в этой сессии.' : 'Coins immediately fund continues, boosts, and another chance in this same session.')
+    : offerContext === 'momentum'
+      ? (language === 'ru' ? 'Лучший момент для покупки: пока игра уже зашла, у тебя есть темп, а магазин конвертирует его в длинную сессию.' : 'Best purchase moment: the run already feels good, and coins stretch that momentum into a longer session.')
+      : (language === 'ru' ? 'Первый топ-ап нужен не ради коллекции, а ради более длинной серии, быстрых рестартов и меньшего трения.' : 'Your first top-up is not for vanity. It buys longer streaks, faster recoveries, and less friction.');
+  const hotDealLabel = language === 'ru' ? 'Стартовый оффер' : 'Starter Pick';
+  const totalValueLabel = language === 'ru' ? 'Максимальный запас' : 'Max Reserve';
   const instantTopUpLabel = language === 'ru' ? 'Мгновенное пополнение' : 'Instant top-up';
   const claimLabel = language === 'ru' ? 'Забрать монеты' : 'Get Coins';
   const paymentsHintLine1 = language === 'ru' ? 'Оплата проходит на защищенной странице провайдера' : 'Payments are processed on a secure provider page';
   const paymentsHintLine2 = language === 'ru' ? 'После подтверждения монеты начисляются автоматически.' : 'Coins are credited automatically after payment confirmation.';
+  const starterPackId = packs[Math.min(1, Math.max(0, packs.length - 1))]?.id ?? packs[0]?.id ?? '';
   const maxPackCoins = Math.max(...packs.map((p) => p.coins), 0);
 
   return (
@@ -84,7 +96,11 @@ export function ShopModal({
           <div className="relative flex items-start justify-between gap-3">
             <div className="max-w-[58%]">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200/80">
-                {language === 'ru' ? 'Премиум-валюта' : 'Premium Currency'}
+                {offerContext === 'recovery'
+                  ? (language === 'ru' ? 'Оффер на возврат' : 'Recovery offer')
+                  : offerContext === 'momentum'
+                    ? (language === 'ru' ? 'Оффер на темп' : 'Momentum offer')
+                    : (language === 'ru' ? 'Первый топ-ап' : 'First top-up')}
               </div>
               <div className="mt-3 text-xl font-black leading-tight text-white sm:text-2xl">
                 {hookLine}
@@ -117,7 +133,11 @@ export function ShopModal({
           <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-200/20 bg-black/20 px-3 py-2.5">
             <div>
               <div className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-100/75">{instantTopUpLabel}</div>
-              <div className="mt-1 text-sm font-semibold text-white/80">{t.buyCoins}</div>
+              <div className="mt-1 text-sm font-semibold text-white/80">
+                {offerContext === 'recovery'
+                  ? (language === 'ru' ? 'Монеты для продолжений и бустов прямо сейчас' : 'Coins for continues and boosts right now')
+                  : (language === 'ru' ? 'Монеты, чтобы не обрывать сессию' : 'Coins that keep the session going')}
+              </div>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-200/35 bg-gradient-to-r from-amber-300/25 via-yellow-300/22 to-orange-300/24 px-3 py-1.5 shadow-[0_0_24px_rgba(251,191,36,0.2)]">
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/10">
@@ -179,7 +199,9 @@ export function ShopModal({
             <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/75">{t.buyCoins}</div>
             <div className="grid grid-cols-1 gap-2.5">
               {packs.map((pack) => {
-                const featured = pack.coins === maxPackCoins;
+                const featured = pack.id === starterPackId;
+                const reservePack = pack.coins === maxPackCoins;
+                const continueCount = Math.max(1, Math.floor(pack.coins / boosterCost));
                 const accent = featured
                   ? {
                       shell: 'border-amber-200/35 bg-[linear-gradient(135deg,rgba(251,191,36,0.16),rgba(249,115,22,0.12),rgba(14,165,233,0.12))] hover:from-amber-300/18',
@@ -236,17 +258,26 @@ export function ShopModal({
                                 {hotDealLabel}
                               </span>
                             )}
+                            {!featured && reservePack && (
+                              <span className="rounded-full border border-cyan-200/25 bg-cyan-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">
+                                {totalValueLabel}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className={`mt-2 text-[11px] font-black uppercase tracking-[0.16em] ${accent.label}`}>
-                          {featured ? (language === 'ru' ? 'Максимум сияния за покупку' : 'Maximum shine per purchase') : (language === 'ru' ? 'Быстрый заряд для серии' : 'Fast fuel for your streak')}
+                          {featured
+                            ? (language === 'ru' ? 'Лучший первый пак для реальной сессии' : 'Best first pack for a real session')
+                            : reservePack
+                              ? (language === 'ru' ? 'Большой запас на длинную неделю' : 'Big reserve for a longer week')
+                              : (language === 'ru' ? 'Быстрый заряд для серии' : 'Fast fuel for your streak')}
                         </div>
                       </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-3">
                       <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70">
                         <CoinGlyph className="h-3.5 w-3.5" />
-                        {t.openPayment}
+                        {language === 'ru' ? `${continueCount} продолжений` : `${continueCount} continue plays`}
                       </div>
                       <span className={`inline-flex items-center justify-center rounded-full bg-gradient-to-r px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] shadow-[0_8px_18px_rgba(0,0,0,0.2)] ${accent.button}`}>
                         {claimLabel}
