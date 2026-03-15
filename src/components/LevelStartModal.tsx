@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Play, X } from 'lucide-react';
+import { Play, Shield, Sparkles, Trash2, X, Zap } from 'lucide-react';
 import type { Language } from '../i18n';
 import { COPY } from '../i18n';
 
@@ -28,6 +28,37 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
   const title = language === 'ru' ? 'Подготовка к запуску' : 'Prepare for Launch';
   const subtitle = language === 'ru' ? 'Проверь цель и начни уровень' : 'Check your goal and start the level';
   const playLabel = language === 'ru' ? 'Играть' : 'Play';
+  const runModifiersTitle = language === 'ru' ? 'Усилители забега' : 'Run modifiers';
+  const runModifiersSubtitle = language === 'ru' ? 'Одноразовые покупки перед стартом уровня' : 'One-time boosts before the level starts';
+
+  const getModifierVisuals = (modifierId: string) => {
+    if (modifierId === 'startBomb') {
+      return {
+        icon: <Sparkles className="h-4 w-4" />,
+        badge: language === 'ru' ? 'Сильный старт' : 'Fast opener',
+        tone: 'from-amber-300/35 to-orange-500/20 border-amber-200/25 text-amber-50',
+      };
+    }
+    if (modifierId === 'startLightning') {
+      return {
+        icon: <Zap className="h-4 w-4" />,
+        badge: language === 'ru' ? 'Линия сразу' : 'Line clear',
+        tone: 'from-cyan-300/35 to-sky-500/20 border-cyan-200/25 text-cyan-50',
+      };
+    }
+    if (modifierId === 'bossShield') {
+      return {
+        icon: <Shield className="h-4 w-4" />,
+        badge: language === 'ru' ? 'Против босса' : 'Boss safe',
+        tone: 'from-emerald-300/35 to-teal-500/20 border-emerald-200/25 text-emerald-50',
+      };
+    }
+    return {
+      icon: <Trash2 className="h-4 w-4" />,
+      badge: language === 'ru' ? 'Чистое поле' : 'Board cleanup',
+      tone: 'from-violet-300/35 to-fuchsia-500/20 border-violet-200/25 text-violet-50',
+    };
+  };
 
   return (
     <motion.div
@@ -70,41 +101,57 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
           <div className="mt-4 rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="text-[11px] uppercase tracking-[0.22em] text-amber-100/80">
-                {language === 'ru' ? 'Run modifiers' : 'Run modifiers'}
+                {runModifiersTitle}
               </div>
               <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-black text-amber-50">
                 {language === 'ru' ? 'Монеты' : 'Coins'}: {coinsBalance}
               </div>
             </div>
+            <div className="mt-2 flex items-center gap-2 text-xs text-amber-50/80">
+              <Sparkles className="h-3.5 w-3.5 text-amber-200" />
+              <span>{runModifiersSubtitle}</span>
+            </div>
             <div className="mt-3 space-y-2">
-              {runModifiers.map((modifier) => (
-                <div key={modifier.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+              {runModifiers.map((modifier) => {
+                const visuals = getModifierVisuals(modifier.id);
+                return (
+                <div key={modifier.id} className={`rounded-xl border bg-gradient-to-r p-3 ${visuals.tone}`}>
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-black text-white">{modifier.title}</div>
-                      <div className="mt-1 text-xs text-slate-300">{modifier.description}</div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-black/20">
+                          {visuals.icon}
+                        </span>
+                        <div>
+                          <div className="text-sm font-black text-white">{modifier.title}</div>
+                          <div className="mt-1 inline-flex rounded-full border border-white/10 bg-black/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-white/80">
+                            {visuals.badge}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs text-slate-100/88">{modifier.description}</div>
                     </div>
                     <button
                       type="button"
                       onClick={() => onBuyRunModifier(modifier.id)}
                       disabled={modifier.active}
-                      className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] ${
                         modifier.active
                           ? 'bg-emerald-300/20 text-emerald-100'
-                          : 'bg-gradient-to-r from-amber-300 to-orange-400 text-slate-900'
+                          : 'bg-gradient-to-r from-amber-300 to-orange-400 text-slate-900 shadow-[0_0_16px_rgba(251,191,36,0.28)]'
                       }`}
                     >
                       {modifier.active
-                        ? (language === 'ru' ? 'Armed' : 'Armed')
-                        : `-${modifier.cost}`}
+                        ? (language === 'ru' ? 'Готово' : 'Armed')
+                        : (language === 'ru' ? `-${modifier.cost} мон.` : `-${modifier.cost}`)}
                     </button>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
             {bossShieldCharges > 0 && (
               <div className="mt-3 text-xs font-bold text-emerald-100">
-                {language === 'ru' ? `Активный щит в текущем матче: ${bossShieldCharges}` : `Active shield in current run: ${bossShieldCharges}`}
+                {language === 'ru' ? `Щит уже заряжен для этого матча: ${bossShieldCharges}` : `Shield is already charged for this run: ${bossShieldCharges}`}
               </div>
             )}
           </div>

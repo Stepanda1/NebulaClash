@@ -702,28 +702,28 @@ function App() {
     if (modifierId === 'startBomb') {
       return {
         cost,
-        title: language === 'ru' ? 'Стартовая бомба' : 'Start with bomb',
-        description: language === 'ru' ? 'Добавляет бомбу в стартовую раскладку.' : 'Adds a bomb to your opening board.',
+        title: language === 'ru' ? 'Старт с бомбой' : 'Start with bomb',
+        description: language === 'ru' ? 'Сразу даёт взрывной ход и помогает быстро раскачать поле.' : 'Start with an explosive opener and break open the board immediately.',
       };
     }
     if (modifierId === 'startLightning') {
       return {
         cost,
-        title: language === 'ru' ? 'Стартовая молния' : 'Start with lightning',
-        description: language === 'ru' ? 'Даёт ранний line-clear для быстрого темпа.' : 'Gives an early line-clear to spike tempo.',
+        title: language === 'ru' ? 'Старт с молнией' : 'Start with lightning',
+        description: language === 'ru' ? 'Даёт мощную зачистку линии уже в начале матча.' : 'Start with an early line clear to spike tempo from move one.',
       };
     }
     if (modifierId === 'bossShield') {
       return {
         cost,
         title: language === 'ru' ? 'Щит от босса' : 'Boss shield',
-        description: language === 'ru' ? 'Блокирует первую волну мусора от босса.' : 'Blocks the first debris wave from the boss.',
+        description: language === 'ru' ? 'Отменяет первую атаку босса и сохраняет темп в решающий момент.' : 'Cancel the first boss debris wave and keep your run alive.',
       };
     }
     return {
       cost,
-      title: language === 'ru' ? 'Trash cleaner' : 'Trash cleaner',
-      description: language === 'ru' ? 'Счищает часть мусора до первого хода.' : 'Scrubs some trash before your first move.',
+      title: language === 'ru' ? 'Очистка мусора' : 'Trash cleaner',
+      description: language === 'ru' ? 'Убирает часть мусора до первого хода и делает старт чище.' : 'Scrub part of the trash before your first move for a cleaner start.',
     };
   }, [language]);
 
@@ -750,7 +750,7 @@ function App() {
     }));
     setShopNotice(
       language === 'ru'
-        ? `${meta.title} готов к следующему запуску`
+        ? `${meta.title} куплен и готов к запуску`
         : `${meta.title} is armed for the next run`,
     );
     trackEvent('shop_spend_coins', {
@@ -892,7 +892,7 @@ function App() {
   const handleClaimDailyReward = async () => {
     const result = await claimDailyReward();
     if (!result) {
-      setShopNotice(language === 'ru' ? 'Daily reward недоступен' : 'Daily reward unavailable');
+      setShopNotice(language === 'ru' ? 'Ежедневная награда недоступна' : 'Daily reward unavailable');
       return;
     }
     if (result.granted) {
@@ -963,7 +963,7 @@ function App() {
               <div className="mt-1 text-2xl font-black">{dailyClaimDay}/30</div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Следом' : 'Next'}</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Следующая' : 'Next'}</div>
               <div className="mt-1 text-2xl font-black">+{dailyNextReward}</div>
             </div>
           </div>
@@ -987,7 +987,7 @@ function App() {
           </div>
           <div className="mt-3 text-xs leading-relaxed text-white/72">
             {language === 'ru'
-              ? `Всего получено daily: ${dailyTotalClaims}. ${dailyMilestoneBonus > 0 ? `На этом дне есть бонус серии +${dailyMilestoneBonus}.` : 'Следи за бонусными днями 7 / 14 / 21 / 30.'}`
+              ? `Всего получено ежедневных наград: ${dailyTotalClaims}. ${dailyMilestoneBonus > 0 ? `На этом дне действует бонус серии +${dailyMilestoneBonus}.` : 'Следи за бонусными днями 7 / 14 / 21 / 30.'}`
               : `Total daily claims: ${dailyTotalClaims}. ${dailyMilestoneBonus > 0 ? `This day includes a +${dailyMilestoneBonus} milestone bonus.` : 'Watch milestone days 7 / 14 / 21 / 30.'}`}
           </div>
           <button
@@ -1003,11 +1003,11 @@ function App() {
 
           <div className="mt-4 rounded-2xl border border-amber-200/18 bg-amber-300/10 p-3">
             <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">
-              {language === 'ru' ? 'Daily missions / quest board' : 'Daily missions / quest board'}
+              {language === 'ru' ? 'Ежедневные миссии' : 'Daily missions'}
             </div>
             <div className="mt-1 text-xs text-white/72">
               {language === 'ru'
-                ? `Дата цикла: ${dailyMissionDate || 'сегодня'}`
+                ? `Дата миссий: ${dailyMissionDate || 'сегодня'}`
                 : `Cycle date: ${dailyMissionDate || 'today'}`}
             </div>
             <div className="mt-3 space-y-2">
@@ -1016,7 +1016,7 @@ function App() {
                   ? (language === 'ru' ? 'Активируй 3 бомбы' : 'Activate 3 bombs')
                   : mission.id === 'score_1800'
                     ? (language === 'ru' ? 'Набери 1800 очков' : 'Beat 1800 score')
-                    : (language === 'ru' ? 'Закрой 2 уровня без continue' : 'Clear 2 levels without continue');
+                    : (language === 'ru' ? 'Пройди 2 уровня без продолжения' : 'Clear 2 levels without continue');
                 const progressValue = Math.min(mission.target, mission.progress);
                 return (
                   <div key={mission.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
@@ -1040,10 +1040,10 @@ function App() {
                         }`}
                       >
                         {mission.claimed
-                          ? (language === 'ru' ? 'Claimed' : 'Claimed')
+                          ? (language === 'ru' ? 'Получено' : 'Claimed')
                           : mission.completed
                             ? (language === 'ru' ? 'Забрать' : 'Claim')
-                            : (language === 'ru' ? 'В пути' : 'In progress')}
+                            : (language === 'ru' ? 'Прогресс' : 'In progress')}
                       </button>
                     </div>
                     <div className="mt-2 h-2 rounded-full bg-white/10">
@@ -1072,7 +1072,7 @@ function App() {
           </button>
         </div>
         <div className="mb-3 rounded-2xl border border-amber-200/18 bg-amber-300/10 px-4 py-3 text-sm text-white">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">{language === 'ru' ? 'Beat this rival' : 'Beat this rival'}</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">{language === 'ru' ? 'Цель рейтинга' : 'Beat this rival'}</div>
           <div className="mt-1 text-xl font-black">
             {leaderboardOverview.nextRival?.bestScore ?? weeklyLoop.challengeTargetScore}
           </div>
@@ -1092,11 +1092,11 @@ function App() {
             <div className="mt-1 text-2xl font-black">{leaderboardOverview.playerRank ? `#${leaderboardOverview.playerRank}` : '--'}</div>
           </div>
           <div className="rounded-2xl border border-violet-200/20 bg-violet-300/10 px-4 py-3 text-white">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-violet-100/75">{language === 'ru' ? 'Weekly tier' : 'Weekly tier'}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-violet-100/75">{language === 'ru' ? 'Недельная лига' : 'Weekly tier'}</div>
             <div className="mt-1 text-lg font-black">
               {leaderboardOverview.weeklyTier
                 ? `${leaderboardOverview.weeklyTier.id.toUpperCase()}`
-                : (language === 'ru' ? 'Вне tier' : 'No tier yet')}
+                : (language === 'ru' ? 'Пока вне лиги' : 'No tier yet')}
             </div>
           </div>
         </div>
@@ -1104,10 +1104,10 @@ function App() {
           <div className="mb-3 rounded-2xl border border-emerald-200/18 bg-emerald-300/10 px-4 py-3 text-white">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Reward chest for rank tier' : 'Reward chest for rank tier'}</div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Сундук за ранг' : 'Reward chest for rank tier'}</div>
                 <div className="mt-1 text-sm font-bold">
                   {language === 'ru'
-                    ? `Tier ${leaderboardOverview.chest.tierId.toUpperCase()} даёт +${leaderboardOverview.chest.reward}`
+                    ? `Лига ${leaderboardOverview.chest.tierId.toUpperCase()} даёт +${leaderboardOverview.chest.reward}`
                     : `Tier ${leaderboardOverview.chest.tierId.toUpperCase()} awards +${leaderboardOverview.chest.reward}`}
                 </div>
               </div>
@@ -1124,10 +1124,10 @@ function App() {
                 }`}
               >
                 {leaderboardOverview.chest.claimed
-                  ? (language === 'ru' ? 'Claimed' : 'Claimed')
+                  ? (language === 'ru' ? 'Получено' : 'Claimed')
                   : leaderboardOverview.chest.claimable
                     ? (language === 'ru' ? 'Забрать' : 'Claim')
-                    : (language === 'ru' ? 'Ниже tier' : 'Locked')}
+                    : (language === 'ru' ? 'Пока закрыто' : 'Locked')}
               </button>
             </div>
           </div>
@@ -1170,10 +1170,10 @@ function App() {
         <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-white">
           <div className="text-xs uppercase tracking-[0.18em] text-violet-100/80">{language === 'ru' ? 'Прогресс недели' : 'Weekly progress'}</div>
           <div className="mt-1 text-2xl font-black">{weeklyTasksCompleted}/3</div>
-          <div className="mt-4 space-y-2">
-            <div className={`rounded-xl border px-3 py-3 text-sm ${weeklyLoop.dailyClaimed ? 'border-emerald-200/30 bg-emerald-300/10 text-emerald-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
-              {language === 'ru' ? `1. Забери daily reward ${weeklyLoop.dailyClaimed ? 'выполнено' : 'сегодня/на этой неделе'}` : `1. Claim a daily reward ${weeklyLoop.dailyClaimed ? 'done' : 'this week'}`}
-            </div>
+            <div className="mt-4 space-y-2">
+              <div className={`rounded-xl border px-3 py-3 text-sm ${weeklyLoop.dailyClaimed ? 'border-emerald-200/30 bg-emerald-300/10 text-emerald-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
+              {language === 'ru' ? `1. Забери ежедневную награду ${weeklyLoop.dailyClaimed ? 'выполнено' : 'на этой неделе'}` : `1. Claim a daily reward ${weeklyLoop.dailyClaimed ? 'done' : 'this week'}`}
+              </div>
             <div className={`rounded-xl border px-3 py-3 text-sm ${weeklyLoop.challengeCompleted ? 'border-cyan-200/30 bg-cyan-300/10 text-cyan-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
               {language === 'ru' ? `2. Побей ${weeklyLoop.challengeTargetScore} очков (${bestScore} сейчас)` : `2. Beat ${weeklyLoop.challengeTargetScore} score (${bestScore} now)`}
             </div>

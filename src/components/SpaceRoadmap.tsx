@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Flame, Gift, Lock, LogOut, Share2, Star, Target, Trophy, Volume2, VolumeX, X } from 'lucide-react';
+import { Gift, Lock, LogOut, Share2, Star, Trophy, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import type { LegalSection } from '../types/legal';
 import { COPY } from '../i18n';
@@ -290,24 +290,6 @@ export function SpaceRoadmap({
             </button>
             <button
               type="button"
-              onClick={onOpenDailyRewards}
-              className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${dailyCanClaim ? 'border-orange-200/45 bg-orange-300/20 text-orange-50 shadow-[0_0_14px_rgba(251,146,60,0.24)]' : 'border-white/20 bg-slate-900/70 text-white/80'}`}
-              title={language === 'ru' ? `Серия возвратов: ${dailyStreak}` : `Return streak: ${dailyStreak}`}
-              aria-label={language === 'ru' ? `Серия возвратов: ${dailyStreak}` : `Return streak: ${dailyStreak}`}
-            >
-              <Flame className="h-6 w-6" />
-            </button>
-            <button
-              type="button"
-              onClick={onOpenLeaderboard}
-              className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${weeklyChallengeCompleted ? 'border-amber-200/45 bg-amber-300/22 text-amber-50 shadow-[0_0_14px_rgba(251,191,36,0.24)]' : 'border-white/20 bg-slate-900/70 text-white/80'}`}
-              title={language === 'ru' ? `Побей счёт ${weeklyChallengeScore}. Твой лучший: ${bestScore}` : `Beat ${weeklyChallengeScore}. Your best: ${bestScore}`}
-              aria-label={language === 'ru' ? `Побей счёт ${weeklyChallengeScore}. Твой лучший: ${bestScore}` : `Beat ${weeklyChallengeScore}. Your best: ${bestScore}`}
-            >
-              <Target className="h-6 w-6" />
-            </button>
-            <button
-              type="button"
               onClick={onOpenWeeklyLoop}
               className="inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border border-violet-200/45 bg-violet-300/20 text-violet-50 shadow-[0_0_14px_rgba(167,139,250,0.24)] transition-all hover:bg-violet-300/28"
               title={language === 'ru' ? `Недельный цикл: ${weeklyTasksCompleted}/3` : `Weekly loop: ${weeklyTasksCompleted}/3`}
@@ -319,9 +301,13 @@ export function SpaceRoadmap({
               ref={topButtonRef}
               type="button"
               onClick={onOpenLeaderboard}
-              className="inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border border-cyan-200/45 bg-cyan-300/22 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] transition-all hover:bg-cyan-300/30"
-              title={language === 'ru' ? 'Рейтинг' : 'Ranking'}
-              aria-label={language === 'ru' ? 'Рейтинг' : 'Ranking'}
+              className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${
+                weeklyChallengeCompleted
+                  ? 'border-amber-200/45 bg-amber-300/22 text-amber-50 shadow-[0_0_14px_rgba(251,191,36,0.24)]'
+                  : 'border-cyan-200/45 bg-cyan-300/22 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] hover:bg-cyan-300/30'
+              }`}
+              title={language === 'ru' ? `Рейтинг: цель ${weeklyChallengeScore}, лучший счёт ${bestScore}` : `Ranking: target ${weeklyChallengeScore}, best score ${bestScore}`}
+              aria-label={language === 'ru' ? `Рейтинг: цель ${weeklyChallengeScore}, лучший счёт ${bestScore}` : `Ranking: target ${weeklyChallengeScore}, best score ${bestScore}`}
             >
               <Trophy className="h-6 w-6" />
             </button>
