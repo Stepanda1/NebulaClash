@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  font-family: 'Fredoka', system-ui, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.5;
   font-weight: 500;
 
@@ -200,18 +200,4 @@ body.low-performance * {
   display: none;
 }
 
-/* Hide Consentmanager overlays/popups injected via GTM/CMP scripts. */
-#cmpwrapper,
-#cmpwrapper *,
-#cmpbox,
-#cmplayer,
-[id^="cmpbox"],
-[id^="cmplayer"],
-.cmpbox,
-.cmplayer {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
 

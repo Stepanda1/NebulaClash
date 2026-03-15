@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import { trackEvent } from './analytics';
+import { getConsentState, trackEvent } from './analytics';
 
 const SENTRY_DSN = ((import.meta.env.VITE_SENTRY_DSN as string | undefined) || '').trim();
 const SENTRY_ENVIRONMENT =
@@ -63,6 +63,7 @@ function initLagObserver() {
 
 export function initMonitoring() {
   if (monitoringInitialized) return;
+  if (!getConsentState().analytics) return;
 
   initSentry();
   initLagObserver();

@@ -95,10 +95,11 @@ export function MarketingLanding({
   }, [buildTrackedUrl]);
 
   const legalLinks = [
-    { label: language === 'ru' ? 'Оферта' : 'Offer', href: '/LegalDocsPDF/01_Oferta.pdf' },
-    { label: language === 'ru' ? 'Политика ПД' : 'Privacy Policy', href: '/LegalDocsPDF/02_Privacy.pdf' },
-    { label: language === 'ru' ? 'Возврат' : 'Refunds', href: '/LegalDocsPDF/03_Refunds.pdf' },
-    { label: language === 'ru' ? 'Реквизиты' : 'Requisites', href: '/LegalDocsPDF/04_Requisites.pdf' },
+    { label: language === 'ru' ? 'Оферта' : 'Offer', href: '/LegalDocsPDF/01_Oferta.html' },
+    { label: language === 'ru' ? 'Политика ПД' : 'Privacy Policy', href: '/LegalDocsPDF/02_Privacy.html' },
+    { label: language === 'ru' ? 'Возврат' : 'Refunds', href: '/LegalDocsPDF/03_Refunds.html' },
+    { label: language === 'ru' ? 'Реквизиты' : 'Requisites', href: '/LegalDocsPDF/04_Requisites.html' },
+    { label: language === 'ru' ? 'Ассеты' : 'Assets', href: '/LegalDocsPDF/05_Asset_Sources.html' },
   ] as const;
 
   return (

@@ -8,6 +8,7 @@ import { COPY } from '../i18n';
 type LegalModalProps = {
   language: Language;
   contacts: LegalContacts;
+  onManageConsent: () => void;
   onClose: () => void;
 };
 
@@ -22,6 +23,7 @@ function TikTokIcon(props: LucideProps) {
 export function LegalModal({
   language,
   contacts,
+  onManageConsent,
   onClose,
 }: LegalModalProps) {
   const t = COPY[language];
@@ -74,10 +76,11 @@ export function LegalModal({
   ] as const;
 
   const legalPdfLinks = [
-    { id: 'offer', label: language === 'ru' ? 'Оферта (PDF)' : 'Offer (PDF)', href: '/LegalDocsPDF/01_Oferta.pdf' },
-    { id: 'privacy', label: language === 'ru' ? 'Конфиденциальность (PDF)' : 'Privacy (PDF)', href: '/LegalDocsPDF/02_Privacy.pdf' },
-    { id: 'refunds', label: language === 'ru' ? 'Возврат (PDF)' : 'Refunds (PDF)', href: '/LegalDocsPDF/03_Refunds.pdf' },
-    { id: 'requisites', label: language === 'ru' ? 'Реквизиты (PDF)' : 'Requisites (PDF)', href: '/LegalDocsPDF/04_Requisites.pdf' },
+    { id: 'offer', label: language === 'ru' ? 'Оферта' : 'Offer', href: '/LegalDocsPDF/01_Oferta.html' },
+    { id: 'privacy', label: language === 'ru' ? 'Политика ПД' : 'Privacy policy', href: '/LegalDocsPDF/02_Privacy.html' },
+    { id: 'refunds', label: language === 'ru' ? 'Возврат' : 'Refunds', href: '/LegalDocsPDF/03_Refunds.html' },
+    { id: 'requisites', label: language === 'ru' ? 'Реквизиты' : 'Requisites', href: '/LegalDocsPDF/04_Requisites.html' },
+    { id: 'assets', label: language === 'ru' ? 'Источники ассетов' : 'Asset sources', href: '/LegalDocsPDF/05_Asset_Sources.html' },
   ] as const;
 
   const renderContent = () => {
@@ -109,6 +112,13 @@ export function LegalModal({
           <p>{language === 'ru' ? 'Продавец:' : 'Seller:'} {contacts.sellerName}</p>
           <p>{language === 'ru' ? 'ИНН:' : 'TIN:'} {contacts.sellerInn}</p>
         </div>
+        <button
+          type="button"
+          onClick={onManageConsent}
+          className="w-full rounded-xl border border-amber-200/25 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-300/18"
+        >
+          {language === 'ru' ? 'Настроить аналитику и маркетинговые пиксели' : 'Manage analytics and marketing consent'}
+        </button>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {legalPdfLinks.map((item) => (
             <a

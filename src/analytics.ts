@@ -1,6 +1,10 @@
 import posthog from 'posthog-js';
 
 export type AnalyticsPayload = Record<string, string | number | boolean | null | undefined>;
+export type ConsentState = {
+  analytics: boolean;
+  marketing: boolean;
+};
 
 type YmFunction = ((counterId: number, action: string, ...args: unknown[]) => void) & {
   a?: unknown[][];
@@ -30,15 +34,20 @@ const YM_COUNTER_ID = YM_COUNTER_ID_RAW ? Number(YM_COUNTER_ID_RAW) : NaN;
 const TIKTOK_PIXEL_ID = ((import.meta.env.VITE_TIKTOK_PIXEL_ID as string | undefined) || '').trim();
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
 const POSTHOG_HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://us.i.posthog.com';
+const CONSENT_STORAGE_KEY = 'match3_consent_v1';
 
-let initialized = false;
 let posthogInitialized = false;
+let gtmInitialized = false;
+let gaInitialized = false;
+let ymInitialized = false;
+let tiktokInitialized = false;
 let sessionId: string | null = null;
 let attributionCache: AnalyticsPayload | null = null;
 const UTM_STORAGE_KEY = 'match3_utm_attribution';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 const CORE_FUNNEL_NAME = 'core_conversion';
 const GA_DEBUG_QUERY_KEY = 'ga_debug';
+const consentListeners = new Set<(state: ConsentState) => void>();
 
 const isBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined';
 
@@ -54,7 +63,7 @@ function injectScript(src: string, id: string) {
 }
 
 function initGTM() {
-  if (!isBrowser() || !GTM_CONTAINER_ID) return;
+  if (!isBrowser() || !GTM_CONTAINER_ID || gtmInitialized) return;
 
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({
@@ -63,11 +72,11 @@ function initGTM() {
   });
 
   injectScript(`https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`, 'gtm-script');
+  gtmInitialized = true;
 }
 
 function initGA4Direct() {
-  if (!isBrowser() || !GA_MEASUREMENT_ID) return;
-  if (GTM_CONTAINER_ID) return;
+  if (!isBrowser() || !GA_MEASUREMENT_ID || gaInitialized) return;
 
   injectScript(`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`, 'ga4-script');
 
@@ -83,10 +92,11 @@ function initGA4Direct() {
     anonymize_ip: true,
     send_page_view: true,
   });
+  gaInitialized = true;
 }
 
 function initYandexMetrica() {
-  if (!isBrowser() || !Number.isFinite(YM_COUNTER_ID)) return;
+  if (!isBrowser() || !Number.isFinite(YM_COUNTER_ID) || ymInitialized) return;
 
   if (!window.ym) {
     const ymStub: YmFunction = ((...args: unknown[]) => {
@@ -105,11 +115,11 @@ function initYandexMetrica() {
     accurateTrackBounce: true,
     webvisor: true,
   });
+  ymInitialized = true;
 }
 
 function initTikTokPixel() {
-  if (!isBrowser() || !TIKTOK_PIXEL_ID) return;
-  if (document.getElementById('tiktok-pixel-script')) return;
+  if (!isBrowser() || !TIKTOK_PIXEL_ID || tiktokInitialized) return;
 
   const ttq = (window.ttq = window.ttq || {});
   const queueTarget = ttq as Record<string, unknown> & {
@@ -142,6 +152,7 @@ function initTikTokPixel() {
 
   ttq.load?.(TIKTOK_PIXEL_ID);
   ttq.page?.();
+  tiktokInitialized = true;
 }
 
 function initPostHog() {
@@ -211,6 +222,53 @@ function readStoredAttribution(): AnalyticsPayload {
   }
 }
 
+function readConsentState(): ConsentState {
+  if (!isBrowser()) {
+    return { analytics: false, marketing: false };
+  }
+
+  try {
+    const raw = window.localStorage.getItem(CONSENT_STORAGE_KEY);
+    if (!raw) {
+      return { analytics: false, marketing: false };
+    }
+
+    const parsed = JSON.parse(raw) as Partial<ConsentState>;
+    return {
+      analytics: Boolean(parsed.analytics),
+      marketing: Boolean(parsed.marketing),
+    };
+  } catch {
+    return { analytics: false, marketing: false };
+  }
+}
+
+export function getConsentState(): ConsentState {
+  return readConsentState();
+}
+
+export function hasConsentDecision() {
+  if (!isBrowser()) return false;
+  return window.localStorage.getItem(CONSENT_STORAGE_KEY) !== null;
+}
+
+export function setConsentState(nextState: ConsentState) {
+  if (!isBrowser()) return;
+  const normalized: ConsentState = {
+    analytics: Boolean(nextState.analytics),
+    marketing: Boolean(nextState.marketing),
+  };
+  window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(normalized));
+  consentListeners.forEach((listener) => listener(normalized));
+}
+
+export function onConsentStateChange(listener: (state: ConsentState) => void) {
+  consentListeners.add(listener);
+  return () => {
+    consentListeners.delete(listener);
+  };
+}
+
 export function getAttributionPayload(): AnalyticsPayload {
   if (attributionCache) return attributionCache;
   if (!isBrowser()) {
@@ -261,16 +319,25 @@ export function getSessionId() {
 }
 
 export function initAnalytics() {
-  if (initialized) return;
+  const consent = getConsentState();
+  if (!consent.analytics) return;
 
   getAttributionPayload();
-  initGTM();
-  initGA4Direct();
+
+  if (consent.marketing && GTM_CONTAINER_ID) {
+    initGTM();
+  } else {
+    initGA4Direct();
+  }
+
   initYandexMetrica();
-  initTikTokPixel();
   initPostHog();
+
+  if (consent.marketing) {
+    initTikTokPixel();
+  }
+
   emitGaDebugProbe();
-  initialized = true;
 }
 
 function dispatchEvent(eventName: string, payload: AnalyticsPayload) {
@@ -334,9 +401,8 @@ function getFunnelStepPayload(eventName: string, payload: AnalyticsPayload): Ana
 
 export function trackEvent(eventName: string, payload: AnalyticsPayload = {}) {
   if (!isBrowser()) return;
-  if (!initialized) {
-    initAnalytics();
-  }
+  initAnalytics();
+  if (!getConsentState().analytics) return;
 
   dispatchEvent(eventName, payload);
 

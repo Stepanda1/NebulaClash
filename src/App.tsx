@@ -14,6 +14,7 @@ import { MarketingLanding } from './components/MarketingLanding';
 import { LevelStartModal } from './components/LevelStartModal';
 import { ShopModal } from './components/ShopModal';
 import { LegalModal } from './components/LegalModal';
+import { ConsentBanner } from './components/ConsentBanner';
 import { GameGuideModal } from './components/GameGuideModal';
 import { FeedbackModal } from './components/FeedbackModal';
 import { AdminModal } from './components/AdminModal';
@@ -22,7 +23,7 @@ import type { GemType } from './types';
 import type { Language } from './i18n';
 import type { LegalSection } from './types/legal';
 import { COPY } from './i18n';
-import { initAnalytics, trackEvent } from './analytics';
+import { getConsentState, hasConsentDecision, initAnalytics, setConsentState, trackEvent } from './analytics';
 import { useWallet } from './hooks/useWallet';
 import { BoosterGlyph, CoinGlyph, CompassGlyph, GiftGlyph, SignalGlyph, TimeGlyph, VaultGlyph } from './components/CosmicArtwork';
 import { buildLevelConfigs, type LevelConfig } from './logic/levelProgress';
@@ -334,6 +335,8 @@ function App() {
   const [comboStyle, setComboStyle] = useState<{ color: string; size: string }>({ color: 'text-amber-300', size: 'text-lg sm:text-2xl' });
   const [lowPerfMode, setLowPerfMode] = useState(false);
   const [language, setLanguage] = useState<Language>(getDefaultLanguage);
+  const [consentState, setConsentStateLocal] = useState(() => getConsentState());
+  const [isConsentBannerOpen, setIsConsentBannerOpen] = useState(() => !hasConsentDecision());
   const [isMarketingLandingOpen, setIsMarketingLandingOpen] = useState(shouldOpenMarketingLanding);
   const [isMapOpen, setIsMapOpen] = useState(shouldOpenMapByDefault);
   const [isShopOpen, setIsShopOpen] = useState(false);
@@ -399,6 +402,7 @@ function App() {
   const bombRef = useRef(0);
   const lightningRef = useRef(0);
   const analyticsInitRef = useRef(false);
+  const sessionStartTrackedRef = useRef(false);
   const prevPausedRef = useRef(false);
   const prevGameOverRef = useRef(false);
   const prevLevelUpRef = useRef(false);
@@ -1832,11 +1836,65 @@ function App() {
   }, [levelStars]);
 
   useEffect(() => {
-    if (analyticsInitRef.current) return;
+    if (!consentState.analytics) return;
     initAnalytics();
     analyticsInitRef.current = true;
+    void import('./monitoring').then(({ initMonitoring }) => {
+      initMonitoring();
+    });
+    if (sessionStartTrackedRef.current) return;
+    sessionStartTrackedRef.current = true;
     trackEvent('session_start', { level, mode: levelConfig.mode, language });
-  }, [language, level, levelConfig.mode]);
+  }, [consentState.analytics, language, level, levelConfig.mode]);
+
+  const saveConsentSelection = useCallback((nextAnalytics: boolean, nextMarketing: boolean) => {
+    const normalized = {
+      analytics: nextAnalytics || nextMarketing,
+      marketing: nextAnalytics ? nextMarketing : false,
+    };
+
+    setConsentState(normalized);
+    setConsentStateLocal(normalized);
+    setIsConsentBannerOpen(false);
+
+    if (!normalized.analytics) return;
+
+    initAnalytics();
+    void import('./monitoring').then(({ initMonitoring }) => {
+      initMonitoring();
+    });
+    trackEvent('consent_updated', {
+      analytics_allowed: normalized.analytics,
+      marketing_allowed: normalized.marketing,
+    });
+  }, []);
+
+  const renderConsentBanner = () => (
+    <ConsentBanner
+      language={language}
+      isOpen={isConsentBannerOpen}
+      analytics={consentState.analytics}
+      marketing={consentState.marketing}
+      onToggleAnalytics={() => {
+        setConsentStateLocal((current) => {
+          const nextAnalytics = !current.analytics;
+          return {
+            analytics: nextAnalytics,
+            marketing: nextAnalytics ? current.marketing : false,
+          };
+        });
+      }}
+      onToggleMarketing={() => {
+        setConsentStateLocal((current) => ({
+          analytics: current.analytics || !current.marketing,
+          marketing: !current.marketing,
+        }));
+      }}
+      onSaveEssentialOnly={() => saveConsentSelection(false, false)}
+      onAcceptAll={() => saveConsentSelection(consentState.analytics, consentState.marketing)}
+      onClose={() => setIsConsentBannerOpen(false)}
+    />
+  );
 
   useEffect(() => {
     if (!analyticsInitRef.current) return;
@@ -2353,6 +2411,7 @@ function App() {
           onPlayNow={onEnterFromMarketingLanding}
           onOpenFeedback={() => setIsFeedbackOpen(true)}
         />
+        {renderConsentBanner()}
         <AudioPlayer isMuted={isMuted} volume={volume} mode="lobby" />
       </div>
     );
@@ -2386,6 +2445,7 @@ function App() {
             <LegalModal
               language={language}
               contacts={legalContacts}
+              onManageConsent={() => setIsConsentBannerOpen(true)}
               onClose={() => setIsLegalOpen(false)}
             />
           )}
@@ -2459,6 +2519,7 @@ function App() {
             </div>
           </div>
         )}
+        {renderConsentBanner()}
       </div>
     );
   }
@@ -2503,6 +2564,7 @@ function App() {
           <LegalModal
             language={language}
             contacts={legalContacts}
+            onManageConsent={() => setIsConsentBannerOpen(true)}
             onClose={() => setIsLegalOpen(false)}
           />
         )}
@@ -2867,6 +2929,7 @@ function App() {
           />
         )}
       </div>
+      {renderConsentBanner()}
 
     </div>
   );

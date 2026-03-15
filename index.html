@@ -4,41 +4,6 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
-    <script>
-      (() => {
-        const pixelId = '%VITE_TIKTOK_PIXEL_ID%';
-        if (!pixelId || pixelId.startsWith('%')) return;
-        if (window.ttq && typeof window.ttq.page === 'function') return;
-
-        const ttq = (window.ttq = window.ttq || {});
-        const methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'];
-
-        ttq._t = ttq._t || [];
-        ttq._i = ttq._i || {};
-
-        methods.forEach((method) => {
-          ttq[method] = (...args) => {
-            ttq._t.push([method, ...args]);
-          };
-        });
-
-        ttq.load = (id) => {
-          ttq._i[id] = [];
-          const script = document.createElement('script');
-          script.id = 'tiktok-pixel-script';
-          script.async = true;
-          script.src = `https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=${id}&lib=ttq`;
-          document.head.appendChild(script);
-        };
-
-        ttq.load(pixelId);
-        ttq.page();
-      })();
-    </script>
-
     <title>Nebula Clash</title>
   </head>
   <body>

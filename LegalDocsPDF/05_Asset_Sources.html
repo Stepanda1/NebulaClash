@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8" />
+<style>
+body{font-family:"Times New Roman",serif; font-size:14px; line-height:1.45; margin:40px; color:#111}
+h1{font-size:24px; margin:0 0 16px}
+h2{font-size:18px; margin:20px 0 8px}
+p,li{margin:0 0 10px}
+ul{margin:0 0 12px 22px}
+.small{font-size:12px;color:#555}
+.block{margin:14px 0;padding:10px;border:1px solid #ddd}
+</style></head><body>
+<h1>Источники и происхождение ассетов</h1>
+<p class='small'>Дата редакции: 16.03.2026</p>
+<p>Этот документ фиксирует происхождение основных ассетов, использованных в публичной сборке Nebula Clash.</p>
+<h2>1. Графика интерфейса и игровых элементов</h2>
+<ul>
+<li>Основной UI, фоны, векторные и CSS-эффекты разработаны внутри проекта Nebula Clash.</li>
+<li>Растровые игровые изображения в <code>public/gems</code>, <code>public/gems_new.png</code> и <code>public/sprites.png</code> содержат признаки генерации с помощью Google Generative AI / C2PA metadata и рассматриваются как внутренние проектные ассеты.</li>
+<li>Перед заменой этих файлов на сторонние изображения необходимо отдельно проверять коммерческие права и условия лицензии нового источника.</li>
+</ul>
+<h2>2. Музыка</h2>
+<div class='block'>
+<p><b>Файл:</b> <code>public/bgm.mp3</code> / <code>public/bgm.ogg</code></p>
+<p><b>Указанный источник в коде:</b> OpenGameArt</p>
+<p><b>Трек:</b> Outer Space Loop</p>
+<p><b>Автор:</b> wipics</p>
+<p><b>Лицензия:</b> CC0 1.0</p>
+</div>
+<h2>3. Шрифты</h2>
+<p>Публичная сборка использует системный стек шрифтов и не требует загрузки внешних web-font ресурсов до взаимодействия пользователя.</p>
+<h2>4. Open source dependencies</h2>
+<p>Код проекта использует npm-пакеты с лицензиями, отраженными в <code>package-lock.json</code>. При обновлении или добавлении новых зависимостей необходимо отдельно проверять совместимость их лицензий с коммерческим использованием проекта.</p>
+</body></html>
