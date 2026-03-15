@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { GameBoard } from './components/GameBoard';
-import { useGame } from './hooks/useGame';
+import { useGame, type RunModifiers } from './hooks/useGame';
 import { PauseMenu } from './components/PauseMenu';
 import { GameOverMenu } from './components/GameOverMenu';
 import { LevelUpModal } from './components/LevelUpModal';
@@ -61,6 +61,15 @@ function getLevelConfigPreview(targetLevel: number): LevelConfig {
   return APP_LEVEL_CONFIGS[(sanitizedLevel - 1) % APP_LEVEL_CONFIGS.length];
 }
 
+function getEmptyRunModifiers(): RunModifiers {
+  return {
+    startBomb: false,
+    startLightning: false,
+    bossShield: false,
+    trashCleaner: false,
+  };
+}
+
 type LevelStarsMap = Record<number, number>;
 const TUTORIAL_MODAL_STEPS = [1, 3, 5, 7] as const;
 const TUTORIAL_TOTAL_STEPS = TUTORIAL_MODAL_STEPS.length;
@@ -89,6 +98,7 @@ const APP_LEVEL_CONFIGS = buildLevelConfigs();
 type ShopTimingVariant = 'a' | 'b' | 'c';
 type ShopOpenSource = 'manual_button' | 'level_1_complete_auto' | 'level_1_fail_auto';
 type ShopOfferContext = 'manual' | 'momentum' | 'recovery';
+type RunModifierId = 'startBomb' | 'startLightning' | 'bossShield' | 'trashCleaner';
 type LeaderboardItem = {
   rank: number;
   displayName: string;
@@ -96,12 +106,49 @@ type LeaderboardItem = {
   bestScore: number;
   totalStars: number;
 };
+type DailyMissionItem = {
+  id: string;
+  target: number;
+  reward: number;
+  progress: number;
+  completed: boolean;
+  claimed: boolean;
+};
+type LeaderboardOverview = {
+  playerRank: number | null;
+  nextRival: {
+    displayName: string;
+    bestLevel: number;
+    bestScore: number;
+    totalStars: number;
+    gapScore: number;
+  } | null;
+  weeklyTier: {
+    id: string;
+    maxRank: number;
+    reward: number;
+  } | null;
+  chest: {
+    tierId: string;
+    reward: number;
+    claimable: boolean;
+    claimed: boolean;
+    weekKey: string;
+  } | null;
+};
 type WeeklyLoopState = {
   weekKey: string;
   dailyClaimed: boolean;
   levelsCompleted: number;
   challengeTargetScore: number;
   challengeCompleted: boolean;
+};
+
+const RUN_MODIFIER_COSTS: Record<RunModifierId, number> = {
+  startBomb: 12,
+  startLightning: 12,
+  bossShield: 18,
+  trashCleaner: 14,
 };
 
 function getShopTimingVariant(): ShopTimingVariant {
@@ -236,7 +283,7 @@ function isAdminPath(): boolean {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, levelCrossActivations, levelPulseActivations, levelNovaActivations, levelSmashEvents, comboX5Count, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, goalClearId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, levelCrossActivations, levelPulseActivations, levelNovaActivations, levelSmashEvents, comboX5Count, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, bossShieldCharges, goalClearId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime, setNextRunModifiers } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -266,6 +313,12 @@ function App() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(false);
   const [leaderboardItems, setLeaderboardItems] = useState<LeaderboardItem[]>([]);
+  const [leaderboardOverview, setLeaderboardOverview] = useState<LeaderboardOverview>({
+    playerRank: null,
+    nextRival: null,
+    weeklyTier: null,
+    chest: null,
+  });
   const [dailyCanClaim, setDailyCanClaim] = useState(false);
   const [dailyStreak, setDailyStreak] = useState(1);
   const [dailyNextReward, setDailyNextReward] = useState(40);
@@ -273,10 +326,15 @@ function App() {
   const [dailyTotalClaims, setDailyTotalClaims] = useState(0);
   const [dailyMilestoneBonus, setDailyMilestoneBonus] = useState(0);
   const [dailyCalendarRewards, setDailyCalendarRewards] = useState<number[]>([]);
+  const [dailyMissions, setDailyMissions] = useState<DailyMissionItem[]>([]);
+  const [dailyMissionDate, setDailyMissionDate] = useState('');
+  const [dailyMissionClaimLoadingId, setDailyMissionClaimLoadingId] = useState<string | null>(null);
   const [bestScore, setBestScore] = useState(getStoredBestScore);
   const [weeklyLoop, setWeeklyLoop] = useState<WeeklyLoopState>(() => getStoredWeeklyLoopState(getStoredBestScore()));
   const [shopOfferContext, setShopOfferContext] = useState<ShopOfferContext>('manual');
   const [isWeeklyLoopOpen, setIsWeeklyLoopOpen] = useState(false);
+  const [pendingRunModifiers, setPendingRunModifiers] = useState<RunModifiers>(getEmptyRunModifiers);
+  const [usedContinueThisLevel, setUsedContinueThisLevel] = useState(false);
   const [adminAccessToken, setAdminAccessToken] = useState(() => (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) || '' : ''));
   const [adminAuthLoading, setAdminAuthLoading] = useState(false);
   const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
@@ -300,6 +358,7 @@ function App() {
   const levelRewardClaimRef = useRef('');
   const experimentAssignedTrackedRef = useRef(false);
   const autoShopPromptShownRef = useRef(wasShopTimingAutoShown());
+  const runSummaryReportedRef = useRef('');
   const audioCtxRef = useRef<AudioContext | null>(null);
   const parallaxEnabledRef = useRef(false);
   const tutorialActive = showTutorial && level === 1;
@@ -468,6 +527,7 @@ function App() {
 
   const onRestart = () => {
     trackEvent('restart_click', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
+    setUsedContinueThisLevel(false);
     handleRestart();
     if (level === 1 && !hasSeenTutorial) {
       setShowTutorial(true);
@@ -478,6 +538,11 @@ function App() {
       lightningRef.current = lightningSwaps;
     }
     // setIsPaused(false) is handled in handleRestart hook
+  };
+
+  const buyContinueFromGameOver = async () => {
+    setUsedContinueThisLevel(true);
+    await triggerQuickBoost();
   };
 
   const onExitGame = () => {
@@ -542,10 +607,14 @@ function App() {
   const {
     buyCoinsPack,
     claimDailyReward,
+    claimDailyMission,
     claimLevelCompletionReward,
+    claimLeaderboardChest,
     getDailyRewardStatus,
+    getDailyMissionsStatus,
     getLeaderboardTop,
     playerId,
+    reportDailyMissionProgress,
     setShopNotice,
     shopNotice,
     spaceCoins,
@@ -628,6 +697,85 @@ function App() {
 
   const triggerQuickBoost = levelConfig.mode === 'moves' ? buyExtraMoves : buyExtraTime;
 
+  const getRunModifierMeta = useCallback((modifierId: RunModifierId) => {
+    const cost = RUN_MODIFIER_COSTS[modifierId];
+    if (modifierId === 'startBomb') {
+      return {
+        cost,
+        title: language === 'ru' ? 'Стартовая бомба' : 'Start with bomb',
+        description: language === 'ru' ? 'Добавляет бомбу в стартовую раскладку.' : 'Adds a bomb to your opening board.',
+      };
+    }
+    if (modifierId === 'startLightning') {
+      return {
+        cost,
+        title: language === 'ru' ? 'Стартовая молния' : 'Start with lightning',
+        description: language === 'ru' ? 'Даёт ранний line-clear для быстрого темпа.' : 'Gives an early line-clear to spike tempo.',
+      };
+    }
+    if (modifierId === 'bossShield') {
+      return {
+        cost,
+        title: language === 'ru' ? 'Щит от босса' : 'Boss shield',
+        description: language === 'ru' ? 'Блокирует первую волну мусора от босса.' : 'Blocks the first debris wave from the boss.',
+      };
+    }
+    return {
+      cost,
+      title: language === 'ru' ? 'Trash cleaner' : 'Trash cleaner',
+      description: language === 'ru' ? 'Счищает часть мусора до первого хода.' : 'Scrubs some trash before your first move.',
+    };
+  }, [language]);
+
+  const getAvailableRunModifiers = useCallback((config: LevelConfig | null): RunModifierId[] => {
+    if (!config) return [];
+    const items: RunModifierId[] = ['startBomb', 'startLightning'];
+    if (config.goal.type === 'boss') {
+      items.push('bossShield');
+    }
+    if (config.goal.type === 'trash' || (config.trashCount ?? 0) > 0) {
+      items.push('trashCleaner');
+    }
+    return items;
+  }, []);
+
+  const purchaseRunModifier = useCallback(async (modifierId: RunModifierId) => {
+    if (pendingRunModifiers[modifierId]) return;
+    const meta = getRunModifierMeta(modifierId);
+    if (!await spendCoins(meta.cost)) return;
+
+    setPendingRunModifiers((prev) => ({
+      ...prev,
+      [modifierId]: true,
+    }));
+    setShopNotice(
+      language === 'ru'
+        ? `${meta.title} готов к следующему запуску`
+        : `${meta.title} is armed for the next run`,
+    );
+    trackEvent('shop_spend_coins', {
+      item: `run_modifier_${modifierId}`,
+      cost: meta.cost,
+      level: levelToLaunch ?? level,
+      mode: selectedLevelConfig?.mode ?? levelConfig.mode,
+    });
+  }, [getRunModifierMeta, language, level, levelConfig.mode, levelToLaunch, pendingRunModifiers, selectedLevelConfig?.mode, setShopNotice, spendCoins]);
+
+  const clearPendingRunModifiers = useCallback(() => {
+    setPendingRunModifiers(getEmptyRunModifiers());
+  }, []);
+
+  const selectedLevelRunModifiers = useMemo(() => {
+    return getAvailableRunModifiers(selectedLevelConfig).map((modifierId) => {
+      const meta = getRunModifierMeta(modifierId);
+      return {
+        id: modifierId,
+        ...meta,
+        active: pendingRunModifiers[modifierId],
+      };
+    });
+  }, [getAvailableRunModifiers, getRunModifierMeta, pendingRunModifiers, selectedLevelConfig]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(BEST_SCORE_STORAGE_KEY, String(bestScore));
@@ -667,13 +815,19 @@ function App() {
       const payload = await getLeaderboardTop(limit);
       const items = payload?.items ?? [];
       setLeaderboardItems(items);
+      setLeaderboardOverview({
+        playerRank: payload?.playerRank ?? null,
+        nextRival: payload?.nextRival ?? null,
+        weeklyTier: payload?.weeklyTier ?? null,
+        chest: payload?.chest ?? null,
+      });
       setWeeklyLoop((prev) => {
         const normalized = normalizeWeeklyLoopState(prev, bestScore);
         if (normalized.challengeCompleted) {
           return normalized;
         }
 
-        const nextHigherScore = items.find((item) => item.bestScore > bestScore)?.bestScore;
+        const nextHigherScore = payload?.nextRival?.bestScore ?? items.find((item) => item.bestScore > bestScore)?.bestScore;
         const challengeTargetScore = nextHigherScore ?? normalized.challengeTargetScore ?? getDefaultWeeklyChallengeScore(bestScore);
         return {
           ...normalized,
@@ -685,6 +839,55 @@ function App() {
       setIsLeaderboardLoading(false);
     }
   }, [bestScore, getLeaderboardTop]);
+
+  const refreshDailyMissions = useCallback(async () => {
+    const payload = await getDailyMissionsStatus();
+    if (!payload) return;
+    setDailyMissionDate(payload.missionDate);
+    setDailyMissions(payload.missions ?? []);
+  }, [getDailyMissionsStatus]);
+
+  const claimDailyMissionReward = useCallback(async (missionId: string) => {
+    setDailyMissionClaimLoadingId(missionId);
+    try {
+      const payload = await claimDailyMission(missionId);
+      if (!payload) {
+        setShopNotice(language === 'ru' ? 'Награда за миссию недоступна' : 'Mission reward unavailable');
+        return;
+      }
+      setDailyMissionDate(payload.missionDate);
+      setDailyMissions(payload.missions ?? []);
+      const claimedMission = payload.missions?.find((item) => item.id === missionId);
+      if (claimedMission?.claimed) {
+        setShopNotice(
+          language === 'ru'
+            ? `Награда за миссию: +${payload.reward ?? claimedMission.reward}`
+            : `Mission reward: +${payload.reward ?? claimedMission.reward}`,
+        );
+      }
+    } finally {
+      setDailyMissionClaimLoadingId(null);
+    }
+  }, [claimDailyMission, language, setShopNotice]);
+
+  const claimLeaderboardTierChestReward = useCallback(async () => {
+    const payload = await claimLeaderboardChest();
+    if (!payload?.ok) {
+      setShopNotice(language === 'ru' ? 'Сундук ранга пока недоступен' : 'Rank chest is not available yet');
+      return;
+    }
+    setLeaderboardOverview((prev) => ({
+      ...prev,
+      playerRank: payload.playerRank ?? prev.playerRank,
+      weeklyTier: payload.weeklyTier ?? prev.weeklyTier,
+      chest: payload.chest ?? prev.chest,
+    }));
+    setShopNotice(
+      language === 'ru'
+        ? `Награда рейтинга: +${payload.reward ?? 0}`
+        : `Ranking reward: +${payload.reward ?? 0}`,
+    );
+  }, [claimLeaderboardChest, language, setShopNotice]);
 
   const handleClaimDailyReward = async () => {
     const result = await claimDailyReward();
@@ -713,11 +916,28 @@ function App() {
       setDailyCanClaim(false);
       setShopNotice(language === 'ru' ? 'Награда уже получена сегодня' : 'Daily reward already claimed');
     }
+    await refreshDailyMissions();
   };
 
   const openLeaderboard = async () => {
     await refreshLeaderboardSnapshot(20, true);
   };
+
+  const reportRunMissionProgress = useCallback(async (reason: 'level_complete' | 'game_over') => {
+    if (!walletReady) return;
+    const summaryKey = `${reason}:${level}:${score}:${levelBombActivations}:${usedContinueThisLevel ? 1 : 0}`;
+    if (runSummaryReportedRef.current === summaryKey) return;
+    runSummaryReportedRef.current = summaryKey;
+
+    const payload = await reportDailyMissionProgress({
+      bombActivationsDelta: levelBombActivations,
+      highestScore: score,
+      cleanLevelClearDelta: reason === 'level_complete' && !usedContinueThisLevel ? 1 : 0,
+    });
+    if (!payload) return;
+    setDailyMissionDate(payload.missionDate);
+    setDailyMissions(payload.missions ?? []);
+  }, [level, levelBombActivations, reportDailyMissionProgress, score, usedContinueThisLevel, walletReady]);
 
   const openDailyRewards = () => {
     setIsDailyRewardsOpen(true);
@@ -725,7 +945,7 @@ function App() {
 
   const renderDailyRewardsModal = () => (
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)]">
+      <div className="w-full max-w-md rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)] max-h-[88vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between">
           <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{language === 'ru' ? 'Ежедневная награда' : 'Daily Reward'}</div>
           <button type="button" onClick={() => setIsDailyRewardsOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
@@ -780,6 +1000,63 @@ function App() {
           >
             {dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}
           </button>
+
+          <div className="mt-4 rounded-2xl border border-amber-200/18 bg-amber-300/10 p-3">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">
+              {language === 'ru' ? 'Daily missions / quest board' : 'Daily missions / quest board'}
+            </div>
+            <div className="mt-1 text-xs text-white/72">
+              {language === 'ru'
+                ? `Дата цикла: ${dailyMissionDate || 'сегодня'}`
+                : `Cycle date: ${dailyMissionDate || 'today'}`}
+            </div>
+            <div className="mt-3 space-y-2">
+              {dailyMissions.map((mission) => {
+                const missionTitle = mission.id === 'bomb_activations'
+                  ? (language === 'ru' ? 'Активируй 3 бомбы' : 'Activate 3 bombs')
+                  : mission.id === 'score_1800'
+                    ? (language === 'ru' ? 'Набери 1800 очков' : 'Beat 1800 score')
+                    : (language === 'ru' ? 'Закрой 2 уровня без continue' : 'Clear 2 levels without continue');
+                const progressValue = Math.min(mission.target, mission.progress);
+                return (
+                  <div key={mission.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-black text-white">{missionTitle}</div>
+                        <div className="mt-1 text-xs text-white/70">
+                          {progressValue}/{mission.target} • +{mission.reward}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={!mission.completed || mission.claimed || dailyMissionClaimLoadingId === mission.id}
+                        onClick={() => void claimDailyMissionReward(mission.id)}
+                        className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] transition ${
+                          mission.claimed
+                            ? 'bg-white/10 text-white/50'
+                            : mission.completed
+                              ? 'bg-gradient-to-r from-amber-300 to-orange-400 text-slate-900'
+                              : 'bg-white/10 text-white/60'
+                        }`}
+                      >
+                        {mission.claimed
+                          ? (language === 'ru' ? 'Claimed' : 'Claimed')
+                          : mission.completed
+                            ? (language === 'ru' ? 'Забрать' : 'Claim')
+                            : (language === 'ru' ? 'В пути' : 'In progress')}
+                      </button>
+                    </div>
+                    <div className="mt-2 h-2 rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-amber-300 to-orange-400"
+                        style={{ width: `${Math.max(6, Math.min(100, (progressValue / Math.max(1, mission.target)) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -787,7 +1064,7 @@ function App() {
 
   const renderLeaderboardModal = () => (
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
+      <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)] max-h-[88vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between">
           <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{language === 'ru' ? 'Рейтинг игроков' : 'Player Ranking'}</div>
           <button type="button" onClick={() => setIsLeaderboardOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
@@ -795,14 +1072,66 @@ function App() {
           </button>
         </div>
         <div className="mb-3 rounded-2xl border border-amber-200/18 bg-amber-300/10 px-4 py-3 text-sm text-white">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">{language === 'ru' ? 'Beat this score' : 'Beat this score'}</div>
-          <div className="mt-1 text-xl font-black">{weeklyLoop.challengeTargetScore}</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">{language === 'ru' ? 'Beat this rival' : 'Beat this rival'}</div>
+          <div className="mt-1 text-xl font-black">
+            {leaderboardOverview.nextRival?.bestScore ?? weeklyLoop.challengeTargetScore}
+          </div>
           <div className="mt-1 text-xs text-white/72">
-            {language === 'ru'
-              ? `Твой лучший: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Челлендж недели уже закрыт.' : 'Обгони эту планку, чтобы закрыть недельный челлендж.'}`
-              : `Your best: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Weekly challenge already cleared.' : 'Beat this line to close the weekly challenge.'}`}
+            {leaderboardOverview.nextRival
+              ? (language === 'ru'
+                  ? `Обгони ${leaderboardOverview.nextRival.displayName}. До следующего места осталось ${leaderboardOverview.nextRival.gapScore} очков.`
+                  : `Pass ${leaderboardOverview.nextRival.displayName}. ${leaderboardOverview.nextRival.gapScore} score to the next place.`)
+              : (language === 'ru'
+                  ? `Твой лучший: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Челлендж недели уже закрыт.' : 'Обгони эту планку, чтобы закрыть недельный челлендж.'}`
+                  : `Your best: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Weekly challenge already cleared.' : 'Beat this line to close the weekly challenge.'}`)}
           </div>
         </div>
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">{language === 'ru' ? 'Твой ранг' : 'Your rank'}</div>
+            <div className="mt-1 text-2xl font-black">{leaderboardOverview.playerRank ? `#${leaderboardOverview.playerRank}` : '--'}</div>
+          </div>
+          <div className="rounded-2xl border border-violet-200/20 bg-violet-300/10 px-4 py-3 text-white">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-violet-100/75">{language === 'ru' ? 'Weekly tier' : 'Weekly tier'}</div>
+            <div className="mt-1 text-lg font-black">
+              {leaderboardOverview.weeklyTier
+                ? `${leaderboardOverview.weeklyTier.id.toUpperCase()}`
+                : (language === 'ru' ? 'Вне tier' : 'No tier yet')}
+            </div>
+          </div>
+        </div>
+        {leaderboardOverview.chest && (
+          <div className="mb-3 rounded-2xl border border-emerald-200/18 bg-emerald-300/10 px-4 py-3 text-white">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Reward chest for rank tier' : 'Reward chest for rank tier'}</div>
+                <div className="mt-1 text-sm font-bold">
+                  {language === 'ru'
+                    ? `Tier ${leaderboardOverview.chest.tierId.toUpperCase()} даёт +${leaderboardOverview.chest.reward}`
+                    : `Tier ${leaderboardOverview.chest.tierId.toUpperCase()} awards +${leaderboardOverview.chest.reward}`}
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={!leaderboardOverview.chest.claimable || leaderboardOverview.chest.claimed}
+                onClick={() => void claimLeaderboardTierChestReward()}
+                className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
+                  leaderboardOverview.chest.claimed
+                    ? 'bg-white/10 text-white/50'
+                    : leaderboardOverview.chest.claimable
+                      ? 'bg-gradient-to-r from-emerald-300 to-cyan-300 text-slate-900'
+                      : 'bg-white/10 text-white/60'
+                }`}
+              >
+                {leaderboardOverview.chest.claimed
+                  ? (language === 'ru' ? 'Claimed' : 'Claimed')
+                  : leaderboardOverview.chest.claimable
+                    ? (language === 'ru' ? 'Забрать' : 'Claim')
+                    : (language === 'ru' ? 'Ниже tier' : 'Locked')}
+              </button>
+            </div>
+          </div>
+        )}
         <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
           {isLeaderboardLoading ? (
             <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Загрузка...' : 'Loading...'}</div>
@@ -1012,11 +1341,13 @@ function App() {
     }));
     setIsPaused(false);
     setLevelToLaunch(null);
+    clearPendingRunModifiers();
     setIsMapOpen(true);
   };
 
   const onStartFromMap = (targetLevel: number) => {
     if (targetLevel > unlockedLevel) return;
+    clearPendingRunModifiers();
     setLevelToLaunch(targetLevel);
     trackEvent('map_level_selected', { level: targetLevel });
   };
@@ -1032,11 +1363,14 @@ function App() {
   const onPlaySelectedLevel = () => {
     if (levelToLaunch == null) return;
     setIsLaunchingLevel(true);
+    setUsedContinueThisLevel(false);
+    setNextRunModifiers(pendingRunModifiers);
 
     window.setTimeout(() => {
       startAtLevel(levelToLaunch);
       trackEvent('map_level_start', { level: levelToLaunch });
       setLevelToLaunch(null);
+      clearPendingRunModifiers();
       setIsMapOpen(false);
       setIsLaunchingLevel(false);
     }, 180);
@@ -1044,6 +1378,7 @@ function App() {
 
   const onCloseLevelStart = () => {
     if (isLaunchingLevel) return;
+    clearPendingRunModifiers();
     setLevelToLaunch(null);
     setIsMapOpen(true);
   };
@@ -1181,6 +1516,7 @@ function App() {
     if (!analyticsInitRef.current) return;
     if (isLevelUp && !prevLevelUpRef.current) {
       trackEvent('level_complete', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
+      void reportRunMissionProgress('level_complete');
 
       if (level === 1 && shopTimingVariant === 'b' && !autoShopPromptShownRef.current) {
         autoShopPromptShownRef.current = true;
@@ -1190,12 +1526,13 @@ function App() {
     }
 
     prevLevelUpRef.current = isLevelUp;
-  }, [isLevelUp, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, shopTimingVariant]);
+  }, [isLevelUp, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, reportRunMissionProgress, shopTimingVariant]);
 
   useEffect(() => {
     if (!analyticsInitRef.current) return;
     if (isGameOver && !prevGameOverRef.current) {
       trackEvent('game_over', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
+      void reportRunMissionProgress('game_over');
 
       if (
         level === 1 &&
@@ -1213,7 +1550,7 @@ function App() {
     }
 
     prevGameOverRef.current = isGameOver;
-  }, [isGameOver, isShopOpen, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, shopTimingVariant, tutorialActive]);
+  }, [isGameOver, isShopOpen, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, reportRunMissionProgress, shopTimingVariant, tutorialActive]);
 
   useEffect(() => {
     if (!analyticsInitRef.current) return;
@@ -1265,6 +1602,11 @@ function App() {
     }, 2000);
     return () => clearTimeout(timeout);
   }, [shopNotice]);
+
+  useEffect(() => {
+    runSummaryReportedRef.current = '';
+    setUsedContinueThisLevel(false);
+  }, [level]);
 
   useEffect(() => {
     if (!tutorialActive) return;
@@ -1346,8 +1688,9 @@ function App() {
       setDailyTotalClaims(Math.max(0, Number(status.totalClaims || 0)));
       setDailyMilestoneBonus(Math.max(0, Number(status.milestoneBonus || 0)));
       setDailyCalendarRewards(Array.isArray(status.calendarRewards) ? status.calendarRewards : []);
+      await refreshDailyMissions();
     })();
-  }, [getDailyRewardStatus, walletReady]);
+  }, [getDailyRewardStatus, refreshDailyMissions, walletReady]);
 
   useEffect(() => {
     if (!walletReady || !isMapOpen) return;
@@ -1729,6 +2072,10 @@ function App() {
               goalPreview={selectedLevelGoalPreview}
               pacePreview={selectedLevelPacePreview}
               language={language}
+              runModifiers={selectedLevelRunModifiers}
+              coinsBalance={spaceCoins}
+              onBuyRunModifier={(modifierId) => void purchaseRunModifier(modifierId as RunModifierId)}
+              bossShieldCharges={bossShieldCharges}
               onPlay={onPlaySelectedLevel}
               onClose={onCloseLevelStart}
             />
@@ -1848,7 +2195,7 @@ function App() {
             boostAmountLabel={levelConfig.mode === 'moves' ? `+${MOVE_BOOST_AMOUNT} ${language === 'ru' ? 'ходов' : 'moves'}` : `+${TIME_BOOST_SECONDS}${language === 'ru' ? ' сек' : 's'}`}
             canAffordContinue={spaceCoins >= BOOSTER_COST}
             onRestart={onRestart}
-            onBuyContinue={triggerQuickBoost}
+            onBuyContinue={buyContinueFromGameOver}
             onOpenShop={openShop}
             language={language}
           />

@@ -40,6 +40,14 @@ type PersistedGameState = {
     bossHitTick: number;
     bossLastHitDamage: number;
     goalClearId: number;
+    bossShieldCharges: number;
+};
+
+export type RunModifiers = {
+    startBomb: boolean;
+    startLightning: boolean;
+    bossShield: boolean;
+    trashCleaner: boolean;
 };
 
 const BOSS_DEBRIS_CAP = 14;
@@ -105,8 +113,15 @@ export const useGame = () => {
     const [bossHitTick, setBossHitTick] = useState(0);
     const [bossLastHitDamage, setBossLastHitDamage] = useState(0);
     const [goalClearId, setGoalClearId] = useState(0);
+    const [bossShieldCharges, setBossShieldCharges] = useState(0);
     const goalFinalizingRef = useRef(false);
     const gridRef = useRef<Grid>(grid);
+    const upcomingRunModifiersRef = useRef<RunModifiers>({
+        startBomb: false,
+        startLightning: false,
+        bossShield: false,
+        trashCleaner: false,
+    });
 
     const levelIndex = (level - 1) % LEVEL_CONFIGS.length;
     const levelConfig = LEVEL_CONFIGS[levelIndex];
@@ -169,6 +184,47 @@ export const useGame = () => {
         };
     }, [addTrashToGrid]);
 
+    const removeRandomTrashFromGrid = useCallback((baseGrid: Grid, count: number): { grid: Grid; cleared: number } => {
+        const normalizedCount = Math.max(0, Math.floor(count));
+        if (normalizedCount <= 0) {
+            return { grid: baseGrid, cleared: 0 };
+        }
+
+        const trashTiles: Tile[] = [];
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = baseGrid[y][x];
+                if (tile.hasTrash) {
+                    trashTiles.push(tile);
+                }
+            }
+        }
+
+        if (trashTiles.length === 0) {
+            return { grid: baseGrid, cleared: 0 };
+        }
+
+        const shuffled = [...trashTiles];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+
+        const clearCount = Math.min(normalizedCount, shuffled.length);
+        const clearIds = new Set(shuffled.slice(0, clearCount).map((tile) => tile.id));
+        const nextGrid = copyGrid(baseGrid);
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = nextGrid[y][x];
+                if (clearIds.has(tile.id)) {
+                    nextGrid[y][x] = { ...tile, hasTrash: false };
+                }
+            }
+        }
+
+        return { grid: nextGrid, cleared: clearCount };
+    }, []);
+
     const prepareLevel = useCallback((targetLevel: number) => {
         const sanitizedLevel = Math.max(1, Math.floor(targetLevel));
         preparedLevelRef.current = {
@@ -180,7 +236,24 @@ export const useGame = () => {
     const resetLevelState = (config = levelConfig, snapshot?: LevelStateSnapshot) => {
         goalFinalizingRef.current = false;
         const source = snapshot ?? createLevelSnapshot(config);
-        setGrid(source.grid);
+        const modifiers = upcomingRunModifiersRef.current;
+        let nextGrid = source.grid;
+        let clearedTrashCount = 0;
+
+        if (modifiers.startBomb) {
+            nextGrid = placeRandomSpecialOnGrid(nextGrid, 'bomb');
+        }
+        if (modifiers.startLightning) {
+            nextGrid = placeRandomSpecialOnGrid(nextGrid, 'lightning');
+        }
+        if (modifiers.trashCleaner) {
+            const clearedTrash = removeRandomTrashFromGrid(nextGrid, 4);
+            nextGrid = clearedTrash.grid;
+            clearedTrashCount = clearedTrash.cleared;
+        }
+
+        nextGrid = ensurePlayableGrid(nextGrid);
+        setGrid(nextGrid);
         setScore(0);
         setMoves(source.moves);
         setTimeLeft(source.timeLeft);
@@ -199,12 +272,19 @@ export const useGame = () => {
         setLevelNovaActivations(0);
         setLevelSmashEvents(0);
         setComboX5Count(0);
-        setTrashDestroyed(0);
+        setTrashDestroyed(clearedTrashCount);
         setTrashTotal(config.trashCount ?? (config.goal.type === 'trash' ? config.goal.value : 0));
         setBossMaxHp(config.goal.type === 'boss' ? config.goal.value : 0);
         setBossHp(config.goal.type === 'boss' ? config.goal.value : 0);
         setBossLastHitDamage(0);
+        setBossShieldCharges(modifiers.bossShield && config.goal.type === 'boss' ? 1 : 0);
         setValidMoves(0);
+        upcomingRunModifiersRef.current = {
+            startBomb: false,
+            startLightning: false,
+            bossShield: false,
+            trashCleaner: false,
+        };
     };
 
     useEffect(() => {
@@ -259,6 +339,7 @@ export const useGame = () => {
             setBossHitTick(Math.max(0, Math.floor(Number(parsed.bossHitTick) || 0)));
             setBossLastHitDamage(Math.max(0, Math.floor(Number(parsed.bossLastHitDamage) || 0)));
             setGoalClearId(Math.max(0, Math.floor(Number(parsed.goalClearId) || 0)));
+            setBossShieldCharges(Math.max(0, Math.floor(Number(parsed.bossShieldCharges) || 0)));
             setSelectedTile(null);
             setIsProcessing(false);
             setIsLevelUp(false);
@@ -304,6 +385,7 @@ export const useGame = () => {
             bossHitTick,
             bossLastHitDamage,
             goalClearId,
+            bossShieldCharges,
         };
 
         window.localStorage.setItem(GAME_STATE_STORAGE_KEY, JSON.stringify(snapshot));
@@ -337,6 +419,7 @@ export const useGame = () => {
         bossHitTick,
         bossLastHitDamage,
         goalClearId,
+        bossShieldCharges,
     ]);
 
     const ensurePlayableGrid = useCallback((candidate: Grid): Grid => {
@@ -584,6 +667,10 @@ export const useGame = () => {
 
     const applyBossDebrisPressure = useCallback((baseGrid: Grid): Grid => {
         if (goal.type !== 'boss' || bossHp <= 0) return baseGrid;
+        if (bossShieldCharges > 0) {
+            setBossShieldCharges((prev) => Math.max(0, prev - 1));
+            return baseGrid;
+        }
 
         let existingTrash = 0;
         const candidates: Tile[] = [];
@@ -620,7 +707,7 @@ export const useGame = () => {
 
         if (hasPossibleMoves(nextGrid)) return nextGrid;
         return reshuffleBoard(nextGrid);
-    }, [bossHp, bossMaxHp, goal.type]);
+    }, [bossHp, bossMaxHp, bossShieldCharges, goal.type]);
 
     const waitForBoardDelay = useCallback(async (ms: number) => {
         while (isPausedRef.current) await new Promise(r => setTimeout(r, 50));
@@ -1321,6 +1408,15 @@ export const useGame = () => {
         return true;
     }, [isLevelUp, levelConfig.mode]);
 
+    const setNextRunModifiers = useCallback((modifiers: RunModifiers) => {
+        upcomingRunModifiersRef.current = {
+            startBomb: Boolean(modifiers.startBomb),
+            startLightning: Boolean(modifiers.startLightning),
+            bossShield: Boolean(modifiers.bossShield),
+            trashCleaner: Boolean(modifiers.trashCleaner),
+        };
+    }, []);
+
     return {
         grid,
         score,
@@ -1361,12 +1457,14 @@ export const useGame = () => {
         bossMaxHp,
         bossHitTick,
         bossLastHitDamage,
+        bossShieldCharges,
         goalClearId,
         handleRestart,
         handleNextLevel,
         startAtLevel,
         addExtraMoves,
         addExtraTime,
+        setNextRunModifiers,
     };
 };
 

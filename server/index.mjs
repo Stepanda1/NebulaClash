@@ -54,6 +54,18 @@ const LEVEL_COMPLETION_MILESTONES = {
   30: 420,
 };
 
+const DAILY_MISSION_DEFINITIONS = [
+  { id: 'bomb_activations', target: 3, reward: 40 },
+  { id: 'score_1800', target: 1800, reward: 55 },
+  { id: 'clean_clears', target: 2, reward: 75 },
+];
+
+const LEADERBOARD_CHEST_TIERS = [
+  { id: 'top10', maxRank: 10, reward: 80 },
+  { id: 'top5', maxRank: 5, reward: 140 },
+  { id: 'top3', maxRank: 3, reward: 220 },
+];
+
 const FALLBACK_LEADERBOARD_PROFILES = [
   { displayName: 'NovaFox', bestLevel: 9, bestScore: 2480, totalStars: 22 },
   { displayName: 'CometHex', bestLevel: 8, bestScore: 2210, totalStars: 19 },
@@ -155,6 +167,15 @@ function initDatabase() {
       updated_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_leaderboard_rank ON leaderboard_profiles (best_level DESC, best_score DESC, total_stars DESC);
+    CREATE TABLE IF NOT EXISTS daily_mission_progress (
+      player_id TEXT NOT NULL,
+      mission_date TEXT NOT NULL,
+      bomb_activations INTEGER NOT NULL DEFAULT 0,
+      highest_score INTEGER NOT NULL DEFAULT 0,
+      clean_level_clears INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (player_id, mission_date)
+    );
   `);
 
   ensureColumn('daily_rewards', 'total_claims', 'INTEGER NOT NULL DEFAULT 0');
@@ -603,6 +624,64 @@ function getUtcDateKey(offsetDays = 0) {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() + offsetDays);
   return d.toISOString().slice(0, 10);
+}
+
+function getUtcWeekKey(now = new Date()) {
+  const d = new Date(now);
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() - (day - 1));
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+}
+
+function getDailyMissionProgressRow(playerId, missionDate = getUtcDateKey(0)) {
+  return db.prepare(`
+    SELECT bomb_activations, highest_score, clean_level_clears
+    FROM daily_mission_progress
+    WHERE player_id = ? AND mission_date = ?
+  `).get(playerId, missionDate);
+}
+
+function getClaimedRewardKeys(playerId, prefix) {
+  return new Set(db.prepare(`
+    SELECT reward_key
+    FROM reward_claims
+    WHERE player_id = ? AND reward_key LIKE ?
+  `).all(playerId, `${prefix}%`).map((row) => String(row.reward_key || '')));
+}
+
+function buildDailyMissionStatus(playerId, missionDate = getUtcDateKey(0)) {
+  const progressRow = getDailyMissionProgressRow(playerId, missionDate);
+  const progress = {
+    bombActivations: Math.max(0, Math.floor(Number(progressRow?.bomb_activations || 0))),
+    highestScore: Math.max(0, Math.floor(Number(progressRow?.highest_score || 0))),
+    cleanLevelClears: Math.max(0, Math.floor(Number(progressRow?.clean_level_clears || 0))),
+  };
+  const claimedKeys = getClaimedRewardKeys(playerId, `daily_mission_${missionDate}_`);
+
+  const missions = DAILY_MISSION_DEFINITIONS.map((mission) => {
+    const rewardKey = `daily_mission_${missionDate}_${mission.id}`;
+    const current = mission.id === 'bomb_activations'
+      ? progress.bombActivations
+      : mission.id === 'score_1800'
+        ? progress.highestScore
+        : progress.cleanLevelClears;
+    return {
+      id: mission.id,
+      target: mission.target,
+      reward: mission.reward,
+      progress: current,
+      completed: current >= mission.target,
+      claimed: claimedKeys.has(rewardKey),
+    };
+  });
+
+  return { missionDate, missions };
+}
+
+function resolveLeaderboardTier(rank) {
+  if (!Number.isFinite(rank) || rank <= 0) return null;
+  return LEADERBOARD_CHEST_TIERS.find((tier) => rank <= tier.maxRank) || null;
 }
 
 function getDefaultDisplayName(playerId) {
@@ -1068,6 +1147,90 @@ function claimDailyReward(res, playerId) {
   });
 }
 
+function getDailyMissionsStatus(res, playerId) {
+  const status = buildDailyMissionStatus(playerId);
+  json(res, 200, {
+    ok: true,
+    missionDate: status.missionDate,
+    missions: status.missions,
+  });
+}
+
+function updateDailyMissionProgress(res, payload, playerId) {
+  const missionDate = getUtcDateKey(0);
+  const bombActivationsDelta = Math.max(0, Math.floor(Number(payload.bombActivationsDelta || 0)));
+  const highestScore = Math.max(0, Math.floor(Number(payload.highestScore || 0)));
+  const cleanLevelClearDelta = Math.max(0, Math.floor(Number(payload.cleanLevelClearDelta || 0)));
+
+  withTransaction(() => {
+    const current = getDailyMissionProgressRow(playerId, missionDate);
+    const nextBombActivations = Math.max(0, Math.floor(Number(current?.bomb_activations || 0))) + bombActivationsDelta;
+    const nextHighestScore = Math.max(
+      Math.max(0, Math.floor(Number(current?.highest_score || 0))),
+      highestScore,
+    );
+    const nextCleanClears = Math.max(0, Math.floor(Number(current?.clean_level_clears || 0))) + cleanLevelClearDelta;
+
+    db.prepare(`
+      INSERT INTO daily_mission_progress (
+        player_id, mission_date, bomb_activations, highest_score, clean_level_clears, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(player_id, mission_date) DO UPDATE SET
+        bomb_activations = excluded.bomb_activations,
+        highest_score = excluded.highest_score,
+        clean_level_clears = excluded.clean_level_clears,
+        updated_at = excluded.updated_at
+    `).run(playerId, missionDate, nextBombActivations, nextHighestScore, nextCleanClears, nowIso());
+  });
+
+  getDailyMissionsStatus(res, playerId);
+}
+
+function claimDailyMission(res, payload, playerId) {
+  const missionId = String(payload.missionId || '').trim();
+  const mission = DAILY_MISSION_DEFINITIONS.find((item) => item.id === missionId);
+  if (!mission) {
+    json(res, 400, { error: 'Unknown missionId' });
+    return;
+  }
+
+  const missionDate = getUtcDateKey(0);
+  const rewardKey = `daily_mission_${missionDate}_${mission.id}`;
+  const status = buildDailyMissionStatus(playerId, missionDate);
+  const targetMission = status.missions.find((item) => item.id === mission.id);
+  if (!targetMission?.completed) {
+    json(res, 409, { error: 'Mission is not completed yet' });
+    return;
+  }
+  if (targetMission.claimed) {
+    json(res, 409, { error: 'Mission reward already claimed' });
+    return;
+  }
+
+  const balance = withTransaction(() => {
+    const current = ensureWalletRow(playerId);
+    const next = current + mission.reward;
+    const claimedAt = nowIso();
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, claimedAt, playerId);
+    db.prepare(`
+      INSERT INTO reward_claims (player_id, reward_key, amount, claimed_at)
+      VALUES (?, ?, ?, ?)
+    `).run(playerId, rewardKey, mission.reward, claimedAt);
+    return next;
+  });
+
+  const nextStatus = buildDailyMissionStatus(playerId, missionDate);
+  json(res, 200, {
+    ok: true,
+    missionId,
+    reward: mission.reward,
+    balance,
+    missionDate,
+    missions: nextStatus.missions,
+  });
+}
+
 function submitLeaderboard(res, payload, playerId) {
   const bestLevel = Math.max(1, Math.floor(Number(payload.bestLevel || 1)));
   const bestScore = Math.max(0, Math.floor(Number(payload.bestScore || 0)));
@@ -1102,7 +1265,85 @@ function submitLeaderboard(res, payload, playerId) {
   json(res, 200, { ok: true });
 }
 
-function getLeaderboardTop(res, requestedLimit) {
+function getLeaderboardOverview(playerId, items) {
+  if (!playerId) {
+    return {
+      playerRank: null,
+      nextRival: null,
+      weeklyTier: null,
+      chest: null,
+    };
+  }
+
+  const playerRow = db.prepare(`
+    SELECT display_name, best_level, best_score, total_stars
+    FROM leaderboard_profiles
+    WHERE player_id = ?
+  `).get(playerId);
+
+  const rankedPool = [
+    ...db.prepare(`
+      SELECT player_id, display_name, best_level, best_score, total_stars
+      FROM leaderboard_profiles
+    `).all().map((row) => ({
+      playerId: String(row.player_id || ''),
+      displayName: String(row.display_name || 'Pilot'),
+      bestLevel: Math.max(1, Math.floor(Number(row.best_level || 1))),
+      bestScore: Math.max(0, Math.floor(Number(row.best_score || 0))),
+      totalStars: Math.max(0, Math.floor(Number(row.total_stars || 0))),
+    })),
+  ];
+
+  for (const rival of FALLBACK_LEADERBOARD_PROFILES) {
+    if (rankedPool.some((entry) => entry.displayName === rival.displayName)) continue;
+    rankedPool.push({ playerId: '', ...rival });
+  }
+
+  rankedPool.sort((left, right) => (
+    right.bestLevel - left.bestLevel
+    || right.bestScore - left.bestScore
+    || right.totalStars - left.totalStars
+    || left.displayName.localeCompare(right.displayName)
+  ));
+
+  const playerRank = rankedPool.findIndex((entry) => entry.playerId === playerId) + 1;
+  const nextRival = playerRank > 1 ? rankedPool[playerRank - 2] : null;
+  const weeklyTier = resolveLeaderboardTier(playerRank);
+  const weekKey = getUtcWeekKey();
+  const claimedKeys = getClaimedRewardKeys(playerId, `leaderboard_weekly_${weekKey}_`);
+  const chestKey = weeklyTier ? `leaderboard_weekly_${weekKey}_${weeklyTier.id}` : null;
+
+  return {
+    playerRank: playerRank || null,
+    nextRival: nextRival
+      ? {
+          displayName: nextRival.displayName,
+          bestLevel: nextRival.bestLevel,
+          bestScore: nextRival.bestScore,
+          totalStars: nextRival.totalStars,
+          gapScore: Math.max(0, nextRival.bestScore - Math.max(0, Math.floor(Number(playerRow?.best_score || 0)))),
+        }
+      : null,
+    weeklyTier: weeklyTier
+      ? {
+          id: weeklyTier.id,
+          maxRank: weeklyTier.maxRank,
+          reward: weeklyTier.reward,
+        }
+      : null,
+    chest: weeklyTier
+      ? {
+          tierId: weeklyTier.id,
+          reward: weeklyTier.reward,
+          claimable: !claimedKeys.has(chestKey),
+          claimed: claimedKeys.has(chestKey),
+          weekKey,
+        }
+      : null,
+  };
+}
+
+function getLeaderboardTop(res, requestedLimit, playerId = null) {
   const limit = Math.max(1, Math.min(50, Math.floor(Number(requestedLimit || 20))));
   const rows = db.prepare(`
     SELECT display_name, best_level, best_score, total_stars
@@ -1135,7 +1376,7 @@ function getLeaderboardTop(res, requestedLimit) {
       || left.displayName.localeCompare(right.displayName)
     ))
     .slice(0, limit)
-    .map((row, index) => ({
+  .map((row, index) => ({
     rank: index + 1,
     displayName: row.displayName,
     bestLevel: row.bestLevel,
@@ -1143,7 +1384,52 @@ function getLeaderboardTop(res, requestedLimit) {
     totalStars: row.totalStars,
   }));
 
-  json(res, 200, { ok: true, items });
+  const overview = getLeaderboardOverview(playerId, items);
+
+  json(res, 200, {
+    ok: true,
+    items,
+    playerRank: overview.playerRank,
+    nextRival: overview.nextRival,
+    weeklyTier: overview.weeklyTier,
+    chest: overview.chest,
+  });
+}
+
+function claimLeaderboardChest(res, playerId) {
+  const overview = getLeaderboardOverview(playerId, []);
+  if (!overview.weeklyTier || !overview.chest) {
+    json(res, 409, { error: 'No chest tier unlocked yet' });
+    return;
+  }
+  if (!overview.chest.claimable || overview.chest.claimed) {
+    json(res, 409, { error: 'Chest already claimed' });
+    return;
+  }
+
+  const rewardKey = `leaderboard_weekly_${overview.chest.weekKey}_${overview.weeklyTier.id}`;
+  const balance = withTransaction(() => {
+    const current = ensureWalletRow(playerId);
+    const next = current + overview.weeklyTier.reward;
+    const claimedAt = nowIso();
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, claimedAt, playerId);
+    db.prepare(`
+      INSERT INTO reward_claims (player_id, reward_key, amount, claimed_at)
+      VALUES (?, ?, ?, ?)
+    `).run(playerId, rewardKey, overview.weeklyTier.reward, claimedAt);
+    return next;
+  });
+
+  const nextOverview = getLeaderboardOverview(playerId, []);
+  json(res, 200, {
+    ok: true,
+    reward: overview.weeklyTier.reward,
+    balance,
+    playerRank: nextOverview.playerRank,
+    weeklyTier: nextOverview.weeklyTier,
+    chest: nextOverview.chest,
+  });
 }
 
 function parseRobokassaPayload(rawBody, urlObj) {
@@ -1292,6 +1578,14 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && urlObj.pathname === '/api/missions/daily-status') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'daily-missions-status', 40)) return;
+    getDailyMissionsStatus(res, playerId);
+    return;
+  }
+
   if (req.method === 'POST' && urlObj.pathname === '/api/rewards/daily-claim') {
     const playerId = requireAuth(req, res);
     if (!playerId) return;
@@ -1322,9 +1616,40 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'POST' && urlObj.pathname === '/api/missions/daily-progress') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'daily-missions-progress', 50)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    updateDailyMissionProgress(res, payload, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/missions/daily-claim') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'daily-missions-claim', 30)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    claimDailyMission(res, payload, playerId);
+    return;
+  }
+
   if (req.method === 'GET' && urlObj.pathname === '/api/leaderboard/top') {
     if (!enforceRateLimit(req, res, 'leaderboard-top', 60)) return;
-    getLeaderboardTop(res, urlObj.searchParams.get('limit'));
+    const session = verifySessionToken(extractBearerToken(req));
+    getLeaderboardTop(res, urlObj.searchParams.get('limit'), session?.playerId || null);
     return;
   }
 
@@ -1340,6 +1665,14 @@ const server = createServer(async (req, res) => {
       return;
     }
     submitLeaderboard(res, payload, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/leaderboard/claim-tier-chest') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'leaderboard-claim-tier-chest', 20)) return;
+    claimLeaderboardChest(res, playerId);
     return;
   }
 

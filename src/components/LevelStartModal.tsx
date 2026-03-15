@@ -9,11 +9,21 @@ type LevelStartModalProps = {
   goalPreview: React.ReactNode;
   pacePreview: string;
   language: Language;
+  runModifiers: Array<{
+    id: string;
+    title: string;
+    description: string;
+    cost: number;
+    active: boolean;
+  }>;
+  coinsBalance: number;
+  onBuyRunModifier: (modifierId: string) => void;
+  bossShieldCharges?: number;
   onPlay: () => void;
   onClose: () => void;
 };
 
-export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPreview, pacePreview, language, onPlay, onClose }) => {
+export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPreview, pacePreview, language, runModifiers, coinsBalance, onBuyRunModifier, bossShieldCharges = 0, onPlay, onClose }) => {
   const t = COPY[language];
   const title = language === 'ru' ? 'Подготовка к запуску' : 'Prepare for Launch';
   const subtitle = language === 'ru' ? 'Проверь цель и начни уровень' : 'Check your goal and start the level';
@@ -55,6 +65,50 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
             {pacePreview}
           </div>
         </div>
+
+        {runModifiers.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-[11px] uppercase tracking-[0.22em] text-amber-100/80">
+                {language === 'ru' ? 'Run modifiers' : 'Run modifiers'}
+              </div>
+              <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-black text-amber-50">
+                {language === 'ru' ? 'Монеты' : 'Coins'}: {coinsBalance}
+              </div>
+            </div>
+            <div className="mt-3 space-y-2">
+              {runModifiers.map((modifier) => (
+                <div key={modifier.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-black text-white">{modifier.title}</div>
+                      <div className="mt-1 text-xs text-slate-300">{modifier.description}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onBuyRunModifier(modifier.id)}
+                      disabled={modifier.active}
+                      className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
+                        modifier.active
+                          ? 'bg-emerald-300/20 text-emerald-100'
+                          : 'bg-gradient-to-r from-amber-300 to-orange-400 text-slate-900'
+                      }`}
+                    >
+                      {modifier.active
+                        ? (language === 'ru' ? 'Armed' : 'Armed')
+                        : `-${modifier.cost}`}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {bossShieldCharges > 0 && (
+              <div className="mt-3 text-xs font-bold text-emerald-100">
+                {language === 'ru' ? `Активный щит в текущем матче: ${bossShieldCharges}` : `Active shield in current run: ${bossShieldCharges}`}
+              </div>
+            )}
+          </div>
+        )}
 
         <button
           type="button"
