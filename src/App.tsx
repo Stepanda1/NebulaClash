@@ -107,12 +107,38 @@ type LeaderboardItem = {
   totalStars: number;
 };
 type DailyMissionItem = {
+  slotIndex?: number;
   id: string;
   target: number;
   reward: number;
   progress: number;
   completed: boolean;
   claimed: boolean;
+};
+type DailyMissionChest = {
+  reward: number;
+  claimable: boolean;
+  claimed: boolean;
+  progress: number;
+  target: number;
+};
+type WeeklyMissionTrack = {
+  weekKey: string;
+  progress: number;
+  target: number;
+  reward: number;
+  claimable: boolean;
+  claimed: boolean;
+};
+type StarterOffer = {
+  active: boolean;
+  claimed: boolean;
+  expiresAt: string | null;
+  packId: string;
+  coins: number;
+  amountRub: number;
+  modifierTokens: number;
+  continueReserve: number;
 };
 type LeaderboardOverview = {
   playerRank: number | null;
@@ -135,6 +161,12 @@ type LeaderboardOverview = {
     claimed: boolean;
     weekKey: string;
   } | null;
+};
+type MissionAssistOffer = {
+  title: string;
+  description: string;
+  cta: string;
+  onActivate: () => void;
 };
 type WeeklyLoopState = {
   weekKey: string;
@@ -329,13 +361,33 @@ function App() {
   const [dailyMissions, setDailyMissions] = useState<DailyMissionItem[]>([]);
   const [dailyMissionDate, setDailyMissionDate] = useState('');
   const [dailyMissionClaimLoadingId, setDailyMissionClaimLoadingId] = useState<string | null>(null);
+  const [dailyMissionFreeRerolls, setDailyMissionFreeRerolls] = useState(1);
+  const [dailyMissionPaidRerollCost, setDailyMissionPaidRerollCost] = useState(20);
+  const [dailyMissionCompletionChest, setDailyMissionCompletionChest] = useState<DailyMissionChest | null>(null);
+  const [weeklyMissionTrack, setWeeklyMissionTrack] = useState<WeeklyMissionTrack | null>(null);
   const [bestScore, setBestScore] = useState(getStoredBestScore);
   const [weeklyLoop, setWeeklyLoop] = useState<WeeklyLoopState>(() => getStoredWeeklyLoopState(getStoredBestScore()));
   const [shopOfferContext, setShopOfferContext] = useState<ShopOfferContext>('manual');
   const [isWeeklyLoopOpen, setIsWeeklyLoopOpen] = useState(false);
   const [pendingRunModifiers, setPendingRunModifiers] = useState<RunModifiers>(getEmptyRunModifiers);
   const [usedContinueThisLevel, setUsedContinueThisLevel] = useState(false);
+  const [playerDisplayName, setPlayerDisplayName] = useState('');
+  const [displayNameDraft, setDisplayNameDraft] = useState('');
+  const [isSavingDisplayName, setIsSavingDisplayName] = useState(false);
+  const [modifierTokens, setModifierTokens] = useState(0);
+  const [continueReserve, setContinueReserve] = useState(0);
+  const [starterOffer, setStarterOffer] = useState<StarterOffer>({
+    active: false,
+    claimed: false,
+    expiresAt: null,
+    packId: 'starter-bundle',
+    coins: 120,
+    amountRub: 149,
+    modifierTokens: 1,
+    continueReserve: 2,
+  });
   const [adminAccessToken, setAdminAccessToken] = useState(() => (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) || '' : ''));
+  const [profileRefreshNonce, setProfileRefreshNonce] = useState(0);
   const [adminAuthLoading, setAdminAuthLoading] = useState(false);
   const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
@@ -356,6 +408,7 @@ function App() {
   const analyticsLightningCountRef = useRef(0);
   const weeklyChallengeUnlockedNoticeRef = useRef(false);
   const levelRewardClaimRef = useRef('');
+  const profileHydratedRef = useRef(false);
   const experimentAssignedTrackedRef = useRef(false);
   const autoShopPromptShownRef = useRef(wasShopTimingAutoShown());
   const runSummaryReportedRef = useRef('');
@@ -542,6 +595,18 @@ function App() {
 
   const buyContinueFromGameOver = async () => {
     setUsedContinueThisLevel(true);
+    if (continueReserve > 0) {
+      const profile = await consumeProfileBonus('continue_reserve');
+      if (profile) {
+        applyProfileState(profile);
+        const applied = levelConfig.mode === 'moves' ? addExtraMoves(MOVE_BOOST_AMOUNT) : addExtraTime(TIME_BOOST_SECONDS);
+        if (applied) {
+          setShopNotice(language === 'ru' ? 'Продолжение активировано из стартового резерва' : 'Continue used from starter reserve');
+          trackEvent('economy_source', { source: 'continue_reserve', amount: 1, remaining_reserve: profile.continueReserve });
+          return;
+        }
+      }
+    }
     await triggerQuickBoost();
   };
 
@@ -608,19 +673,25 @@ function App() {
     buyCoinsPack,
     claimDailyReward,
     claimDailyMission,
+    claimDailyMissionCompletionChest,
     claimLevelCompletionReward,
     claimLeaderboardChest,
+    claimWeeklyMissionTrackChest,
+    consumeProfileBonus,
     getDailyRewardStatus,
     getDailyMissionsStatus,
     getLeaderboardTop,
+    getProfile,
     playerId,
     reportDailyMissionProgress,
+    rerollDailyMission,
     setShopNotice,
     shopNotice,
     spaceCoins,
     spendCoins,
     submitLeaderboardEntry,
     syncWalletBalance,
+    updateProfile,
     walletReady,
   } = useWallet({
     language,
@@ -630,6 +701,9 @@ function App() {
     shopPackUnavailableMessage: t.shopPackUnavailable,
     onPaymentStatus: (status) => {
       trackEvent('shop_payment_status', { status });
+      if (status === 'success') {
+        setProfileRefreshNonce((value) => value + 1);
+      }
     },
     onPackCheckout: (packId) => {
       trackEvent('shop_real_money_click', { pack_id: packId, level, mode: levelConfig.mode });
@@ -648,6 +722,7 @@ function App() {
     const notice = t.boughtExtraMoves(MOVE_BOOST_AMOUNT);
     setShopNotice(notice);
     trackEvent('shop_spend_coins', { item: 'extra_moves', cost: BOOSTER_COST, value: MOVE_BOOST_AMOUNT, level, mode: levelConfig.mode });
+    trackEvent('economy_sink', { sink: 'extra_moves', amount: BOOSTER_COST, value: MOVE_BOOST_AMOUNT, level });
   };
 
   const buyExtraTime = async () => {
@@ -662,7 +737,58 @@ function App() {
     const notice = t.boughtExtraTime(TIME_BOOST_SECONDS);
     setShopNotice(notice);
     trackEvent('shop_spend_coins', { item: 'extra_time', cost: BOOSTER_COST, value: TIME_BOOST_SECONDS, level, mode: levelConfig.mode });
+    trackEvent('economy_sink', { sink: 'extra_time', amount: BOOSTER_COST, value: TIME_BOOST_SECONDS, level });
   };
+
+  const applyMissionStatus = useCallback((payload: {
+    missionDate?: string;
+    missions?: DailyMissionItem[];
+    freeRerollsRemaining?: number;
+    paidRerollCost?: number;
+    completionChest?: DailyMissionChest | null;
+    weeklyTrack?: WeeklyMissionTrack | null;
+  } | null | undefined) => {
+    if (!payload) return;
+    setDailyMissionDate(payload.missionDate ?? '');
+    setDailyMissions(payload.missions ?? []);
+    setDailyMissionFreeRerolls(Math.max(0, Number(payload.freeRerollsRemaining ?? 1)));
+    setDailyMissionPaidRerollCost(Math.max(0, Number(payload.paidRerollCost ?? 20)));
+    setDailyMissionCompletionChest(payload.completionChest ?? null);
+    setWeeklyMissionTrack(payload.weeklyTrack ?? null);
+  }, []);
+
+  const applyProfileState = useCallback((profile: {
+    displayName?: string;
+    unlockedLevel?: number;
+    levelStars?: Record<number, number>;
+    bestScore?: number;
+    weeklyLoop?: Partial<WeeklyLoopState>;
+    tutorialCompleted?: boolean;
+    modifierTokens?: number;
+    continueReserve?: number;
+    starterOffer?: StarterOffer;
+  } | null | undefined) => {
+    if (!profile) return;
+    const nextBestScore = Math.max(0, Math.floor(Number(profile.bestScore ?? 0)));
+    setPlayerDisplayName(profile.displayName ?? '');
+    setDisplayNameDraft(profile.displayName ?? '');
+    setUnlockedLevel(Math.max(1, Math.floor(Number(profile.unlockedLevel ?? 1))));
+    setLevelStars((profile.levelStars ?? {}) as LevelStarsMap);
+    setBestScore(nextBestScore);
+    setWeeklyLoop(normalizeWeeklyLoopState(profile.weeklyLoop ?? null, nextBestScore));
+    setHasSeenTutorial(Boolean(profile.tutorialCompleted));
+    setModifierTokens(Math.max(0, Math.floor(Number(profile.modifierTokens ?? 0))));
+    setContinueReserve(Math.max(0, Math.floor(Number(profile.continueReserve ?? 0))));
+    if (profile.starterOffer) {
+      setStarterOffer(profile.starterOffer);
+    }
+  }, []);
+
+  const starterBundlePack = useMemo(() => ({
+    id: starterOffer.packId,
+    coins: starterOffer.coins,
+    priceLabel: `${starterOffer.amountRub} RUB`,
+  }), [starterOffer.amountRub, starterOffer.coins, starterOffer.packId]);
 
   const openShopWithSource = useCallback((source: ShopOpenSource) => {
     setShopOfferContext(
@@ -697,8 +823,42 @@ function App() {
 
   const triggerQuickBoost = levelConfig.mode === 'moves' ? buyExtraMoves : buyExtraTime;
 
+  const missionAssistOffer = useMemo<MissionAssistOffer | null>(() => {
+    const nearMission = dailyMissions.find((mission) => !mission.claimed && !mission.completed && mission.target - mission.progress <= 1);
+    if (!nearMission) return null;
+
+    if (nearMission.id === 'bomb_activations') {
+      return {
+        title: language === 'ru' ? 'Осталась 1 бомба до миссии' : '1 bomb left for the mission',
+        description: language === 'ru' ? 'Возьми старт с бомбой и закрой задачу в следующем забеге.' : 'Grab a starting bomb and close the mission in the next run.',
+        cta: language === 'ru' ? 'К модификаторам' : 'Open modifiers',
+        onActivate: () => {
+          setIsShopOpen(false);
+          setIsMapOpen(true);
+          setLevelToLaunch(Math.max(level, unlockedLevel));
+        },
+      };
+    }
+
+    return {
+      title: language === 'ru' ? 'Ты в одном шаге от награды' : 'You are one step from a reward',
+      description: language === 'ru' ? 'Быстрый буст поможет дожать миссию прямо в этой сессии.' : 'A quick boost can close this mission in the current session.',
+      cta: language === 'ru' ? 'Купить буст' : 'Buy boost',
+      onActivate: () => {
+        void triggerQuickBoost();
+      },
+    };
+  }, [dailyMissions, language, level, triggerQuickBoost, unlockedLevel]);
+
   const getRunModifierMeta = useCallback((modifierId: RunModifierId) => {
-    const cost = RUN_MODIFIER_COSTS[modifierId];
+    const targetConfig = selectedLevelConfig ?? levelConfig;
+    const targetLevel = levelToLaunch ?? level;
+    const earlyGameDiscount = targetLevel <= 10 ? 2 : 0;
+    const cost = modifierId === 'bossShield'
+      ? RUN_MODIFIER_COSTS[modifierId] + (targetLevel >= 20 ? 4 : 2)
+      : modifierId === 'trashCleaner' && (targetConfig.trashCount ?? 0) > 0
+        ? Math.max(8, RUN_MODIFIER_COSTS[modifierId] - 2)
+        : Math.max(8, RUN_MODIFIER_COSTS[modifierId] - earlyGameDiscount);
     if (modifierId === 'startBomb') {
       return {
         cost,
@@ -725,7 +885,7 @@ function App() {
       title: language === 'ru' ? 'Очистка мусора' : 'Trash cleaner',
       description: language === 'ru' ? 'Убирает часть мусора до первого хода и делает старт чище.' : 'Scrub part of the trash before your first move for a cleaner start.',
     };
-  }, [language]);
+  }, [language, level, levelConfig, levelToLaunch, selectedLevelConfig]);
 
   const getAvailableRunModifiers = useCallback((config: LevelConfig | null): RunModifierId[] => {
     if (!config) return [];
@@ -742,6 +902,23 @@ function App() {
   const purchaseRunModifier = useCallback(async (modifierId: RunModifierId) => {
     if (pendingRunModifiers[modifierId]) return;
     const meta = getRunModifierMeta(modifierId);
+    if (modifierTokens > 0) {
+      const profile = await consumeProfileBonus('modifier_token');
+      if (!profile) return;
+      applyProfileState(profile);
+      setPendingRunModifiers((prev) => ({
+        ...prev,
+        [modifierId]: true,
+      }));
+      setShopNotice(
+        language === 'ru'
+          ? `${meta.title} активирован за жетон модификатора`
+          : `${meta.title} activated with a modifier token`,
+      );
+      trackEvent('economy_source', { source: 'starter_modifier_token', item: modifierId, remaining_tokens: profile.modifierTokens });
+      return;
+    }
+
     if (!await spendCoins(meta.cost)) return;
 
     setPendingRunModifiers((prev) => ({
@@ -759,7 +936,12 @@ function App() {
       level: levelToLaunch ?? level,
       mode: selectedLevelConfig?.mode ?? levelConfig.mode,
     });
-  }, [getRunModifierMeta, language, level, levelConfig.mode, levelToLaunch, pendingRunModifiers, selectedLevelConfig?.mode, setShopNotice, spendCoins]);
+    trackEvent('economy_sink', {
+      sink: `run_modifier_${modifierId}`,
+      amount: meta.cost,
+      level: levelToLaunch ?? level,
+    });
+  }, [applyProfileState, consumeProfileBonus, getRunModifierMeta, language, level, levelConfig.mode, levelToLaunch, modifierTokens, pendingRunModifiers, selectedLevelConfig?.mode, setShopNotice, spendCoins]);
 
   const clearPendingRunModifiers = useCallback(() => {
     setPendingRunModifiers(getEmptyRunModifiers());
@@ -785,6 +967,37 @@ function App() {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(WEEKLY_LOOP_STORAGE_KEY, JSON.stringify(weeklyLoop));
   }, [weeklyLoop]);
+
+  useEffect(() => {
+    if (!walletReady || profileHydratedRef.current) return;
+    void (async () => {
+      const profile = await getProfile();
+      if (!profile) return;
+      applyProfileState(profile);
+      profileHydratedRef.current = true;
+    })();
+  }, [applyProfileState, getProfile, walletReady]);
+
+  useEffect(() => {
+    if (!walletReady || profileRefreshNonce === 0) return;
+    void (async () => {
+      const profile = await getProfile();
+      if (!profile) return;
+      applyProfileState(profile);
+    })();
+  }, [applyProfileState, getProfile, profileRefreshNonce, walletReady]);
+
+  useEffect(() => {
+    if (!walletReady || !profileHydratedRef.current) return;
+    void updateProfile({
+      displayName: playerDisplayName,
+      unlockedLevel,
+      levelStars,
+      bestScore,
+      weeklyLoop,
+      tutorialCompleted: hasSeenTutorial,
+    });
+  }, [bestScore, hasSeenTutorial, levelStars, playerDisplayName, unlockedLevel, updateProfile, walletReady, weeklyLoop]);
 
   useEffect(() => {
     setWeeklyLoop((prev) => normalizeWeeklyLoopState(prev, bestScore));
@@ -843,9 +1056,8 @@ function App() {
   const refreshDailyMissions = useCallback(async () => {
     const payload = await getDailyMissionsStatus();
     if (!payload) return;
-    setDailyMissionDate(payload.missionDate);
-    setDailyMissions(payload.missions ?? []);
-  }, [getDailyMissionsStatus]);
+    applyMissionStatus(payload);
+  }, [applyMissionStatus, getDailyMissionsStatus]);
 
   const claimDailyMissionReward = useCallback(async (missionId: string) => {
     setDailyMissionClaimLoadingId(missionId);
@@ -855,8 +1067,7 @@ function App() {
         setShopNotice(language === 'ru' ? 'Награда за миссию недоступна' : 'Mission reward unavailable');
         return;
       }
-      setDailyMissionDate(payload.missionDate);
-      setDailyMissions(payload.missions ?? []);
+      applyMissionStatus(payload);
       const claimedMission = payload.missions?.find((item) => item.id === missionId);
       if (claimedMission?.claimed) {
         setShopNotice(
@@ -864,11 +1075,12 @@ function App() {
             ? `Награда за миссию: +${payload.reward ?? claimedMission.reward}`
             : `Mission reward: +${payload.reward ?? claimedMission.reward}`,
         );
+        trackEvent('economy_source', { source: `daily_mission_${missionId}`, amount: payload.reward ?? claimedMission.reward });
       }
     } finally {
       setDailyMissionClaimLoadingId(null);
     }
-  }, [claimDailyMission, language, setShopNotice]);
+  }, [applyMissionStatus, claimDailyMission, language, setShopNotice]);
 
   const claimLeaderboardTierChestReward = useCallback(async () => {
     const payload = await claimLeaderboardChest();
@@ -887,7 +1099,68 @@ function App() {
         ? `Награда рейтинга: +${payload.reward ?? 0}`
         : `Ranking reward: +${payload.reward ?? 0}`,
     );
+    trackEvent('economy_source', { source: 'leaderboard_tier_chest', amount: payload.reward ?? 0 });
   }, [claimLeaderboardChest, language, setShopNotice]);
+
+  const rerollMission = useCallback(async (slotIndex: number) => {
+    const payload = await rerollDailyMission(slotIndex);
+    if (!payload) {
+      setShopNotice(language === 'ru' ? 'Реролл миссии недоступен' : 'Mission reroll unavailable');
+      return;
+    }
+    applyMissionStatus(payload);
+    const usedFree = Number(payload.freeRerollsRemaining ?? 0) < dailyMissionFreeRerolls;
+    setShopNotice(
+      usedFree
+        ? (language === 'ru' ? 'Миссия обновлена бесплатно' : 'Mission rerolled for free')
+        : (language === 'ru' ? `Миссия обновлена за ${payload.paidRerollCost ?? dailyMissionPaidRerollCost} монет` : `Mission rerolled for ${payload.paidRerollCost ?? dailyMissionPaidRerollCost} coins`),
+    );
+    if (!usedFree) {
+      trackEvent('economy_sink', { sink: 'daily_mission_reroll', amount: payload.paidRerollCost ?? dailyMissionPaidRerollCost });
+    }
+  }, [applyMissionStatus, dailyMissionFreeRerolls, dailyMissionPaidRerollCost, language, rerollDailyMission, setShopNotice]);
+
+  const claimDailyCompletionChestReward = useCallback(async () => {
+    const payload = await claimDailyMissionCompletionChest();
+    if (!payload) {
+      setShopNotice(language === 'ru' ? 'Сундук дня пока недоступен' : 'Daily chest is not available yet');
+      return;
+    }
+    applyMissionStatus(payload);
+    setShopNotice(language === 'ru' ? `Сундук дня: +${payload.reward ?? 0}` : `Daily chest: +${payload.reward ?? 0}`);
+    trackEvent('economy_source', { source: 'daily_mission_completion_chest', amount: payload.reward ?? 0 });
+  }, [applyMissionStatus, claimDailyMissionCompletionChest, language, setShopNotice]);
+
+  const claimWeeklyTrackReward = useCallback(async () => {
+    const payload = await claimWeeklyMissionTrackChest();
+    if (!payload?.ok) {
+      setShopNotice(language === 'ru' ? 'Недельный сундук миссий пока закрыт' : 'Weekly mission chest is not available yet');
+      return;
+    }
+    setWeeklyMissionTrack(payload.weeklyTrack ?? null);
+    setShopNotice(language === 'ru' ? `Недельный сундук: +${payload.reward ?? 0}` : `Weekly mission chest: +${payload.reward ?? 0}`);
+    trackEvent('economy_source', { source: 'weekly_mission_track_chest', amount: payload.reward ?? 0 });
+  }, [claimWeeklyMissionTrackChest, language, setShopNotice]);
+
+  const saveDisplayName = useCallback(async () => {
+    const trimmed = displayNameDraft.trim().slice(0, 24);
+    if (!trimmed) {
+      setShopNotice(language === 'ru' ? 'Введите имя для рейтинга' : 'Enter a leaderboard name');
+      return;
+    }
+    setIsSavingDisplayName(true);
+    try {
+      const profile = await updateProfile({ displayName: trimmed });
+      if (!profile) {
+        setShopNotice(language === 'ru' ? 'Не удалось сохранить имя' : 'Failed to save name');
+        return;
+      }
+      applyProfileState(profile);
+      setShopNotice(language === 'ru' ? 'Имя сохранено' : 'Name saved');
+    } finally {
+      setIsSavingDisplayName(false);
+    }
+  }, [applyProfileState, displayNameDraft, language, setShopNotice, updateProfile]);
 
   const handleClaimDailyReward = async () => {
     const result = await claimDailyReward();
@@ -912,6 +1185,7 @@ function App() {
           ? `Ежедневная награда: +${result.reward}${result.milestoneBonus ? ` и +${result.milestoneBonus} бонус серии` : ''}`
           : `Daily reward: +${result.reward}${result.milestoneBonus ? ` and +${result.milestoneBonus} milestone bonus` : ''}`,
       );
+      trackEvent('economy_source', { source: 'daily_reward', amount: result.reward + (result.milestoneBonus || 0) });
     } else {
       setDailyCanClaim(false);
       setShopNotice(language === 'ru' ? 'Награда уже получена сегодня' : 'Daily reward already claimed');
@@ -933,11 +1207,12 @@ function App() {
       bombActivationsDelta: levelBombActivations,
       highestScore: score,
       cleanLevelClearDelta: reason === 'level_complete' && !usedContinueThisLevel ? 1 : 0,
+      lightningActivationsDelta: levelLightningActivations,
+      levelCompleteDelta: reason === 'level_complete' ? 1 : 0,
     });
     if (!payload) return;
-    setDailyMissionDate(payload.missionDate);
-    setDailyMissions(payload.missions ?? []);
-  }, [level, levelBombActivations, reportDailyMissionProgress, score, usedContinueThisLevel, walletReady]);
+    applyMissionStatus(payload);
+  }, [applyMissionStatus, level, levelBombActivations, levelLightningActivations, reportDailyMissionProgress, score, usedContinueThisLevel, walletReady]);
 
   const openDailyRewards = () => {
     setIsDailyRewardsOpen(true);
@@ -1010,13 +1285,23 @@ function App() {
                 ? `Дата миссий: ${dailyMissionDate || 'сегодня'}`
                 : `Cycle date: ${dailyMissionDate || 'today'}`}
             </div>
+            <div className="mt-2 flex items-center justify-between gap-2 text-xs text-white/72">
+              <span>{language === 'ru' ? `Бесплатный реролл: ${dailyMissionFreeRerolls}` : `Free rerolls: ${dailyMissionFreeRerolls}`}</span>
+              <span>{language === 'ru' ? `Платный реролл: ${dailyMissionPaidRerollCost}` : `Paid reroll: ${dailyMissionPaidRerollCost}`}</span>
+            </div>
             <div className="mt-3 space-y-2">
               {dailyMissions.map((mission) => {
                 const missionTitle = mission.id === 'bomb_activations'
                   ? (language === 'ru' ? 'Активируй 3 бомбы' : 'Activate 3 bombs')
                   : mission.id === 'score_1800'
                     ? (language === 'ru' ? 'Набери 1800 очков' : 'Beat 1800 score')
-                    : (language === 'ru' ? 'Пройди 2 уровня без продолжения' : 'Clear 2 levels without continue');
+                    : mission.id === 'clean_clears'
+                      ? (language === 'ru' ? 'Пройди 2 уровня без продолжения' : 'Clear 2 levels without continue')
+                      : mission.id === 'lightning_activations'
+                        ? (language === 'ru' ? 'Активируй 2 молнии' : 'Activate 2 lightnings')
+                        : mission.id === 'level_completions'
+                          ? (language === 'ru' ? 'Пройди 2 уровня' : 'Complete 2 levels')
+                          : (language === 'ru' ? 'Набери 2600 очков' : 'Beat 2600 score');
                 const progressValue = Math.min(mission.target, mission.progress);
                 return (
                   <div key={mission.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
@@ -1046,6 +1331,17 @@ function App() {
                             : (language === 'ru' ? 'Прогресс' : 'In progress')}
                       </button>
                     </div>
+                    {!mission.claimed && (
+                      <button
+                        type="button"
+                        onClick={() => void rerollMission(mission.slotIndex ?? 0)}
+                        className="mt-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/75 transition hover:bg-white/15"
+                      >
+                        {dailyMissionFreeRerolls > 0
+                          ? (language === 'ru' ? 'Бесплатно сменить' : 'Free reroll')
+                          : (language === 'ru' ? `Сменить за ${dailyMissionPaidRerollCost}` : `Reroll for ${dailyMissionPaidRerollCost}`)}
+                      </button>
+                    )}
                     <div className="mt-2 h-2 rounded-full bg-white/10">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-amber-300 to-orange-400"
@@ -1056,6 +1352,54 @@ function App() {
                 );
               })}
             </div>
+            {dailyMissionCompletionChest && (
+              <div className="mt-3 rounded-xl border border-emerald-200/20 bg-emerald-300/10 p-3 text-white">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-black">{language === 'ru' ? 'Сундук за все 3 миссии' : 'All-missions chest'}</div>
+                    <div className="mt-1 text-xs text-white/72">
+                      {dailyMissionCompletionChest.progress}/{dailyMissionCompletionChest.target} • +{dailyMissionCompletionChest.reward}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void claimDailyCompletionChestReward()}
+                    disabled={!dailyMissionCompletionChest.claimable || dailyMissionCompletionChest.claimed}
+                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${dailyMissionCompletionChest.claimable ? 'bg-gradient-to-r from-emerald-300 to-teal-400 text-slate-900' : 'bg-white/10 text-white/55'}`}
+                  >
+                    {dailyMissionCompletionChest.claimed
+                      ? (language === 'ru' ? 'Получено' : 'Claimed')
+                      : dailyMissionCompletionChest.claimable
+                        ? (language === 'ru' ? 'Открыть' : 'Claim')
+                        : (language === 'ru' ? 'Сначала закрой все' : 'Finish all first')}
+                  </button>
+                </div>
+              </div>
+            )}
+            {weeklyMissionTrack && (
+              <div className="mt-3 rounded-xl border border-cyan-200/18 bg-cyan-300/10 p-3 text-white">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-black">{language === 'ru' ? 'Недельный трек миссий' : 'Weekly mission track'}</div>
+                    <div className="mt-1 text-xs text-white/72">
+                      {weeklyMissionTrack.progress}/{weeklyMissionTrack.target} • +{weeklyMissionTrack.reward}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void claimWeeklyTrackReward()}
+                    disabled={!weeklyMissionTrack.claimable || weeklyMissionTrack.claimed}
+                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${weeklyMissionTrack.claimable ? 'bg-gradient-to-r from-cyan-300 to-sky-400 text-slate-900' : 'bg-white/10 text-white/55'}`}
+                  >
+                    {weeklyMissionTrack.claimed
+                      ? (language === 'ru' ? 'Получено' : 'Claimed')
+                      : weeklyMissionTrack.claimable
+                        ? (language === 'ru' ? 'Открыть' : 'Claim')
+                        : (language === 'ru' ? 'В процессе' : 'In progress')}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1098,6 +1442,30 @@ function App() {
                 ? `${leaderboardOverview.weeklyTier.id.toUpperCase()}`
                 : (language === 'ru' ? 'Пока вне лиги' : 'No tier yet')}
             </div>
+          </div>
+        </div>
+        <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">{language === 'ru' ? 'Имя в рейтинге' : 'Leaderboard name'}</div>
+          <div className="mt-2 flex gap-2">
+            <input
+              value={displayNameDraft}
+              onChange={(event) => setDisplayNameDraft(event.target.value)}
+              placeholder={language === 'ru' ? 'Например, StarPilot' : 'For example, StarPilot'}
+              className="flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => void saveDisplayName()}
+              disabled={isSavingDisplayName}
+              className="rounded-xl bg-gradient-to-r from-cyan-300 to-sky-400 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-900"
+            >
+              {language === 'ru' ? 'Сохранить' : 'Save'}
+            </button>
+          </div>
+          <div className="mt-2 text-xs text-white/60">
+            {language === 'ru'
+              ? `Текущее имя: ${playerDisplayName || 'не задано'}`
+              : `Current name: ${playerDisplayName || 'not set'}`}
           </div>
         </div>
         {leaderboardOverview.chest && (
@@ -1723,15 +2091,17 @@ function App() {
             ? `Награда за уровень: +${levelReward.reward}${levelReward.milestoneBonus ? ` и +${levelReward.milestoneBonus} за ${levelReward.completedLevelsCount} уровней` : ''}`
             : `Level reward: +${levelReward.reward}${levelReward.milestoneBonus ? ` and +${levelReward.milestoneBonus} for ${levelReward.completedLevelsCount} levels` : ''}`,
         );
+        trackEvent('economy_source', { source: 'level_completion_reward', amount: levelReward.reward, level });
       }
 
       await submitLeaderboardEntry({
+        displayName: playerDisplayName || undefined,
         bestLevel: level,
         bestScore: score,
         totalStars: totalCollectedStars + Math.max(0, stars),
       });
     })();
-  }, [bestScore, claimLevelCompletionReward, isLevelUp, language, level, playerId, score, setShopNotice, submitLeaderboardEntry, totalCollectedStars, walletReady]);
+  }, [bestScore, claimLevelCompletionReward, isLevelUp, language, level, playerDisplayName, playerId, score, setShopNotice, submitLeaderboardEntry, totalCollectedStars, walletReady]);
 
   const getAudioCtx = () => {
     if (!audioCtxRef.current) {
@@ -2159,6 +2529,16 @@ function App() {
             moveBoostAmount={MOVE_BOOST_AMOUNT}
             timeBoostSeconds={TIME_BOOST_SECONDS}
             packs={coinPacks}
+            starterBundle={{
+              active: starterOffer.active,
+              expiresAt: starterOffer.expiresAt,
+              pack: starterBundlePack,
+              modifierTokens: starterOffer.modifierTokens,
+              continueReserve: starterOffer.continueReserve,
+            }}
+            modifierTokens={modifierTokens}
+            continueReserve={continueReserve}
+            missionAssistOffer={missionAssistOffer}
             onClose={() => setIsShopOpen(false)}
             onBuyMoves={buyExtraMoves}
             onBuyTime={buyExtraTime}
@@ -2191,9 +2571,9 @@ function App() {
           <GameOverMenu
             score={score}
             mode={levelConfig.mode}
-            boostCost={BOOSTER_COST}
+            boostCost={continueReserve > 0 ? 0 : BOOSTER_COST}
             boostAmountLabel={levelConfig.mode === 'moves' ? `+${MOVE_BOOST_AMOUNT} ${language === 'ru' ? 'ходов' : 'moves'}` : `+${TIME_BOOST_SECONDS}${language === 'ru' ? ' сек' : 's'}`}
-            canAffordContinue={spaceCoins >= BOOSTER_COST}
+            canAffordContinue={continueReserve > 0 || spaceCoins >= BOOSTER_COST}
             onRestart={onRestart}
             onBuyContinue={buyContinueFromGameOver}
             onOpenShop={openShop}

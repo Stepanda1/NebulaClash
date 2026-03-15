@@ -13,6 +13,21 @@ type ShopModalProps = {
   moveBoostAmount: number;
   timeBoostSeconds: number;
   packs: ShopPack[];
+  starterBundle?: {
+    active: boolean;
+    expiresAt: string | null;
+    pack: ShopPack;
+    modifierTokens: number;
+    continueReserve: number;
+  };
+  modifierTokens: number;
+  continueReserve: number;
+  missionAssistOffer?: {
+    title: string;
+    description: string;
+    cta: string;
+    onActivate: () => void;
+  } | null;
   onClose: () => void;
   onBuyMoves: () => void;
   onBuyTime: () => void;
@@ -28,6 +43,10 @@ export function ShopModal({
   moveBoostAmount,
   timeBoostSeconds,
   packs,
+  starterBundle,
+  modifierTokens,
+  continueReserve,
+  missionAssistOffer,
   onClose,
   onBuyMoves,
   onBuyTime,
@@ -54,6 +73,16 @@ export function ShopModal({
   const paymentsHintLine2 = language === 'ru' ? 'После подтверждения монеты начисляются автоматически.' : 'Coins are credited automatically after payment confirmation.';
   const starterPackId = packs[Math.min(1, Math.max(0, packs.length - 1))]?.id ?? packs[0]?.id ?? '';
   const maxPackCoins = Math.max(...packs.map((p) => p.coins), 0);
+  const starterOfferCountdown = starterBundle?.active && starterBundle.expiresAt
+    ? Math.max(0, Math.floor((Date.parse(starterBundle.expiresAt) - Date.now()) / 1000))
+    : 0;
+  const starterCountdownLabel = starterOfferCountdown > 0
+    ? `${Math.floor(starterOfferCountdown / 3600)}h ${Math.floor((starterOfferCountdown % 3600) / 60)}m`
+    : (language === 'ru' ? 'До конца сессии' : 'This session');
+  const visiblePacks = starterBundle?.active ? [starterBundle.pack, ...packs] : packs;
+  const starterBundlePackId = starterBundle?.pack.id ?? '';
+  const starterBundleTokenCount = starterBundle?.modifierTokens ?? 0;
+  const starterBundleContinueCount = starterBundle?.continueReserve ?? 0;
 
   return (
     <motion.div
@@ -146,6 +175,47 @@ export function ShopModal({
               <span className="text-xl font-black text-amber-100">{coinsBalance}</span>
             </div>
           </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/78">
+            <div>
+              <div className="uppercase tracking-[0.16em] text-white/55">{language === 'ru' ? 'Жетоны модификатора' : 'Modifier tokens'}</div>
+              <div className="mt-1 text-lg font-black text-white">{modifierTokens}</div>
+            </div>
+            <div>
+              <div className="uppercase tracking-[0.16em] text-white/55">{language === 'ru' ? 'Резерв продолжений' : 'Continue reserve'}</div>
+              <div className="mt-1 text-lg font-black text-white">{continueReserve}</div>
+            </div>
+          </div>
+          {starterBundle?.active && (
+            <div className="mt-3 rounded-2xl border border-amber-200/30 bg-gradient-to-r from-amber-300/18 to-orange-400/16 p-3 text-white">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-100/85">{language === 'ru' ? 'Starter offer v2' : 'Starter offer v2'}</div>
+                  <div className="mt-1 text-sm font-bold">
+                    {language === 'ru'
+                      ? `Первый платёж: +${starterBundle.pack.coins} монет, +${starterBundle.modifierTokens} жетон модификатора и ${starterBundle.continueReserve} продолжения`
+                      : `First purchase: +${starterBundle.pack.coins} coins, +${starterBundle.modifierTokens} modifier token, ${starterBundle.continueReserve} continues`}
+                  </div>
+                </div>
+                <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-50">
+                  {starterCountdownLabel}
+                </div>
+              </div>
+            </div>
+          )}
+          {missionAssistOffer && (
+            <div className="mt-3 rounded-2xl border border-cyan-200/20 bg-cyan-300/10 p-3 text-white">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/80">{language === 'ru' ? 'Mission assist' : 'Mission assist'}</div>
+              <div className="mt-1 text-sm font-bold">{missionAssistOffer.title}</div>
+              <div className="mt-1 text-xs text-white/72">{missionAssistOffer.description}</div>
+              <button
+                type="button"
+                onClick={missionAssistOffer.onActivate}
+                className="mt-3 rounded-full bg-gradient-to-r from-cyan-300 to-sky-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-900"
+              >
+                {missionAssistOffer.cta}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -198,10 +268,13 @@ export function ShopModal({
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
             <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/75">{t.buyCoins}</div>
             <div className="grid grid-cols-1 gap-2.5">
-              {packs.map((pack) => {
-                const featured = pack.id === starterPackId;
+              {visiblePacks.map((pack) => {
+                const starterBundleCard = Boolean(starterBundle?.active) && pack.id === starterBundlePackId;
+                const featured = starterBundleCard || pack.id === starterPackId;
                 const reservePack = pack.coins === maxPackCoins;
-                const continueCount = Math.max(1, Math.floor(pack.coins / boosterCost));
+                const continueCount = starterBundleCard
+                  ? starterBundleContinueCount
+                  : Math.max(1, Math.floor(pack.coins / boosterCost));
                 const accent = featured
                   ? {
                       shell: 'border-amber-200/35 bg-[linear-gradient(135deg,rgba(251,191,36,0.16),rgba(249,115,22,0.12),rgba(14,165,233,0.12))] hover:from-amber-300/18',
@@ -255,7 +328,7 @@ export function ShopModal({
                             </span>
                             {featured && (
                               <span className="rounded-full border border-amber-200/30 bg-amber-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100">
-                                {hotDealLabel}
+                                {starterBundleCard ? (language === 'ru' ? 'Первый платёж' : 'First purchase') : hotDealLabel}
                               </span>
                             )}
                             {!featured && reservePack && (
@@ -266,7 +339,9 @@ export function ShopModal({
                           </div>
                         </div>
                         <div className={`mt-2 text-[11px] font-black uppercase tracking-[0.16em] ${accent.label}`}>
-                          {featured
+                          {starterBundleCard
+                            ? (language === 'ru' ? 'Пакет для первого платежа с бонусами профиля' : 'First-purchase bundle with profile perks')
+                            : featured
                             ? (language === 'ru' ? 'Лучший первый пак для реальной сессии' : 'Best first pack for a real session')
                             : reservePack
                               ? (language === 'ru' ? 'Большой запас на длинную неделю' : 'Big reserve for a longer week')
@@ -277,7 +352,9 @@ export function ShopModal({
                     <div className="mt-3 flex items-center justify-between gap-3">
                       <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70">
                         <CoinGlyph className="h-3.5 w-3.5" />
-                        {language === 'ru' ? `${continueCount} продолжений` : `${continueCount} continue plays`}
+                        {starterBundleCard
+                          ? (language === 'ru' ? `+${starterBundleTokenCount} жетон и ${continueCount} продолжения` : `+${starterBundleTokenCount} token and ${continueCount} continues`)
+                          : (language === 'ru' ? `${continueCount} продолжений` : `${continueCount} continue plays`)}
                       </div>
                       <span className={`inline-flex items-center justify-center rounded-full bg-gradient-to-r px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] shadow-[0_8px_18px_rgba(0,0,0,0.2)] ${accent.button}`}>
                         {claimLabel}

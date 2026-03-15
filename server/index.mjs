@@ -32,6 +32,15 @@ const DEFAULT_PACKS = [
   { id: 'pack-800', coins: 420, amountRub: 499 },
 ];
 
+const STARTER_BUNDLE = {
+  id: 'starter-bundle',
+  coins: 120,
+  amountRub: 149,
+  modifierTokens: 1,
+  continueReserve: 2,
+  expiresInHours: 12,
+};
+
 const DAILY_REWARD_CALENDAR = [
   40, 50, 60, 70, 80, 95, 120, 85, 95, 110,
   125, 145, 165, 190, 140, 155, 170, 185, 205, 230,
@@ -58,7 +67,15 @@ const DAILY_MISSION_DEFINITIONS = [
   { id: 'bomb_activations', target: 3, reward: 40 },
   { id: 'score_1800', target: 1800, reward: 55 },
   { id: 'clean_clears', target: 2, reward: 75 },
+  { id: 'lightning_activations', target: 2, reward: 45 },
+  { id: 'level_completions', target: 2, reward: 35 },
+  { id: 'score_2600', target: 2600, reward: 85 },
 ];
+
+const DAILY_MISSION_REROLL_COST = 20;
+const DAILY_MISSION_COMPLETION_CHEST_REWARD = 90;
+const WEEKLY_MISSION_TARGET = 10;
+const WEEKLY_MISSION_CHEST_REWARD = 180;
 
 const LEADERBOARD_CHEST_TIERS = [
   { id: 'top10', maxRank: 10, reward: 80 },
@@ -173,12 +190,34 @@ function initDatabase() {
       bomb_activations INTEGER NOT NULL DEFAULT 0,
       highest_score INTEGER NOT NULL DEFAULT 0,
       clean_level_clears INTEGER NOT NULL DEFAULT 0,
+      lightning_activations INTEGER NOT NULL DEFAULT 0,
+      level_completions INTEGER NOT NULL DEFAULT 0,
+      mission_ids_json TEXT NOT NULL DEFAULT '[]',
+      free_rerolls_used INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (player_id, mission_date)
+    );
+    CREATE TABLE IF NOT EXISTS player_profiles (
+      player_id TEXT PRIMARY KEY,
+      display_name TEXT NOT NULL DEFAULT '',
+      unlocked_level INTEGER NOT NULL DEFAULT 1,
+      level_stars_json TEXT NOT NULL DEFAULT '{}',
+      best_score INTEGER NOT NULL DEFAULT 0,
+      weekly_loop_json TEXT NOT NULL DEFAULT '{}',
+      tutorial_completed INTEGER NOT NULL DEFAULT 0,
+      modifier_tokens INTEGER NOT NULL DEFAULT 0,
+      continue_reserve INTEGER NOT NULL DEFAULT 0,
+      starter_offer_expires_at TEXT,
+      starter_bundle_claimed INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
     );
   `);
 
   ensureColumn('daily_rewards', 'total_claims', 'INTEGER NOT NULL DEFAULT 0');
+  ensureColumn('daily_mission_progress', 'lightning_activations', 'INTEGER NOT NULL DEFAULT 0');
+  ensureColumn('daily_mission_progress', 'level_completions', 'INTEGER NOT NULL DEFAULT 0');
+  ensureColumn('daily_mission_progress', 'mission_ids_json', "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn('daily_mission_progress', 'free_rerolls_used', 'INTEGER NOT NULL DEFAULT 0');
 
   const hasOrders = db.prepare('SELECT 1 AS ok FROM orders LIMIT 1').get();
   if (!hasOrders) {
@@ -620,6 +659,136 @@ function grantCoins(playerId, amount) {
   });
 }
 
+function parseJsonObject(rawValue, fallbackValue) {
+  try {
+    const parsed = JSON.parse(String(rawValue || ''));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // ignore malformed stored JSON
+  }
+  return fallbackValue;
+}
+
+function ensurePlayerProfileRow(playerId) {
+  const normalizedPlayerId = String(playerId || '').trim();
+  if (!normalizedPlayerId) return null;
+
+  const existing = db.prepare(`
+    SELECT *
+    FROM player_profiles
+    WHERE player_id = ?
+  `).get(normalizedPlayerId);
+  if (existing) {
+    return existing;
+  }
+
+  const updatedAt = nowIso();
+  const expiresAt = new Date(Date.now() + STARTER_BUNDLE.expiresInHours * 60 * 60 * 1000).toISOString();
+  db.prepare(`
+    INSERT INTO player_profiles (
+      player_id,
+      display_name,
+      unlocked_level,
+      level_stars_json,
+      best_score,
+      weekly_loop_json,
+      tutorial_completed,
+      modifier_tokens,
+      continue_reserve,
+      starter_offer_expires_at,
+      starter_bundle_claimed,
+      updated_at
+    ) VALUES (?, ?, 1, '{}', 0, '{}', 0, 0, 0, ?, 0, ?)
+  `).run(normalizedPlayerId, '', expiresAt, updatedAt);
+
+  return db.prepare(`
+    SELECT *
+    FROM player_profiles
+    WHERE player_id = ?
+  `).get(normalizedPlayerId);
+}
+
+function getPlayerProfile(playerId) {
+  const row = ensurePlayerProfileRow(playerId);
+  const displayName = String(row?.display_name || '').trim();
+  const starterOfferExpiresAt = row?.starter_offer_expires_at ? String(row.starter_offer_expires_at) : null;
+  const starterOfferClaimed = Boolean(Number(row?.starter_bundle_claimed || 0));
+  const starterOfferActive = !starterOfferClaimed
+    && Boolean(starterOfferExpiresAt)
+    && Date.parse(starterOfferExpiresAt || '') > Date.now();
+
+  return {
+    playerId,
+    displayName,
+    unlockedLevel: Math.max(1, Math.floor(Number(row?.unlocked_level || 1))),
+    levelStars: parseJsonObject(row?.level_stars_json, {}),
+    bestScore: Math.max(0, Math.floor(Number(row?.best_score || 0))),
+    weeklyLoop: parseJsonObject(row?.weekly_loop_json, {}),
+    tutorialCompleted: Boolean(Number(row?.tutorial_completed || 0)),
+    modifierTokens: Math.max(0, Math.floor(Number(row?.modifier_tokens || 0))),
+    continueReserve: Math.max(0, Math.floor(Number(row?.continue_reserve || 0))),
+    starterOffer: {
+      active: starterOfferActive,
+      claimed: starterOfferClaimed,
+      expiresAt: starterOfferExpiresAt,
+      packId: STARTER_BUNDLE.id,
+      coins: STARTER_BUNDLE.coins,
+      amountRub: STARTER_BUNDLE.amountRub,
+      modifierTokens: STARTER_BUNDLE.modifierTokens,
+      continueReserve: STARTER_BUNDLE.continueReserve,
+    },
+  };
+}
+
+function updatePlayerProfileState(playerId, payload = {}) {
+  return withTransaction(() => {
+    const current = getPlayerProfile(playerId);
+    const nextDisplayName = typeof payload.displayName === 'string'
+      ? String(payload.displayName || '').trim().slice(0, 24)
+      : current.displayName;
+    const nextUnlockedLevel = payload.unlockedLevel == null
+      ? current.unlockedLevel
+      : Math.max(current.unlockedLevel, Math.max(1, Math.floor(Number(payload.unlockedLevel || 1))));
+    const nextLevelStars = payload.levelStars && typeof payload.levelStars === 'object'
+      ? payload.levelStars
+      : current.levelStars;
+    const nextBestScore = payload.bestScore == null
+      ? current.bestScore
+      : Math.max(current.bestScore, Math.max(0, Math.floor(Number(payload.bestScore || 0))));
+    const nextWeeklyLoop = payload.weeklyLoop && typeof payload.weeklyLoop === 'object'
+      ? payload.weeklyLoop
+      : current.weeklyLoop;
+    const nextTutorialCompleted = payload.tutorialCompleted == null
+      ? current.tutorialCompleted
+      : Boolean(payload.tutorialCompleted);
+
+    db.prepare(`
+      UPDATE player_profiles
+      SET display_name = ?,
+          unlocked_level = ?,
+          level_stars_json = ?,
+          best_score = ?,
+          weekly_loop_json = ?,
+          tutorial_completed = ?,
+          updated_at = ?
+      WHERE player_id = ?
+    `).run(
+      nextDisplayName,
+      nextUnlockedLevel,
+      JSON.stringify(nextLevelStars),
+      nextBestScore,
+      JSON.stringify(nextWeeklyLoop),
+      nextTutorialCompleted ? 1 : 0,
+      nowIso(),
+      playerId,
+    );
+
+    return getPlayerProfile(playerId);
+  });
+}
+
 function getUtcDateKey(offsetDays = 0) {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() + offsetDays);
@@ -636,7 +805,7 @@ function getUtcWeekKey(now = new Date()) {
 
 function getDailyMissionProgressRow(playerId, missionDate = getUtcDateKey(0)) {
   return db.prepare(`
-    SELECT bomb_activations, highest_score, clean_level_clears
+    SELECT bomb_activations, highest_score, clean_level_clears, lightning_activations, level_completions, mission_ids_json, free_rerolls_used
     FROM daily_mission_progress
     WHERE player_id = ? AND mission_date = ?
   `).get(playerId, missionDate);
@@ -650,23 +819,89 @@ function getClaimedRewardKeys(playerId, prefix) {
   `).all(playerId, `${prefix}%`).map((row) => String(row.reward_key || '')));
 }
 
+function buildDefaultMissionIds() {
+  return DAILY_MISSION_DEFINITIONS.slice(0, 3).map((mission) => mission.id);
+}
+
+function sanitizeMissionIds(rawValue) {
+  try {
+    const parsed = JSON.parse(String(rawValue || '[]'));
+    if (!Array.isArray(parsed)) return buildDefaultMissionIds();
+    const valid = parsed
+      .map((item) => String(item || '').trim())
+      .filter((id) => DAILY_MISSION_DEFINITIONS.some((mission) => mission.id === id));
+    if (valid.length === 3) {
+      return valid;
+    }
+  } catch {
+    // ignore malformed JSON
+  }
+  return buildDefaultMissionIds();
+}
+
+function ensureDailyMissionRow(playerId, missionDate = getUtcDateKey(0)) {
+  const existing = getDailyMissionProgressRow(playerId, missionDate);
+  if (existing) {
+    return existing;
+  }
+  db.prepare(`
+    INSERT INTO daily_mission_progress (
+      player_id, mission_date, bomb_activations, highest_score, clean_level_clears, lightning_activations, level_completions, mission_ids_json, free_rerolls_used, updated_at
+    ) VALUES (?, ?, 0, 0, 0, 0, 0, ?, 0, ?)
+  `).run(playerId, missionDate, JSON.stringify(buildDefaultMissionIds()), nowIso());
+  return getDailyMissionProgressRow(playerId, missionDate);
+}
+
+function getMissionCurrentProgress(progress, missionId) {
+  if (missionId === 'bomb_activations') return progress.bombActivations;
+  if (missionId === 'score_1800' || missionId === 'score_2600') return progress.highestScore;
+  if (missionId === 'clean_clears') return progress.cleanLevelClears;
+  if (missionId === 'lightning_activations') return progress.lightningActivations;
+  if (missionId === 'level_completions') return progress.levelCompletions;
+  return 0;
+}
+
+function buildWeeklyMissionTrack(playerId) {
+  const weekKey = getUtcWeekKey();
+  const claimedMissionCount = Math.max(0, Math.floor(Number(db.prepare(`
+    SELECT COUNT(*) AS total
+    FROM reward_claims
+    WHERE player_id = ? AND reward_key LIKE 'daily_mission_%' AND reward_key NOT LIKE 'daily_mission_completion_%' AND claimed_at >= ?
+  `).get(playerId, `${weekKey}T00:00:00.000Z`)?.total || 0)));
+  const rewardKey = `weekly_mission_track_${weekKey}_${WEEKLY_MISSION_TARGET}`;
+  const claimed = db.prepare(`
+    SELECT 1 AS ok
+    FROM reward_claims
+    WHERE player_id = ? AND reward_key = ?
+  `).get(playerId, rewardKey);
+
+  return {
+    weekKey,
+    progress: claimedMissionCount,
+    target: WEEKLY_MISSION_TARGET,
+    reward: WEEKLY_MISSION_CHEST_REWARD,
+    claimable: claimedMissionCount >= WEEKLY_MISSION_TARGET && !claimed,
+    claimed: Boolean(claimed),
+  };
+}
+
 function buildDailyMissionStatus(playerId, missionDate = getUtcDateKey(0)) {
-  const progressRow = getDailyMissionProgressRow(playerId, missionDate);
+  const progressRow = ensureDailyMissionRow(playerId, missionDate);
   const progress = {
     bombActivations: Math.max(0, Math.floor(Number(progressRow?.bomb_activations || 0))),
     highestScore: Math.max(0, Math.floor(Number(progressRow?.highest_score || 0))),
     cleanLevelClears: Math.max(0, Math.floor(Number(progressRow?.clean_level_clears || 0))),
+    lightningActivations: Math.max(0, Math.floor(Number(progressRow?.lightning_activations || 0))),
+    levelCompletions: Math.max(0, Math.floor(Number(progressRow?.level_completions || 0))),
   };
+  const missionIds = sanitizeMissionIds(progressRow?.mission_ids_json);
   const claimedKeys = getClaimedRewardKeys(playerId, `daily_mission_${missionDate}_`);
-
-  const missions = DAILY_MISSION_DEFINITIONS.map((mission) => {
+  const missions = missionIds.map((missionId, slotIndex) => {
+    const mission = DAILY_MISSION_DEFINITIONS.find((item) => item.id === missionId) || DAILY_MISSION_DEFINITIONS[slotIndex];
     const rewardKey = `daily_mission_${missionDate}_${mission.id}`;
-    const current = mission.id === 'bomb_activations'
-      ? progress.bombActivations
-      : mission.id === 'score_1800'
-        ? progress.highestScore
-        : progress.cleanLevelClears;
+    const current = getMissionCurrentProgress(progress, mission.id);
     return {
+      slotIndex,
       id: mission.id,
       target: mission.target,
       reward: mission.reward,
@@ -676,7 +911,162 @@ function buildDailyMissionStatus(playerId, missionDate = getUtcDateKey(0)) {
     };
   });
 
-  return { missionDate, missions };
+  const completionRewardKey = `daily_mission_completion_${missionDate}`;
+  const completionClaimed = db.prepare(`
+    SELECT 1 AS ok
+    FROM reward_claims
+    WHERE player_id = ? AND reward_key = ?
+  `).get(playerId, completionRewardKey);
+  const completedClaims = missions.filter((mission) => mission.claimed).length;
+
+  return {
+    missionDate,
+    missions,
+    freeRerollsRemaining: Math.max(0, 1 - Math.max(0, Math.floor(Number(progressRow?.free_rerolls_used || 0)))),
+    paidRerollCost: DAILY_MISSION_REROLL_COST,
+    completionChest: {
+      reward: DAILY_MISSION_COMPLETION_CHEST_REWARD,
+      claimable: completedClaims === missions.length && missions.length > 0 && !completionClaimed,
+      claimed: Boolean(completionClaimed),
+      progress: completedClaims,
+      target: missions.length,
+    },
+    weeklyTrack: buildWeeklyMissionTrack(playerId),
+  };
+}
+
+function rerollDailyMission(res, payload, playerId) {
+  const missionDate = getUtcDateKey(0);
+  const slotIndex = Math.max(0, Math.min(2, Math.floor(Number(payload.slotIndex || 0))));
+
+  const result = withTransaction(() => {
+    const row = ensureDailyMissionRow(playerId, missionDate);
+    const currentMissionIds = sanitizeMissionIds(row?.mission_ids_json);
+    const currentMissionId = currentMissionIds[slotIndex];
+    const freeRerollsUsed = Math.max(0, Math.floor(Number(row?.free_rerolls_used || 0)));
+    const hasFreeReroll = freeRerollsUsed < 1;
+
+    if (!hasFreeReroll) {
+      const wallet = ensureWalletRow(playerId);
+      if (wallet < DAILY_MISSION_REROLL_COST) {
+        return { ok: false, error: 'Not enough balance', balance: wallet };
+      }
+      db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+        .run(wallet - DAILY_MISSION_REROLL_COST, nowIso(), playerId);
+    }
+
+    const claimedKey = `daily_mission_${missionDate}_${currentMissionId}`;
+    const missionClaimed = db.prepare(`
+      SELECT 1 AS ok
+      FROM reward_claims
+      WHERE player_id = ? AND reward_key = ?
+    `).get(playerId, claimedKey);
+    if (missionClaimed) {
+      return { ok: false, error: 'Claimed mission cannot be rerolled', balance: ensureWalletRow(playerId) };
+    }
+
+    const alternatives = DAILY_MISSION_DEFINITIONS
+      .map((mission) => mission.id)
+      .filter((missionId) => missionId !== currentMissionId && !currentMissionIds.includes(missionId));
+    const replacementId = alternatives[Math.floor(Math.random() * alternatives.length)] || currentMissionId;
+    currentMissionIds[slotIndex] = replacementId;
+
+    db.prepare(`
+      UPDATE daily_mission_progress
+      SET mission_ids_json = ?, free_rerolls_used = ?, updated_at = ?
+      WHERE player_id = ? AND mission_date = ?
+    `).run(
+      JSON.stringify(currentMissionIds),
+      hasFreeReroll ? freeRerollsUsed + 1 : freeRerollsUsed,
+      nowIso(),
+      playerId,
+      missionDate,
+    );
+
+    return { ok: true, balance: ensureWalletRow(playerId), freeRerollUsed: hasFreeReroll };
+  });
+
+  if (!result.ok) {
+    json(res, 409, { error: result.error, balance: result.balance });
+    return;
+  }
+
+  const status = buildDailyMissionStatus(playerId, missionDate);
+  json(res, 200, {
+    ok: true,
+    balance: result.balance,
+    missionDate: status.missionDate,
+    missions: status.missions,
+    freeRerollsRemaining: status.freeRerollsRemaining,
+    paidRerollCost: status.paidRerollCost,
+    completionChest: status.completionChest,
+    weeklyTrack: status.weeklyTrack,
+  });
+}
+
+function claimDailyMissionCompletionChest(res, playerId) {
+  const missionDate = getUtcDateKey(0);
+  const status = buildDailyMissionStatus(playerId, missionDate);
+  if (!status.completionChest.claimable) {
+    json(res, 409, { error: 'Completion chest is not claimable yet' });
+    return;
+  }
+
+  const rewardKey = `daily_mission_completion_${missionDate}`;
+  const balance = withTransaction(() => {
+    const current = ensureWalletRow(playerId);
+    const next = current + DAILY_MISSION_COMPLETION_CHEST_REWARD;
+    const claimedAt = nowIso();
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, claimedAt, playerId);
+    db.prepare(`
+      INSERT INTO reward_claims (player_id, reward_key, amount, claimed_at)
+      VALUES (?, ?, ?, ?)
+    `).run(playerId, rewardKey, DAILY_MISSION_COMPLETION_CHEST_REWARD, claimedAt);
+    return next;
+  });
+
+  const nextStatus = buildDailyMissionStatus(playerId, missionDate);
+  json(res, 200, {
+    ok: true,
+    reward: DAILY_MISSION_COMPLETION_CHEST_REWARD,
+    balance,
+    missionDate: nextStatus.missionDate,
+    missions: nextStatus.missions,
+    freeRerollsRemaining: nextStatus.freeRerollsRemaining,
+    paidRerollCost: nextStatus.paidRerollCost,
+    completionChest: nextStatus.completionChest,
+    weeklyTrack: nextStatus.weeklyTrack,
+  });
+}
+
+function claimWeeklyMissionTrackChest(res, playerId) {
+  const weeklyTrack = buildWeeklyMissionTrack(playerId);
+  if (!weeklyTrack.claimable) {
+    json(res, 409, { error: 'Weekly mission chest is not claimable yet' });
+    return;
+  }
+
+  const rewardKey = `weekly_mission_track_${weeklyTrack.weekKey}_${weeklyTrack.target}`;
+  const balance = withTransaction(() => {
+    const current = ensureWalletRow(playerId);
+    const next = current + WEEKLY_MISSION_CHEST_REWARD;
+    const claimedAt = nowIso();
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(next, claimedAt, playerId);
+    db.prepare(`
+      INSERT INTO reward_claims (player_id, reward_key, amount, claimed_at)
+      VALUES (?, ?, ?, ?)
+    `).run(playerId, rewardKey, WEEKLY_MISSION_CHEST_REWARD, claimedAt);
+    return next;
+  });
+
+  json(res, 200, {
+    ok: true,
+    reward: WEEKLY_MISSION_CHEST_REWARD,
+    balance,
+    weeklyTrack: buildWeeklyMissionTrack(playerId),
+  });
 }
 
 function resolveLeaderboardTier(rank) {
@@ -707,12 +1097,14 @@ function initSession(res, payload) {
   }
 
   const balance = ensureWalletRow(playerId);
+  const profile = getPlayerProfile(playerId);
 
   json(res, 200, {
     ok: true,
     playerId,
     token,
     balance,
+    profile,
   });
 }
 
@@ -851,7 +1243,12 @@ async function createInvoice(req, res, payload, playerId) {
     return;
   }
 
-  const pack = readPacks().find((item) => item.id === packId);
+  const profile = getPlayerProfile(playerId);
+  const pack = packId === STARTER_BUNDLE.id
+    ? (profile.starterOffer.active && !profile.starterOffer.claimed
+        ? { id: STARTER_BUNDLE.id, coins: STARTER_BUNDLE.coins, amountRub: STARTER_BUNDLE.amountRub }
+        : null)
+    : readPacks().find((item) => item.id === packId);
   if (!pack) {
     json(res, 404, { error: 'Unknown packId' });
     return;
@@ -1153,6 +1550,10 @@ function getDailyMissionsStatus(res, playerId) {
     ok: true,
     missionDate: status.missionDate,
     missions: status.missions,
+    freeRerollsRemaining: status.freeRerollsRemaining,
+    paidRerollCost: status.paidRerollCost,
+    completionChest: status.completionChest,
+    weeklyTrack: status.weeklyTrack,
   });
 }
 
@@ -1161,26 +1562,36 @@ function updateDailyMissionProgress(res, payload, playerId) {
   const bombActivationsDelta = Math.max(0, Math.floor(Number(payload.bombActivationsDelta || 0)));
   const highestScore = Math.max(0, Math.floor(Number(payload.highestScore || 0)));
   const cleanLevelClearDelta = Math.max(0, Math.floor(Number(payload.cleanLevelClearDelta || 0)));
+  const lightningActivationsDelta = Math.max(0, Math.floor(Number(payload.lightningActivationsDelta || 0)));
+  const levelCompleteDelta = Math.max(0, Math.floor(Number(payload.levelCompleteDelta || 0)));
 
   withTransaction(() => {
-    const current = getDailyMissionProgressRow(playerId, missionDate);
+    const current = ensureDailyMissionRow(playerId, missionDate);
     const nextBombActivations = Math.max(0, Math.floor(Number(current?.bomb_activations || 0))) + bombActivationsDelta;
     const nextHighestScore = Math.max(
       Math.max(0, Math.floor(Number(current?.highest_score || 0))),
       highestScore,
     );
     const nextCleanClears = Math.max(0, Math.floor(Number(current?.clean_level_clears || 0))) + cleanLevelClearDelta;
+    const nextLightningActivations = Math.max(0, Math.floor(Number(current?.lightning_activations || 0))) + lightningActivationsDelta;
+    const nextLevelCompletions = Math.max(0, Math.floor(Number(current?.level_completions || 0))) + levelCompleteDelta;
+    const missionIdsJson = current?.mission_ids_json ? String(current.mission_ids_json) : JSON.stringify(buildDefaultMissionIds());
+    const freeRerollsUsed = Math.max(0, Math.floor(Number(current?.free_rerolls_used || 0)));
 
     db.prepare(`
       INSERT INTO daily_mission_progress (
-        player_id, mission_date, bomb_activations, highest_score, clean_level_clears, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?)
+        player_id, mission_date, bomb_activations, highest_score, clean_level_clears, lightning_activations, level_completions, mission_ids_json, free_rerolls_used, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(player_id, mission_date) DO UPDATE SET
         bomb_activations = excluded.bomb_activations,
         highest_score = excluded.highest_score,
         clean_level_clears = excluded.clean_level_clears,
+        lightning_activations = excluded.lightning_activations,
+        level_completions = excluded.level_completions,
+        mission_ids_json = excluded.mission_ids_json,
+        free_rerolls_used = excluded.free_rerolls_used,
         updated_at = excluded.updated_at
-    `).run(playerId, missionDate, nextBombActivations, nextHighestScore, nextCleanClears, nowIso());
+    `).run(playerId, missionDate, nextBombActivations, nextHighestScore, nextCleanClears, nextLightningActivations, nextLevelCompletions, missionIdsJson, freeRerollsUsed, nowIso());
   });
 
   getDailyMissionsStatus(res, playerId);
@@ -1228,7 +1639,54 @@ function claimDailyMission(res, payload, playerId) {
     balance,
     missionDate,
     missions: nextStatus.missions,
+    freeRerollsRemaining: nextStatus.freeRerollsRemaining,
+    paidRerollCost: nextStatus.paidRerollCost,
+    completionChest: nextStatus.completionChest,
+    weeklyTrack: nextStatus.weeklyTrack,
   });
+}
+
+function getProfileState(res, playerId) {
+  json(res, 200, { ok: true, profile: getPlayerProfile(playerId) });
+}
+
+function updateProfileState(res, payload, playerId) {
+  const profile = updatePlayerProfileState(playerId, payload);
+  json(res, 200, { ok: true, profile });
+}
+
+function consumeProfileBonus(res, payload, playerId) {
+  const bonusType = String(payload.type || '').trim();
+  if (bonusType !== 'modifier_token' && bonusType !== 'continue_reserve') {
+    json(res, 400, { error: 'Unknown bonus type' });
+    return;
+  }
+
+  const profile = withTransaction(() => {
+    const current = getPlayerProfile(playerId);
+    if (bonusType === 'modifier_token' && current.modifierTokens <= 0) return null;
+    if (bonusType === 'continue_reserve' && current.continueReserve <= 0) return null;
+
+    db.prepare(`
+      UPDATE player_profiles
+      SET modifier_tokens = ?, continue_reserve = ?, updated_at = ?
+      WHERE player_id = ?
+    `).run(
+      bonusType === 'modifier_token' ? current.modifierTokens - 1 : current.modifierTokens,
+      bonusType === 'continue_reserve' ? current.continueReserve - 1 : current.continueReserve,
+      nowIso(),
+      playerId,
+    );
+
+    return getPlayerProfile(playerId);
+  });
+
+  if (!profile) {
+    json(res, 409, { error: 'Bonus is not available' });
+    return;
+  }
+
+  json(res, 200, { ok: true, profile });
 }
 
 function submitLeaderboard(res, payload, playerId) {
@@ -1239,6 +1697,7 @@ function submitLeaderboard(res, payload, playerId) {
   const displayName = (incomingName || getDefaultDisplayName(playerId)).slice(0, 24);
 
   withTransaction(() => {
+    ensurePlayerProfileRow(playerId);
     const existing = db.prepare(`
       SELECT display_name, best_level, best_score, total_stars
       FROM leaderboard_profiles
@@ -1260,6 +1719,12 @@ function submitLeaderboard(res, payload, playerId) {
         total_stars = excluded.total_stars,
         updated_at = excluded.updated_at
     `).run(playerId, mergedName, mergedLevel, mergedScore, mergedStars, nowIso());
+
+    db.prepare(`
+      UPDATE player_profiles
+      SET display_name = ?, updated_at = ?
+      WHERE player_id = ?
+    `).run(mergedName, nowIso(), playerId);
   });
 
   json(res, 200, { ok: true });
@@ -1499,6 +1964,23 @@ function creditFromRobokassaResult(res, payload) {
       WHERE order_id = ?
     `).run(creditedAt, webhookPayload, order.order_id);
 
+    if (String(order.pack_id || '').trim() === STARTER_BUNDLE.id) {
+      const profile = getPlayerProfile(playerId);
+      db.prepare(`
+        UPDATE player_profiles
+        SET modifier_tokens = ?,
+            continue_reserve = ?,
+            starter_bundle_claimed = 1,
+            updated_at = ?
+        WHERE player_id = ?
+      `).run(
+        profile.modifierTokens + STARTER_BUNDLE.modifierTokens,
+        profile.continueReserve + STARTER_BUNDLE.continueReserve,
+        creditedAt,
+        playerId,
+      );
+    }
+
     return { status: 'credited', invId: String(order.inv_id || providerInvId) };
   });
 
@@ -1567,6 +2049,44 @@ const server = createServer(async (req, res) => {
     const playerId = requireAuth(req, res);
     if (!playerId) return;
     getWallet(res, playerId);
+    return;
+  }
+
+  if (req.method === 'GET' && urlObj.pathname === '/api/profile') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'profile-get', 60)) return;
+    getProfileState(res, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/profile') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'profile-update', 60)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    updateProfileState(res, payload, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/profile/consume-bonus') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'profile-consume-bonus', 40)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    consumeProfileBonus(res, payload, playerId);
     return;
   }
 
@@ -1643,6 +2163,37 @@ const server = createServer(async (req, res) => {
       return;
     }
     claimDailyMission(res, payload, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/missions/daily-reroll') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'daily-missions-reroll', 30)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    rerollDailyMission(res, payload, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/missions/daily-completion-claim') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'daily-missions-completion-claim', 20)) return;
+    claimDailyMissionCompletionChest(res, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/missions/weekly-track-claim') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'weekly-missions-track-claim', 20)) return;
+    claimWeeklyMissionTrackChest(res, playerId);
     return;
   }
 

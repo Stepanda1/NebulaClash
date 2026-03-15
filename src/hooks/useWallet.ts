@@ -63,6 +63,7 @@ type DailyMissionStatus = {
   ok: boolean;
   missionDate: string;
   missions: Array<{
+    slotIndex?: number;
     id: string;
     target: number;
     reward: number;
@@ -70,6 +71,45 @@ type DailyMissionStatus = {
     completed: boolean;
     claimed: boolean;
   }>;
+  freeRerollsRemaining?: number;
+  paidRerollCost?: number;
+  completionChest?: {
+    reward: number;
+    claimable: boolean;
+    claimed: boolean;
+    progress: number;
+    target: number;
+  };
+  weeklyTrack?: {
+    weekKey: string;
+    progress: number;
+    target: number;
+    reward: number;
+    claimable: boolean;
+    claimed: boolean;
+  };
+};
+
+type PlayerProfile = {
+  playerId: string;
+  displayName: string;
+  unlockedLevel: number;
+  levelStars: Record<number, number>;
+  bestScore: number;
+  weeklyLoop: Record<string, unknown>;
+  tutorialCompleted: boolean;
+  modifierTokens: number;
+  continueReserve: number;
+  starterOffer: {
+    active: boolean;
+    claimed: boolean;
+    expiresAt: string | null;
+    packId: string;
+    coins: number;
+    amountRub: number;
+    modifierTokens: number;
+    continueReserve: number;
+  };
 };
 
 type LeaderboardOverview = {
@@ -245,8 +285,11 @@ export function useWallet({
   }, [notEnoughCoinsMessage, spaceCoins, syncWalletBalance, walletReady, walletToken, walletUnavailableMessage]);
 
   const buyCoinsPack = useCallback(async (packId: string) => {
-    const pack = coinPacks.find((item) => item.id === packId);
-    if (!pack) return;
+    const pack = coinPacks.find((item) => item.id === packId) ?? {
+      id: packId,
+      coins: 0,
+      priceLabel: '',
+    };
 
     if (!walletReady || !walletToken) {
       setShopNotice(walletUnavailableMessage);
@@ -299,6 +342,8 @@ export function useWallet({
     bombActivationsDelta?: number;
     highestScore?: number;
     cleanLevelClearDelta?: number;
+    lightningActivationsDelta?: number;
+    levelCompleteDelta?: number;
   }): Promise<DailyMissionStatus | null> => {
     return authedJson<DailyMissionStatus>('/api/missions/daily-progress', {
       method: 'POST',
@@ -310,6 +355,39 @@ export function useWallet({
     const payload = await authedJson<DailyMissionStatus & { balance?: number; reward?: number }>('/api/missions/daily-claim', {
       method: 'POST',
       body: JSON.stringify({ missionId }),
+    });
+    if (payload && typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
+      setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
+    }
+    return payload;
+  }, [authedJson]);
+
+  const rerollDailyMission = useCallback(async (slotIndex: number) => {
+    const payload = await authedJson<DailyMissionStatus & { balance?: number }>('/api/missions/daily-reroll', {
+      method: 'POST',
+      body: JSON.stringify({ slotIndex }),
+    });
+    if (payload && typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
+      setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
+    }
+    return payload;
+  }, [authedJson]);
+
+  const claimDailyMissionCompletionChest = useCallback(async () => {
+    const payload = await authedJson<DailyMissionStatus & { balance?: number; reward?: number }>('/api/missions/daily-completion-claim', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    if (payload && typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
+      setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
+    }
+    return payload;
+  }, [authedJson]);
+
+  const claimWeeklyMissionTrackChest = useCallback(async () => {
+    const payload = await authedJson<{ ok: boolean; balance?: number; reward?: number; weeklyTrack?: DailyMissionStatus['weeklyTrack'] }>('/api/missions/weekly-track-claim', {
+      method: 'POST',
+      body: JSON.stringify({}),
     });
     if (payload && typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
       setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
@@ -375,6 +453,27 @@ export function useWallet({
       setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
     }
     return payload;
+  }, [authedJson]);
+
+  const getProfile = useCallback(async () => {
+    const payload = await authedJson<{ ok: boolean; profile?: PlayerProfile }>('/api/profile');
+    return payload?.profile ?? null;
+  }, [authedJson]);
+
+  const updateProfile = useCallback(async (profile: Partial<PlayerProfile>) => {
+    const payload = await authedJson<{ ok: boolean; profile?: PlayerProfile }>('/api/profile', {
+      method: 'POST',
+      body: JSON.stringify(profile),
+    });
+    return payload?.profile ?? null;
+  }, [authedJson]);
+
+  const consumeProfileBonus = useCallback(async (type: 'modifier_token' | 'continue_reserve') => {
+    const payload = await authedJson<{ ok: boolean; profile?: PlayerProfile }>('/api/profile/consume-bonus', {
+      method: 'POST',
+      body: JSON.stringify({ type }),
+    });
+    return payload?.profile ?? null;
   }, [authedJson]);
 
   useEffect(() => {
@@ -486,19 +585,25 @@ export function useWallet({
     buyCoinsPack,
     claimDailyReward,
     claimDailyMission,
+    claimDailyMissionCompletionChest,
     claimLevelCompletionReward,
     claimLeaderboardChest,
+    claimWeeklyMissionTrackChest,
+    consumeProfileBonus,
     getDailyRewardStatus,
     getDailyMissionsStatus,
     getLeaderboardTop,
+    getProfile,
     playerId,
     reportDailyMissionProgress,
+    rerollDailyMission,
     setShopNotice,
     shopNotice,
     spaceCoins,
     spendCoins,
     submitLeaderboardEntry,
     syncWalletBalance,
+    updateProfile,
     walletReady,
   };
 }
