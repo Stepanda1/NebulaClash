@@ -1,198 +1,187 @@
-# React + TypeScript + Vite
+# Nebula Clash
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Nebula Clash is a browser match-3 game with a marketing landing page, in-game economy, payments, daily rewards, leaderboard, and short-form content workflow around `https://nebulaclash.com`.
 
-Currently, two official plugins are available:
+This repository is the main release project for the playable product.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Product Snapshot
 
-## React Compiler
+- Genre: `cosmic match-3 puzzle`
+- Platform: `web`
+- Public site: `https://nebulaclash.com`
+- Frontend: `React 19 + TypeScript + Vite`
+- Backend: `Node.js HTTP server + SQLite`
+- Payments: `Robokassa`
+- Analytics: `GTM`, optional `GA4`, optional `PostHog`
+- Monitoring: `Sentry`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Current Product Surface
 
-## Expanding the ESLint configuration
+The live product already includes:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- marketing landing page
+- playable level flow
+- roadmap screen
+- wallet and paid coin packs
+- continue flow for coins after failure
+- daily rewards
+- leaderboard
+- share action
+- legal docs and contact sections
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Core Loop
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. User lands on `nebulaclash.com`.
+2. User starts a session and enters gameplay.
+3. User completes levels, earns coins, and spends coins on recovery/boost actions.
+4. User can buy coin packs through Robokassa.
+5. User returns through daily rewards, leaderboard comparison, and progression.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Economy Snapshot
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Current economy values in code:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- starting balance: `50` coins
+- continue / booster cost: `15` coins
+- extra moves value: `+5`
+- extra time value: `+30s`
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Default coin packs:
 
-## Analytics
+- `pack-120`: `60` coins for `99 RUB`
+- `pack-300`: `150` coins for `199 RUB`
+- `pack-800`: `420` coins for `499 RUB`
 
-The game now supports analytics providers via Vite env vars:
+Current reward systems:
 
-- `VITE_GTM_CONTAINER_ID` - Google Tag Manager container ID (default `GTM-54KD4D8H`). Gameplay events are pushed to `window.dataLayer` as `{ event: <event_name>, ...payload }`.
-- `VITE_GA_MEASUREMENT_ID` - Google Analytics 4 measurement ID (for example `G-XXXXXXXXXX`)
-- `VITE_YM_COUNTER_ID` - Yandex Metrica counter ID
+- level-completion reward
+- daily reward streak
+- paid pack top-up
 
-If `VITE_GTM_CONTAINER_ID` is set, GTM is initialized automatically and receives gameplay events. If GTM is disabled, the app can fall back to direct GA4 (`VITE_GA_MEASUREMENT_ID`).
+Strategy docs for metrics, economy goals, and hypotheses live in:
 
+- `../../02_Strategy/NebulaClashHypotheses/README.md`
+
+## Funnel And Key Events
+
+Main funnel events already tracked in the app:
+
+- `landing_view`
+- `landing_play_click`
 - `session_start`
 - `level_start`
-- `pause_open` / `pause_close`
-- `restart_click`
-- `exit_click`
 - `level_complete`
-- `game_over`
-- `moves_checkpoint`
-- `bomb_activation`
-- `lightning_swap`
-- `language_change`
-- `sound_toggle`
-- `next_level_click`
+- `shop_open`
+- `checkout_start`
+- `payment_credited`
 
-Session-level correlation is sent via `session_id` (stored in `sessionStorage`).
+The current operating rule is to evaluate growth and content by movement deeper into the funnel, not by views alone.
 
-### PostHog
+## Project Map
 
-Set these env vars to enable PostHog product analytics:
+- `src/`: React app, game UI, analytics integration
+- `server/`: wallet, rewards, leaderboard, payment endpoints
+- `public/`: static assets
+- `docs/marketing/week1/`: early paid traffic and execution docs
+- `progress.md`: running implementation log
+- `RELEASE_AUDIT_2026-02-27.md`: release risk audit
+- `ROBOKASSA_SETUP.md`: payment setup notes
 
-- `VITE_POSTHOG_KEY` - project API key
-- `VITE_POSTHOG_HOST` - optional, defaults to `https://us.i.posthog.com`
+## Local Development
 
-When enabled, game events are sent to PostHog via `posthog.capture(...)`.
+Prerequisites:
 
-### Sentry
+- `Node.js 22+` recommended
+- `npm`
 
-Set these env vars to enable Sentry error/performance monitoring:
+Install:
 
-- `VITE_SENTRY_DSN` - your Sentry DSN
-- `VITE_SENTRY_ENVIRONMENT` - optional environment name
-- `VITE_SENTRY_TRACES_SAMPLE_RATE` - optional, defaults to `0.2`
+```bash
+npm install
+```
 
-Long tasks (UI lag spikes) are monitored with `PerformanceObserver` and reported as:
+Run frontend:
 
-- analytics event: `long_task_detected`
-- Sentry warning message: `long_task_detected`
+```bash
+npm run dev
+```
 
-Optional tuning:
+Run backend:
 
-- `VITE_LONG_TASK_THRESHOLD_MS` (default `200`)
-- `VITE_LONG_TASK_MAX_PER_SESSION` (default `30`)
+```bash
+npm run server
+```
 
-## Shop / Space Coins
+Build:
 
-The game has an in-game currency called Space Coins:
+```bash
+npm run build
+```
 
-- Spend coins on extra moves (`+5`) in move-based levels
-- Spend coins on extra time (`+30s`) in time-based levels
+Lint:
 
-Shop supports backend-driven payments and auto top-up through Robokassa Result URL callback.
+```bash
+npm run lint
+```
 
-### Frontend env vars
+## Environment
 
-- `VITE_SHOP_PACK_SMALL_URL`
-- `VITE_SHOP_PACK_MEDIUM_URL`
-- `VITE_SHOP_PACK_LARGE_URL`
-- `VITE_DEV_API_PROXY_TARGET` (default `http://localhost:8787`)
+Important frontend env vars:
 
-Frontend links are optional fallback. For automatic top-up, configure backend vars and run `server/index.mjs`.
-
-### Backend env vars (`server/index.mjs`)
-
-- `PORT` (default `8787`)
-- `PUBLIC_BASE_URL` (public URL of backend, used for Robokassa callback and redirects)
-- `API_AUTH_SECRET` (required; used to sign player session token for wallet/payment API)
-- `ADMIN_LOGIN` (optional; enables `/admin` login)
-- `ADMIN_PASSWORD` (optional; enables `/admin` login)
-- `SESSION_TTL_SECONDS` (optional; default `2592000`)
-- `INITIAL_COINS` (optional; default `50`)
-- `CORS_ALLOWED_ORIGINS` (comma-separated whitelist, e.g. `https://yourgame.com`)
-- `ROBOKASSA_MERCHANT_LOGIN`
-- `ROBOKASSA_PASSWORD1` (password for payment link signature)
-- `ROBOKASSA_PASSWORD2` (password for Result URL signature verification)
-- `ROBOKASSA_PAYMENT_URL` (default `https://auth.robokassa.ru/Merchant/Index.aspx`)
-- `ROBOKASSA_SUCCESS_URL`
-- `ROBOKASSA_FAIL_URL`
-- `ROBOKASSA_IS_TEST` (`1` for test mode)
-- `ROBOKASSA_CULTURE` (`ru` or `en`)
-- `SHOP_PACKS_JSON` (optional pack config)
-
-### Local run
-
-1. Start backend: `npm run server`
-2. Start frontend in second terminal: `npm run dev`
-3. Open shop, buy a pack, complete payment, webhook credits coins automatically.
-
-### Robokassa setup
-
-1. In Robokassa cabinet set `Result URL` to `https://your-backend-domain/api/payments/robokassa/result`.
-2. Set `Success URL` and `Fail URL` to your public game URL.
-3. Copy merchant login + password #1 + password #2 into backend env vars.
-4. For local testing set `ROBOKASSA_IS_TEST=1`.
-
-## Legal Docs And Contacts
-
-The site includes built-in sections:
-
-- Public offer
-- Privacy policy
-- Refund policy
-- Contacts (email, Telegram, Facebook, Instagram)
-
-Set contacts via env vars:
-
+- `VITE_GTM_CONTAINER_ID`
+- `VITE_GA_MEASUREMENT_ID`
+- `VITE_YM_COUNTER_ID`
+- `VITE_POSTHOG_KEY`
+- `VITE_POSTHOG_HOST`
+- `VITE_SENTRY_DSN`
+- `VITE_DEV_API_PROXY_TARGET`
 - `VITE_CONTACT_EMAIL`
-- `VITE_CONTACT_PHONE`
 - `VITE_CONTACT_TELEGRAM`
 - `VITE_CONTACT_FACEBOOK`
 - `VITE_CONTACT_INSTAGRAM`
-- `VITE_SELLER_NAME`
-- `VITE_SELLER_INN`
-- `VITE_SELLER_OGRN`
-- `VITE_SELLER_ADDRESS`
+
+Important backend env vars:
+
+- `API_AUTH_SECRET`
+- `PUBLIC_BASE_URL`
+- `CORS_ALLOWED_ORIGINS`
+- `INITIAL_COINS`
+- `ROBOKASSA_MERCHANT_LOGIN`
+- `ROBOKASSA_PASSWORD1`
+- `ROBOKASSA_PASSWORD2`
+- `ROBOKASSA_SUCCESS_URL`
+- `ROBOKASSA_FAIL_URL`
+- `SHOP_PACKS_JSON`
+
+Reference values and setup details:
+
+- `.env.example`
+- `ROBOKASSA_SETUP.md`
+
+## Payments And Persistence
+
+- Wallet state is stored in `data/wallet-state.sqlite`.
+- Orders are stored in SQLite and credited through Robokassa Result URL handling.
+- The backend uses signed player sessions via `API_AUTH_SECRET`.
+- Legacy JSON wallet state can be migrated into SQLite on first run.
+
+## Documentation Sources Of Truth
+
+Use these files as the main control layer for the product:
+
+- product strategy hub: `../../02_Strategy/NebulaClashHypotheses/README.md`
+- master metrics: `../../02_Strategy/NebulaClashHypotheses/Product/NebulaClash_Master_Metrics.md`
+- economy and goals: `../../02_Strategy/NebulaClashHypotheses/Product/NebulaClash_Economy_And_Goals.md`
+- hypothesis backlog: `../../02_Strategy/NebulaClashHypotheses/Product/NebulaClash_Hypothesis_Backlog.md`
+
+## Current Priorities
+
+- grow reliable traffic from short-form content and paid tests
+- improve first-session conversion into `checkout_start`
+- improve repeat play and return behavior
+- keep monetization flow stable and measurable
+
+## Notes
+
+- `progress.md` is the best implementation changelog.
+- This README is intentionally product-oriented, not a generic Vite template.

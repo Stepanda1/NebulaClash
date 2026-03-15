@@ -213,13 +213,47 @@ function withTransaction(work) {
   }
 }
 
-function isOriginAllowed(origin) {
-  if (!origin) return true;
-  if (allowedOrigins.includes('*')) return true;
-  if (allowedOrigins.includes(origin)) return true;
+function normalizeOrigin(origin) {
+  const value = String(origin || '').trim();
+  if (!value) return '';
 
   try {
-    const originUrl = new URL(origin);
+    return new URL(value).origin;
+  } catch {
+    return '';
+  }
+}
+
+function getRequestOrigin(req) {
+  const forwardedProto = String(req.headers['x-forwarded-proto'] || '').trim().toLowerCase();
+  const proto = forwardedProto === 'https' ? 'https' : 'http';
+  const host = String(req.headers.host || '').trim();
+  if (!host) return '';
+
+  return normalizeOrigin(`${proto}://${host}`);
+}
+
+function isOriginAllowed(origin, req) {
+  if (!origin) return true;
+
+  const normalizedOrigin = normalizeOrigin(origin);
+  if (!normalizedOrigin) return false;
+
+  if (allowedOrigins.includes('*')) return true;
+  if (allowedOrigins.includes(normalizedOrigin)) return true;
+
+  const requestOrigin = req ? getRequestOrigin(req) : '';
+  if (requestOrigin && normalizedOrigin === requestOrigin) {
+    return true;
+  }
+
+  const publicBaseOrigin = normalizeOrigin(process.env.PUBLIC_BASE_URL || '');
+  if (publicBaseOrigin && normalizedOrigin === publicBaseOrigin) {
+    return true;
+  }
+
+  try {
+    const originUrl = new URL(normalizedOrigin);
     const host = originUrl.hostname.toLowerCase();
 
     if (host === 'nebulaclash.com' || host === 'www.nebulaclash.com') {
@@ -242,7 +276,7 @@ function isOriginAllowed(origin) {
 
 function applyCors(req, res) {
   const origin = String(req.headers.origin || '').trim();
-  if (origin && isOriginAllowed(origin)) {
+  if (origin && isOriginAllowed(origin, req)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
@@ -565,24 +599,16 @@ function initSession(res, payload) {
 
 function getBaseUrl(req) {
   if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL;
-  const forwardedProto = String(req.headers['x-forwarded-proto'] || '').trim().toLowerCase();
-  const proto = forwardedProto === 'https' ? 'https' : 'http';
-  const host = String(req.headers.host || '').trim();
-
-  if (!host) {
+  const requestOrigin = getRequestOrigin(req);
+  if (!requestOrigin) {
     return `http://localhost:${port}`;
   }
 
-  try {
-    const hostUrl = new URL(`${proto}://${host}`);
-    if (!isOriginAllowed(hostUrl.origin)) {
-      return `http://localhost:${port}`;
-    }
-  } catch {
+  if (!isOriginAllowed(requestOrigin, req)) {
     return `http://localhost:${port}`;
   }
 
-  return `${proto}://${host}`;
+  return requestOrigin;
 }
 
 function text(res, status, payload) {
@@ -1115,7 +1141,7 @@ const server = createServer(async (req, res) => {
   applySecurityHeaders(res);
 
   if (req.method === 'OPTIONS') {
-    if (origin && !isOriginAllowed(origin)) {
+    if (origin && !isOriginAllowed(origin, req)) {
       json(res, 403, { error: 'Origin is not allowed' });
       return;
     }
@@ -1124,7 +1150,7 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  if (origin && !isOriginAllowed(origin)) {
+  if (origin && !isOriginAllowed(origin, req)) {
     json(res, 403, { error: 'Origin is not allowed' });
     return;
   }
