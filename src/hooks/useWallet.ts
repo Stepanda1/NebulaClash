@@ -18,8 +18,12 @@ type DailyRewardStatus = {
   ok: boolean;
   canClaim: boolean;
   streak: number;
+  totalClaims: number;
+  claimDay: number;
   lastClaimDate: string | null;
   nextReward: number;
+  milestoneBonus: number;
+  calendarRewards: number[];
   nextClaimAt: string | null;
 };
 
@@ -28,6 +32,10 @@ type DailyRewardClaimResult = {
   granted: boolean;
   reward: number;
   streak: number;
+  claimDay: number;
+  totalClaims: number;
+  milestoneBonus: number;
+  calendarRewards: number[];
   balance: number;
   nextClaimAt: string | null;
 };
@@ -36,6 +44,9 @@ type LevelRewardClaimResult = {
   ok: boolean;
   granted: boolean;
   reward: number;
+  baseReward: number;
+  milestoneBonus: number;
+  completedLevelsCount: number;
   level: number;
   balance: number;
 };

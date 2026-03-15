@@ -269,9 +269,14 @@ function App() {
   const [dailyCanClaim, setDailyCanClaim] = useState(false);
   const [dailyStreak, setDailyStreak] = useState(1);
   const [dailyNextReward, setDailyNextReward] = useState(40);
+  const [dailyClaimDay, setDailyClaimDay] = useState(1);
+  const [dailyTotalClaims, setDailyTotalClaims] = useState(0);
+  const [dailyMilestoneBonus, setDailyMilestoneBonus] = useState(0);
+  const [dailyCalendarRewards, setDailyCalendarRewards] = useState<number[]>([]);
   const [bestScore, setBestScore] = useState(getStoredBestScore);
   const [weeklyLoop, setWeeklyLoop] = useState<WeeklyLoopState>(() => getStoredWeeklyLoopState(getStoredBestScore()));
   const [shopOfferContext, setShopOfferContext] = useState<ShopOfferContext>('manual');
+  const [isWeeklyLoopOpen, setIsWeeklyLoopOpen] = useState(false);
   const [adminAccessToken, setAdminAccessToken] = useState(() => (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) || '' : ''));
   const [adminAuthLoading, setAdminAuthLoading] = useState(false);
   const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
@@ -315,6 +320,10 @@ function App() {
   const bossShieldPercent = Math.max(0, Math.min(100, bossMaxHp > 0 ? (bossHp / bossMaxHp) * 100 : 0));
   const weeklyLevelsCompleted = Math.min(WEEKLY_LEVEL_TARGET, weeklyLoop.levelsCompleted);
   const weeklyTasksCompleted = Number(weeklyLoop.dailyClaimed) + Number(weeklyLoop.challengeCompleted) + Number(weeklyLoop.levelsCompleted >= WEEKLY_LEVEL_TARGET);
+  const totalCollectedStars = useMemo(
+    () => Object.values(levelStars).reduce((sum, value) => sum + Math.max(0, Math.floor(value || 0)), 0),
+    [levelStars],
+  );
   const bossAttackLabel = language === 'ru' ? 'Мусор после хода' : 'Debris After Move';
   const selectedLevelConfig = useMemo(
     () => (levelToLaunch == null ? null : getLevelConfigPreview(levelToLaunch)),
@@ -687,14 +696,18 @@ function App() {
       setDailyCanClaim(false);
       setDailyStreak(Math.max(1, result.streak));
       setDailyNextReward(Math.max(1, result.reward));
+      setDailyClaimDay(Math.max(1, Number(result.claimDay || 1)));
+      setDailyTotalClaims(Math.max(0, Number(result.totalClaims || 0)));
+      setDailyMilestoneBonus(Math.max(0, Number(result.milestoneBonus || 0)));
+      setDailyCalendarRewards(Array.isArray(result.calendarRewards) ? result.calendarRewards : []);
       setWeeklyLoop((prev) => ({
         ...normalizeWeeklyLoopState(prev, bestScore),
         dailyClaimed: true,
       }));
       setShopNotice(
         language === 'ru'
-          ? `Ежедневная награда: +${result.reward} монет (день ${result.streak})`
-          : `Daily reward: +${result.reward} coins (day ${result.streak})`,
+          ? `Ежедневная награда: +${result.reward}${result.milestoneBonus ? ` и +${result.milestoneBonus} бонус серии` : ''}`
+          : `Daily reward: +${result.reward}${result.milestoneBonus ? ` and +${result.milestoneBonus} milestone bonus` : ''}`,
       );
     } else {
       setDailyCanClaim(false);
@@ -709,6 +722,140 @@ function App() {
   const openDailyRewards = () => {
     setIsDailyRewardsOpen(true);
   };
+
+  const renderDailyRewardsModal = () => (
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)]">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{language === 'ru' ? 'Ежедневная награда' : 'Daily Reward'}</div>
+          <button type="button" onClick={() => setIsDailyRewardsOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
+            {language === 'ru' ? 'Закрыть' : 'Close'}
+          </button>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-white">
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Серия' : 'Streak'}</div>
+              <div className="mt-1 text-2xl font-black">{dailyStreak}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'День цикла' : 'Cycle day'}</div>
+              <div className="mt-1 text-2xl font-black">{dailyClaimDay}/30</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Следом' : 'Next'}</div>
+              <div className="mt-1 text-2xl font-black">+{dailyNextReward}</div>
+            </div>
+          </div>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-white/60">{language === 'ru' ? '30-дневная лента наград' : '30-day reward track'}</div>
+            <div className="mt-3 grid grid-cols-5 gap-2">
+              {dailyCalendarRewards.slice(0, 30).map((reward, index) => {
+                const day = index + 1;
+                const claimed = day < dailyClaimDay || (day === dailyClaimDay && !dailyCanClaim);
+                const current = day === dailyClaimDay;
+                const milestone = day === 7 || day === 14 || day === 21 || day === 30;
+                return (
+                  <div key={day} className={`rounded-xl border px-2 py-2 text-center text-[10px] font-black ${current ? 'border-emerald-200/55 bg-emerald-300/18 text-emerald-50' : claimed ? 'border-cyan-200/20 bg-cyan-300/8 text-cyan-50/85' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
+                    <div>D{day}</div>
+                    <div className="mt-1">+{reward}</div>
+                    {milestone && <div className="mt-1 text-[9px] text-amber-200">+{day === 30 ? 260 : day === 21 ? 140 : day === 14 ? 90 : 60}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="mt-3 text-xs leading-relaxed text-white/72">
+            {language === 'ru'
+              ? `Всего получено daily: ${dailyTotalClaims}. ${dailyMilestoneBonus > 0 ? `На этом дне есть бонус серии +${dailyMilestoneBonus}.` : 'Следи за бонусными днями 7 / 14 / 21 / 30.'}`
+              : `Total daily claims: ${dailyTotalClaims}. ${dailyMilestoneBonus > 0 ? `This day includes a +${dailyMilestoneBonus} milestone bonus.` : 'Watch milestone days 7 / 14 / 21 / 30.'}`}
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              await handleClaimDailyReward();
+              setIsDailyRewardsOpen(false);
+            }}
+            className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide transition-all ${dailyCanClaim ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 hover:from-emerald-300 hover:to-teal-400' : 'bg-white/10 text-white/70'}`}
+          >
+            {dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderLeaderboardModal = () => (
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{language === 'ru' ? 'Рейтинг игроков' : 'Player Ranking'}</div>
+          <button type="button" onClick={() => setIsLeaderboardOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
+            {language === 'ru' ? 'Закрыть' : 'Close'}
+          </button>
+        </div>
+        <div className="mb-3 rounded-2xl border border-amber-200/18 bg-amber-300/10 px-4 py-3 text-sm text-white">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">{language === 'ru' ? 'Beat this score' : 'Beat this score'}</div>
+          <div className="mt-1 text-xl font-black">{weeklyLoop.challengeTargetScore}</div>
+          <div className="mt-1 text-xs text-white/72">
+            {language === 'ru'
+              ? `Твой лучший: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Челлендж недели уже закрыт.' : 'Обгони эту планку, чтобы закрыть недельный челлендж.'}`
+              : `Your best: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Weekly challenge already cleared.' : 'Beat this line to close the weekly challenge.'}`}
+          </div>
+        </div>
+        <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
+          {isLeaderboardLoading ? (
+            <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Загрузка...' : 'Loading...'}</div>
+          ) : leaderboardItems.length === 0 ? (
+            <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Пока нет данных' : 'No entries yet'}</div>
+          ) : (
+            <div className="space-y-2">
+              {leaderboardItems.map((item) => (
+                <div key={`${item.rank}-${item.displayName}`} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
+                  <div className="flex items-center gap-2 text-white">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300/20 font-black text-cyan-100">#{item.rank}</span>
+                    <span className="max-w-[130px] truncate font-bold">{item.displayName}</span>
+                  </div>
+                  <div className="text-right text-[11px] text-white/80">
+                    <div>{language === 'ru' ? 'Уровень' : 'Level'}: <span className="font-black text-white">{item.bestLevel}</span></div>
+                    <div>{language === 'ru' ? 'Счёт' : 'Score'}: <span className="font-black text-white">{item.bestScore}</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderWeeklyLoopModal = () => (
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[2rem] border border-violet-200/20 bg-[linear-gradient(180deg,rgba(24,10,46,0.96),rgba(10,8,24,0.98))] p-5 shadow-[0_24px_80px_rgba(139,92,246,0.22)]">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="text-sm font-black uppercase tracking-[0.2em] text-violet-100">{language === 'ru' ? 'Недельный цикл' : 'Weekly loop'}</div>
+          <button type="button" onClick={() => setIsWeeklyLoopOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
+            {language === 'ru' ? 'Закрыть' : 'Close'}
+          </button>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-white">
+          <div className="text-xs uppercase tracking-[0.18em] text-violet-100/80">{language === 'ru' ? 'Прогресс недели' : 'Weekly progress'}</div>
+          <div className="mt-1 text-2xl font-black">{weeklyTasksCompleted}/3</div>
+          <div className="mt-4 space-y-2">
+            <div className={`rounded-xl border px-3 py-3 text-sm ${weeklyLoop.dailyClaimed ? 'border-emerald-200/30 bg-emerald-300/10 text-emerald-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
+              {language === 'ru' ? `1. Забери daily reward ${weeklyLoop.dailyClaimed ? 'выполнено' : 'сегодня/на этой неделе'}` : `1. Claim a daily reward ${weeklyLoop.dailyClaimed ? 'done' : 'this week'}`}
+            </div>
+            <div className={`rounded-xl border px-3 py-3 text-sm ${weeklyLoop.challengeCompleted ? 'border-cyan-200/30 bg-cyan-300/10 text-cyan-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
+              {language === 'ru' ? `2. Побей ${weeklyLoop.challengeTargetScore} очков (${bestScore} сейчас)` : `2. Beat ${weeklyLoop.challengeTargetScore} score (${bestScore} now)`}
+            </div>
+            <div className={`rounded-xl border px-3 py-3 text-sm ${weeklyLevelsCompleted >= WEEKLY_LEVEL_TARGET ? 'border-amber-200/30 bg-amber-300/10 text-amber-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
+              {language === 'ru' ? `3. Пройди ${WEEKLY_LEVEL_TARGET} уровней (${weeklyLevelsCompleted}/${WEEKLY_LEVEL_TARGET})` : `3. Finish ${WEEKLY_LEVEL_TARGET} levels (${weeklyLevelsCompleted}/${WEEKLY_LEVEL_TARGET})`}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const shareGame = async () => {
     const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/play` : 'https://nebulaclash.com/play';
@@ -1195,6 +1342,10 @@ function App() {
       setDailyCanClaim(Boolean(status.canClaim));
       setDailyStreak(Math.max(1, Number(status.streak || 1)));
       setDailyNextReward(Math.max(1, Number(status.nextReward || 40)));
+      setDailyClaimDay(Math.max(1, Number(status.claimDay || 1)));
+      setDailyTotalClaims(Math.max(0, Number(status.totalClaims || 0)));
+      setDailyMilestoneBonus(Math.max(0, Number(status.milestoneBonus || 0)));
+      setDailyCalendarRewards(Array.isArray(status.calendarRewards) ? status.calendarRewards : []);
     })();
   }, [getDailyRewardStatus, walletReady]);
 
@@ -1226,18 +1377,18 @@ function App() {
       if (levelReward?.granted) {
         setShopNotice(
           language === 'ru'
-            ? `Награда за уровень: +${levelReward.reward} монет`
-            : `Level reward: +${levelReward.reward} coins`,
+            ? `Награда за уровень: +${levelReward.reward}${levelReward.milestoneBonus ? ` и +${levelReward.milestoneBonus} за ${levelReward.completedLevelsCount} уровней` : ''}`
+            : `Level reward: +${levelReward.reward}${levelReward.milestoneBonus ? ` and +${levelReward.milestoneBonus} for ${levelReward.completedLevelsCount} levels` : ''}`,
         );
       }
 
       await submitLeaderboardEntry({
         bestLevel: level,
         bestScore: score,
-        totalStars: stars,
+        totalStars: totalCollectedStars + Math.max(0, stars),
       });
     })();
-  }, [bestScore, claimLevelCompletionReward, isLevelUp, language, level, playerId, score, setShopNotice, submitLeaderboardEntry, walletReady]);
+  }, [bestScore, claimLevelCompletionReward, isLevelUp, language, level, playerId, score, setShopNotice, submitLeaderboardEntry, totalCollectedStars, walletReady]);
 
   const getAudioCtx = () => {
     if (!audioCtxRef.current) {
@@ -1478,80 +1629,9 @@ function App() {
               onClose={() => setIsFeedbackOpen(false)}
             />
           )}
-          {isDailyRewardsOpen && (
-            <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
-              <div className="w-full max-w-sm rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)]">
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{language === 'ru' ? 'Ежедневная награда' : 'Daily Reward'}</div>
-                  <button
-                    type="button"
-                    onClick={() => setIsDailyRewardsOpen(false)}
-                    className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12"
-                  >
-                    {language === 'ru' ? 'Закрыть' : 'Close'}
-                  </button>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center text-white">
-                  <div className="text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Серия' : 'Streak'}</div>
-                  <div className="mt-1 text-2xl font-black">{dailyStreak}</div>
-                  <div className="mt-3 text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Следующая награда' : 'Next reward'}</div>
-                  <div className="mt-1 text-xl font-black">+{dailyNextReward}</div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await handleClaimDailyReward();
-                      setIsDailyRewardsOpen(false);
-                    }}
-                    className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide transition-all ${
-                      dailyCanClaim
-                        ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 hover:from-emerald-300 hover:to-teal-400'
-                        : 'bg-white/10 text-white/70'
-                    }`}
-                  >
-                    {dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {isLeaderboardOpen && (
-            <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
-              <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{language === 'ru' ? 'Рейтинг игроков' : 'Player Ranking'}</div>
-                  <button
-                    type="button"
-                    onClick={() => setIsLeaderboardOpen(false)}
-                    className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12"
-                  >
-                    {language === 'ru' ? 'Закрыть' : 'Close'}
-                  </button>
-                </div>
-                <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
-                  {isLeaderboardLoading ? (
-                    <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Загрузка...' : 'Loading...'}</div>
-                  ) : leaderboardItems.length === 0 ? (
-                    <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Пока нет данных' : 'No entries yet'}</div>
-                  ) : (
-                    <div className="space-y-2">
-                      {leaderboardItems.map((item) => (
-                        <div key={`${item.rank}-${item.displayName}`} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
-                          <div className="flex items-center gap-2 text-white">
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300/20 font-black text-cyan-100">#{item.rank}</span>
-                            <span className="max-w-[130px] truncate font-bold">{item.displayName}</span>
-                          </div>
-                          <div className="text-right text-[11px] text-white/80">
-                            <div>{language === 'ru' ? 'Уровень' : 'Level'}: <span className="font-black text-white">{item.bestLevel}</span></div>
-                            <div>{language === 'ru' ? 'Счёт' : 'Score'}: <span className="font-black text-white">{item.bestScore}</span></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          {isDailyRewardsOpen && renderDailyRewardsModal()}
+          {isLeaderboardOpen && renderLeaderboardModal()}
+          {isWeeklyLoopOpen && renderWeeklyLoopModal()}
         </AnimatePresence>
         <MarketingLanding
           language={language}
@@ -1625,56 +1705,22 @@ function App() {
           dailyCanClaim={dailyCanClaim}
           dailyStreak={dailyStreak}
           dailyNextReward={dailyNextReward}
-          weeklyDailyClaimed={weeklyLoop.dailyClaimed}
           bestScore={bestScore}
           weeklyChallengeScore={weeklyLoop.challengeTargetScore}
           weeklyChallengeCompleted={weeklyLoop.challengeCompleted}
-          weeklyLevelsCompleted={weeklyLevelsCompleted}
-          weeklyLevelTarget={WEEKLY_LEVEL_TARGET}
           weeklyTasksCompleted={weeklyTasksCompleted}
           onOpenDailyRewards={openDailyRewards}
           onOpenLeaderboard={openLeaderboard}
+          onOpenWeeklyLoop={() => setIsWeeklyLoopOpen(true)}
           onShareGame={shareGame}
           onVolumeChange={(v) => {
             setVolume(v);
             if (v > 0 && isMuted) setIsMuted(false);
           }}
         />
-        {isDailyRewardsOpen && (
-          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{language === 'ru' ? 'Ежедневная награда' : 'Daily Reward'}</div>
-                <button type="button" onClick={() => setIsDailyRewardsOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">{language === 'ru' ? 'Закрыть' : 'Close'}</button>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center text-white">
-                <div className="text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Серия' : 'Streak'}</div>
-                <div className="mt-1 text-2xl font-black">{dailyStreak}</div>
-                <button type="button" onClick={async () => { await handleClaimDailyReward(); setIsDailyRewardsOpen(false); }} className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide transition-all ${dailyCanClaim ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 hover:from-emerald-300 hover:to-teal-400' : 'bg-white/10 text-white/70'}`}>{dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}</button>
-              </div>
-            </div>
-          </div>
-        )}
-        {isLeaderboardOpen && (
-          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{language === 'ru' ? 'Рейтинг игроков' : 'Player Ranking'}</div>
-                <button type="button" onClick={() => setIsLeaderboardOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">{language === 'ru' ? 'Закрыть' : 'Close'}</button>
-              </div>
-              <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
-                {isLeaderboardLoading ? <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Загрузка...' : 'Loading...'}</div> : leaderboardItems.length === 0 ? <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Пока нет данных' : 'No entries yet'}</div> : (
-                  <div className="space-y-2">{leaderboardItems.map((item) => (
-                    <div key={`${item.rank}-${item.displayName}`} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
-                      <div className="flex items-center gap-2 text-white"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300/20 font-black text-cyan-100">#{item.rank}</span><span className="max-w-[130px] truncate font-bold">{item.displayName}</span></div>
-                      <div className="text-right text-[11px] text-white/80"><div>{language === 'ru' ? 'Уровень' : 'Level'}: <span className="font-black text-white">{item.bestLevel}</span></div><div>{language === 'ru' ? 'Счёт' : 'Score'}: <span className="font-black text-white">{item.bestScore}</span></div></div>
-                    </div>
-                  ))}</div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {isDailyRewardsOpen && renderDailyRewardsModal()}
+        {isLeaderboardOpen && renderLeaderboardModal()}
+        {isWeeklyLoopOpen && renderWeeklyLoopModal()}
         <AudioPlayer isMuted={isMuted} volume={volume} mode="lobby" />
         <AnimatePresence>
           {levelToLaunch !== null && (
@@ -1772,80 +1818,9 @@ function App() {
             onBuyPack={buyCoinsPack}
           />
         )}
-        {isDailyRewardsOpen && (
-          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{language === 'ru' ? 'Ежедневная награда' : 'Daily Reward'}</div>
-                <button
-                  type="button"
-                  onClick={() => setIsDailyRewardsOpen(false)}
-                  className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12"
-                >
-                  {language === 'ru' ? 'Закрыть' : 'Close'}
-                </button>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center text-white">
-                <div className="text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Серия' : 'Streak'}</div>
-                <div className="mt-1 text-2xl font-black">{dailyStreak}</div>
-                <div className="mt-3 text-xs uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Следующая награда' : 'Next reward'}</div>
-                <div className="mt-1 text-xl font-black">+{dailyNextReward}</div>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await handleClaimDailyReward();
-                    setIsDailyRewardsOpen(false);
-                  }}
-                  className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide transition-all ${
-                    dailyCanClaim
-                      ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 hover:from-emerald-300 hover:to-teal-400'
-                      : 'bg-white/10 text-white/70'
-                  }`}
-                >
-                  {dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {isLeaderboardOpen && (
-          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{language === 'ru' ? 'Рейтинг игроков' : 'Player Ranking'}</div>
-                <button
-                  type="button"
-                  onClick={() => setIsLeaderboardOpen(false)}
-                  className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12"
-                >
-                  {language === 'ru' ? 'Закрыть' : 'Close'}
-                </button>
-              </div>
-              <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
-                {isLeaderboardLoading ? (
-                  <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Загрузка...' : 'Loading...'}</div>
-                ) : leaderboardItems.length === 0 ? (
-                  <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Пока нет данных' : 'No entries yet'}</div>
-                ) : (
-                  <div className="space-y-2">
-                    {leaderboardItems.map((item) => (
-                      <div key={`${item.rank}-${item.displayName}`} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs">
-                        <div className="flex items-center gap-2 text-white">
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300/20 font-black text-cyan-100">#{item.rank}</span>
-                          <span className="max-w-[130px] truncate font-bold">{item.displayName}</span>
-                        </div>
-                        <div className="text-right text-[11px] text-white/80">
-                          <div>{language === 'ru' ? 'Уровень' : 'Level'}: <span className="font-black text-white">{item.bestLevel}</span></div>
-                          <div>{language === 'ru' ? 'Счёт' : 'Score'}: <span className="font-black text-white">{item.bestScore}</span></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {isDailyRewardsOpen && renderDailyRewardsModal()}
+        {isLeaderboardOpen && renderLeaderboardModal()}
+        {isWeeklyLoopOpen && renderWeeklyLoopModal()}
         {isPaused && !isGameOver && (
           <PauseMenu
             onResume={() => setIsPaused(false)}

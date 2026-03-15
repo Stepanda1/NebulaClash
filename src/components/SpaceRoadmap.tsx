@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Gift, Lock, LogOut, Share2, Star, Trophy, Volume2, VolumeX, X } from 'lucide-react';
+import { Flame, Gift, Lock, LogOut, Share2, Star, Target, Trophy, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import type { LegalSection } from '../types/legal';
 import { COPY } from '../i18n';
@@ -21,15 +21,13 @@ type SpaceRoadmapProps = {
   dailyCanClaim: boolean;
   dailyStreak: number;
   dailyNextReward: number;
-  weeklyDailyClaimed: boolean;
   bestScore: number;
   weeklyChallengeScore: number;
   weeklyChallengeCompleted: boolean;
-  weeklyLevelsCompleted: number;
-  weeklyLevelTarget: number;
   weeklyTasksCompleted: number;
   onOpenDailyRewards: () => void;
   onOpenLeaderboard: () => void;
+  onOpenWeeklyLoop: () => void;
   onShareGame: () => void;
 };
 
@@ -61,15 +59,13 @@ export function SpaceRoadmap({
   dailyCanClaim,
   dailyStreak,
   dailyNextReward,
-  weeklyDailyClaimed,
   bestScore,
   weeklyChallengeScore,
   weeklyChallengeCompleted,
-  weeklyLevelsCompleted,
-  weeklyLevelTarget,
   weeklyTasksCompleted,
   onOpenDailyRewards,
   onOpenLeaderboard,
+  onOpenWeeklyLoop,
   onShareGame,
 }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
@@ -241,23 +237,6 @@ export function SpaceRoadmap({
   const currentLabel = language === 'ru' ? 'Текущий прогресс' : 'Current Progress';
   const settingsLabel = language === 'ru' ? 'Настройки карты' : 'Map Settings';
   const comingSoonLabel = language === 'ru' ? 'Скоро' : 'Coming Soon';
-  const streakHint = dailyCanClaim
-    ? (language === 'ru' ? 'Вернись сегодня и не рви серию' : 'Come back today and keep the streak alive')
-    : (language === 'ru' ? 'Следующий шаг завтра' : 'Next streak step unlocks tomorrow');
-  const challengeHint = weeklyChallengeCompleted
-    ? (language === 'ru' ? 'Челлендж недели закрыт' : 'Weekly score challenge cleared')
-    : (language === 'ru' ? `Набей ${weeklyChallengeScore} очков и обгони планку недели` : `Hit ${weeklyChallengeScore} and beat the weekly mark`);
-  const weeklyTaskLabels = language === 'ru'
-    ? [
-        { done: weeklyDailyClaimed, label: 'Забери daily' },
-        { done: weeklyChallengeCompleted, label: `Побей ${weeklyChallengeScore}` },
-        { done: weeklyLevelsCompleted >= weeklyLevelTarget, label: `${weeklyLevelsCompleted}/${weeklyLevelTarget} уровней` },
-      ]
-    : [
-        { done: weeklyDailyClaimed, label: 'Claim daily' },
-        { done: weeklyChallengeCompleted, label: `Beat ${weeklyChallengeScore}` },
-        { done: weeklyLevelsCompleted >= weeklyLevelTarget, label: `${weeklyLevelsCompleted}/${weeklyLevelTarget} levels` },
-      ];
   const endPoint = points[points.length - 1];
   const secondSectorStart = points.find((p) => p.level === 31);
   const secondSectorLabel = language === 'ru' ? 'Локация 2: Квантовый Пояс' : 'Location 2: Quantum Belt';
@@ -293,51 +272,6 @@ export function SpaceRoadmap({
             </button>
           </div>
         </div>
-
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={onOpenDailyRewards}
-            className={`rounded-[1.4rem] border px-3 py-3 text-left transition-all ${dailyCanClaim ? 'border-emerald-200/45 bg-emerald-300/16 shadow-[0_0_18px_rgba(74,222,128,0.18)]' : 'border-white/12 bg-white/[0.04]'}`}
-          >
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Серия возвратов' : 'Return streak'}</div>
-            <div className="mt-2 text-2xl font-black text-white">{dailyStreak}</div>
-            <div className="mt-1 text-xs leading-relaxed text-white/72">{streakHint}</div>
-          </button>
-          <button
-            type="button"
-            onClick={onOpenLeaderboard}
-            className={`rounded-[1.4rem] border px-3 py-3 text-left transition-all ${weeklyChallengeCompleted ? 'border-cyan-200/45 bg-cyan-300/16 shadow-[0_0_18px_rgba(34,211,238,0.18)]' : 'border-amber-200/28 bg-amber-300/10'}`}
-          >
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/80">{language === 'ru' ? 'Побей этот счёт' : 'Beat this score'}</div>
-            <div className="mt-2 text-2xl font-black text-white">{weeklyChallengeScore}</div>
-            <div className="mt-1 text-xs leading-relaxed text-white/72">
-              {language === 'ru' ? 'Твой лучший' : 'Your best'} {bestScore}
-            </div>
-          </button>
-          <div className="col-span-2 rounded-[1.4rem] border border-violet-200/18 bg-[linear-gradient(145deg,rgba(76,29,149,0.18),rgba(15,23,42,0.28))] px-3 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-100/82">{language === 'ru' ? 'Недельный цикл' : 'Weekly loop'}</div>
-                <div className="mt-1 text-base font-black text-white">
-                  {language === 'ru' ? `Прогресс ${weeklyTasksCompleted}/3` : `Progress ${weeklyTasksCompleted}/3`}
-                </div>
-              </div>
-              <div className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-violet-100">
-                {weeklyChallengeCompleted ? (language === 'ru' ? 'Неделя закрыта' : 'Week locked in') : (language === 'ru' ? 'Дожимай цикл' : 'Keep climbing')}
-              </div>
-            </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {weeklyTaskLabels.map((task) => (
-                <div key={task.label} className={`rounded-xl border px-3 py-2 text-xs font-semibold ${task.done ? 'border-emerald-200/30 bg-emerald-300/10 text-emerald-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
-                  {task.label}
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 text-xs leading-relaxed text-white/60">{challengeHint}</div>
-          </div>
-        </div>
-
         <div className="relative flex-1 min-h-0 isolate">
           <div className="absolute left-2 top-2 z-[70] flex flex-col gap-2 pointer-events-auto">
             <button
@@ -353,6 +287,33 @@ export function SpaceRoadmap({
               aria-label={language === 'ru' ? `Ежедневная награда: день ${dailyStreak}, +${dailyNextReward}` : `Daily reward: day ${dailyStreak}, +${dailyNextReward}`}
             >
               <Gift className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={onOpenDailyRewards}
+              className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${dailyCanClaim ? 'border-orange-200/45 bg-orange-300/20 text-orange-50 shadow-[0_0_14px_rgba(251,146,60,0.24)]' : 'border-white/20 bg-slate-900/70 text-white/80'}`}
+              title={language === 'ru' ? `Серия возвратов: ${dailyStreak}` : `Return streak: ${dailyStreak}`}
+              aria-label={language === 'ru' ? `Серия возвратов: ${dailyStreak}` : `Return streak: ${dailyStreak}`}
+            >
+              <Flame className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={onOpenLeaderboard}
+              className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${weeklyChallengeCompleted ? 'border-amber-200/45 bg-amber-300/22 text-amber-50 shadow-[0_0_14px_rgba(251,191,36,0.24)]' : 'border-white/20 bg-slate-900/70 text-white/80'}`}
+              title={language === 'ru' ? `Побей счёт ${weeklyChallengeScore}. Твой лучший: ${bestScore}` : `Beat ${weeklyChallengeScore}. Your best: ${bestScore}`}
+              aria-label={language === 'ru' ? `Побей счёт ${weeklyChallengeScore}. Твой лучший: ${bestScore}` : `Beat ${weeklyChallengeScore}. Your best: ${bestScore}`}
+            >
+              <Target className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={onOpenWeeklyLoop}
+              className="inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border border-violet-200/45 bg-violet-300/20 text-violet-50 shadow-[0_0_14px_rgba(167,139,250,0.24)] transition-all hover:bg-violet-300/28"
+              title={language === 'ru' ? `Недельный цикл: ${weeklyTasksCompleted}/3` : `Weekly loop: ${weeklyTasksCompleted}/3`}
+              aria-label={language === 'ru' ? `Недельный цикл: ${weeklyTasksCompleted}/3` : `Weekly loop: ${weeklyTasksCompleted}/3`}
+            >
+              <Star className="h-6 w-6" />
             </button>
             <button
               ref={topButtonRef}

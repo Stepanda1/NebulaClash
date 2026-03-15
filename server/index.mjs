@@ -32,6 +32,36 @@ const DEFAULT_PACKS = [
   { id: 'pack-800', coins: 420, amountRub: 499 },
 ];
 
+const DAILY_REWARD_CALENDAR = [
+  40, 50, 60, 70, 80, 95, 120, 85, 95, 110,
+  125, 145, 165, 190, 140, 155, 170, 185, 205, 230,
+  175, 190, 205, 220, 245, 270, 300, 230, 260, 420,
+];
+
+const DAILY_COLLECTION_MILESTONES = {
+  7: 60,
+  14: 90,
+  21: 140,
+  30: 260,
+};
+
+const LEVEL_COMPLETION_MILESTONES = {
+  3: 40,
+  5: 60,
+  10: 120,
+  15: 180,
+  20: 260,
+  30: 420,
+};
+
+const FALLBACK_LEADERBOARD_PROFILES = [
+  { displayName: 'NovaFox', bestLevel: 9, bestScore: 2480, totalStars: 22 },
+  { displayName: 'CometHex', bestLevel: 8, bestScore: 2210, totalStars: 19 },
+  { displayName: 'OrionPulse', bestLevel: 7, bestScore: 1980, totalStars: 16 },
+  { displayName: 'VoidPilot', bestLevel: 6, bestScore: 1730, totalStars: 14 },
+  { displayName: 'SolarMint', bestLevel: 5, bestScore: 1490, totalStars: 11 },
+];
+
 function readPacks() {
   const raw = process.env.SHOP_PACKS_JSON;
   if (!raw) return DEFAULT_PACKS;
@@ -70,6 +100,14 @@ function parseLegacyState() {
 function initDatabase() {
   mkdirSync(dataDir, { recursive: true });
   const db = new DatabaseSync(dbPath);
+
+  const ensureColumn = (tableName, columnName, definition) => {
+    const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+    if (columns.some((column) => String(column.name || '') === columnName)) {
+      return;
+    }
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  };
 
   db.exec(`
     PRAGMA journal_mode = WAL;
@@ -118,6 +156,8 @@ function initDatabase() {
     );
     CREATE INDEX IF NOT EXISTS idx_leaderboard_rank ON leaderboard_profiles (best_level DESC, best_score DESC, total_stars DESC);
   `);
+
+  ensureColumn('daily_rewards', 'total_claims', 'INTEGER NOT NULL DEFAULT 0');
 
   const hasOrders = db.prepare('SELECT 1 AS ok FROM orders LIMIT 1').get();
   if (!hasOrders) {
@@ -880,7 +920,7 @@ function claimLevelCompletionReward(res, payload, playerId) {
   const level = Math.max(1, Math.floor(Number(payload.level || 1)));
   const score = Math.max(0, Math.floor(Number(payload.score || 0)));
   const stars = Math.max(0, Math.floor(Number(payload.stars || 0)));
-  const reward = Math.max(15, Math.min(140, 20 + level * 2 + Math.min(4, stars) * 3 + Math.min(10000, score) / 2000));
+  const baseReward = Math.max(15, Math.min(140, 20 + level * 2 + Math.min(4, stars) * 3 + Math.min(10000, score) / 2000));
   const rewardKey = `level_complete_${level}`;
 
   const result = withTransaction(() => {
@@ -892,9 +932,21 @@ function claimLevelCompletionReward(res, payload, playerId) {
 
     const current = ensureWalletRow(playerId);
     if (existing) {
-      return { granted: false, balance: current };
+      const completedLevelsCount = Math.max(0, Math.floor(Number(db.prepare(`
+        SELECT COUNT(*) AS total
+        FROM reward_claims
+        WHERE player_id = ? AND reward_key LIKE 'level_complete_%'
+      `).get(playerId)?.total || 0)));
+      return { granted: false, balance: current, reward: baseReward, milestoneBonus: 0, completedLevelsCount };
     }
 
+    const completedLevelsCount = Math.max(0, Math.floor(Number(db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM reward_claims
+      WHERE player_id = ? AND reward_key LIKE 'level_complete_%'
+    `).get(playerId)?.total || 0))) + 1;
+    const milestoneBonus = LEVEL_COMPLETION_MILESTONES[completedLevelsCount] || 0;
+    const reward = baseReward + milestoneBonus;
     const next = current + reward;
     const claimedAt = nowIso();
 
@@ -905,13 +957,16 @@ function claimLevelCompletionReward(res, payload, playerId) {
       VALUES (?, ?, ?, ?)
     `).run(playerId, rewardKey, reward, claimedAt);
 
-    return { granted: true, balance: next };
+    return { granted: true, balance: next, reward, milestoneBonus, completedLevelsCount };
   });
 
   json(res, 200, {
     ok: true,
     granted: result.granted,
-    reward,
+    reward: result.reward,
+    baseReward,
+    milestoneBonus: result.milestoneBonus,
+    completedLevelsCount: result.completedLevelsCount,
     level,
     balance: result.balance,
   });
@@ -919,7 +974,7 @@ function claimLevelCompletionReward(res, payload, playerId) {
 
 function getDailyRewardStatus(res, playerId) {
   const row = db.prepare(`
-    SELECT last_claim_date, streak
+    SELECT last_claim_date, streak, total_claims
     FROM daily_rewards
     WHERE player_id = ?
   `).get(playerId);
@@ -927,68 +982,76 @@ function getDailyRewardStatus(res, playerId) {
   const today = getUtcDateKey(0);
   const canClaim = !row || String(row.last_claim_date || '') !== today;
   const streak = Math.max(1, Math.floor(Number(row?.streak || 1)));
-  const rewards = [40, 55, 70, 90, 110, 140, 180];
+  const totalClaims = Math.max(0, Math.floor(Number(row?.total_claims || 0)));
+  const claimDay = (totalClaims % DAILY_REWARD_CALENDAR.length) + 1;
   const nextStreak = canClaim
     ? (() => {
       const yesterday = getUtcDateKey(-1);
       if (row && String(row.last_claim_date || '') === yesterday) {
-        return Math.min(rewards.length, streak + 1);
+        return Math.min(DAILY_REWARD_CALENDAR.length, streak + 1);
       }
       return 1;
     })()
     : streak;
-  const nextReward = rewards[Math.max(0, Math.min(rewards.length - 1, nextStreak - 1))];
+  const nextReward = DAILY_REWARD_CALENDAR[Math.max(0, Math.min(DAILY_REWARD_CALENDAR.length - 1, claimDay - 1))];
+  const milestoneBonus = DAILY_COLLECTION_MILESTONES[claimDay] || 0;
   const nextClaimAt = canClaim ? null : `${getUtcDateKey(1)}T00:00:00.000Z`;
 
   json(res, 200, {
     ok: true,
     canClaim,
     streak,
+    totalClaims,
+    claimDay,
     lastClaimDate: row ? String(row.last_claim_date || '') : null,
     nextReward,
+    milestoneBonus,
+    calendarRewards: DAILY_REWARD_CALENDAR,
     nextClaimAt,
   });
 }
 
 function claimDailyReward(res, playerId) {
-  const rewards = [40, 55, 70, 90, 110, 140, 180];
   const today = getUtcDateKey(0);
   const yesterday = getUtcDateKey(-1);
 
   const result = withTransaction(() => {
     const row = db.prepare(`
-      SELECT last_claim_date, streak
+      SELECT last_claim_date, streak, total_claims
       FROM daily_rewards
       WHERE player_id = ?
     `).get(playerId);
 
     const current = ensureWalletRow(playerId);
+    const totalClaims = Math.max(0, Math.floor(Number(row?.total_claims || 0)));
+    const claimDay = (totalClaims % DAILY_REWARD_CALENDAR.length) + 1;
+    const reward = DAILY_REWARD_CALENDAR[Math.max(0, Math.min(DAILY_REWARD_CALENDAR.length - 1, claimDay - 1))];
+    const milestoneBonus = DAILY_COLLECTION_MILESTONES[claimDay] || 0;
     if (row && String(row.last_claim_date || '') === today) {
       const streak = Math.max(1, Math.floor(Number(row.streak || 1)));
-      const reward = rewards[Math.max(0, Math.min(rewards.length - 1, streak - 1))];
-      return { granted: false, reward, streak, balance: current };
+      return { granted: false, reward, streak, balance: current, claimDay, totalClaims, milestoneBonus };
     }
 
     const previousStreak = Math.max(1, Math.floor(Number(row?.streak || 1)));
     const streak = row && String(row.last_claim_date || '') === yesterday
-      ? Math.min(rewards.length, previousStreak + 1)
+      ? Math.min(DAILY_REWARD_CALENDAR.length, previousStreak + 1)
       : 1;
-    const reward = rewards[Math.max(0, Math.min(rewards.length - 1, streak - 1))];
-    const next = current + reward;
+    const next = current + reward + milestoneBonus;
     const updatedAt = nowIso();
 
     db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
       .run(next, updatedAt, playerId);
     db.prepare(`
-      INSERT INTO daily_rewards (player_id, last_claim_date, streak, updated_at)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO daily_rewards (player_id, last_claim_date, streak, total_claims, updated_at)
+      VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(player_id) DO UPDATE SET
         last_claim_date = excluded.last_claim_date,
         streak = excluded.streak,
+        total_claims = excluded.total_claims,
         updated_at = excluded.updated_at
-    `).run(playerId, today, streak, updatedAt);
+    `).run(playerId, today, streak, totalClaims + 1, updatedAt);
 
-    return { granted: true, reward, streak, balance: next };
+    return { granted: true, reward, streak, balance: next, claimDay, totalClaims: totalClaims + 1, milestoneBonus };
   });
 
   json(res, 200, {
@@ -996,7 +1059,11 @@ function claimDailyReward(res, playerId) {
     granted: result.granted,
     reward: result.reward,
     streak: result.streak,
+    claimDay: result.claimDay,
+    totalClaims: result.totalClaims,
+    milestoneBonus: result.milestoneBonus,
     balance: result.balance,
+    calendarRewards: DAILY_REWARD_CALENDAR,
     nextClaimAt: `${getUtcDateKey(1)}T00:00:00.000Z`,
   });
 }
@@ -1044,12 +1111,36 @@ function getLeaderboardTop(res, requestedLimit) {
     LIMIT ?
   `).all(limit);
 
-  const items = rows.map((row, index) => ({
-    rank: index + 1,
+  const liveItems = rows.map((row) => ({
     displayName: String(row.display_name || 'Pilot'),
     bestLevel: Math.max(1, Math.floor(Number(row.best_level || 1))),
     bestScore: Math.max(0, Math.floor(Number(row.best_score || 0))),
     totalStars: Math.max(0, Math.floor(Number(row.total_stars || 0))),
+  }));
+  const itemsPool = [...liveItems];
+
+  for (const rival of FALLBACK_LEADERBOARD_PROFILES) {
+    if (itemsPool.length >= limit) break;
+    const duplicate = itemsPool.some((item) => item.displayName === rival.displayName);
+    if (!duplicate) {
+      itemsPool.push({ ...rival });
+    }
+  }
+
+  const items = itemsPool
+    .sort((left, right) => (
+      right.bestLevel - left.bestLevel
+      || right.bestScore - left.bestScore
+      || right.totalStars - left.totalStars
+      || left.displayName.localeCompare(right.displayName)
+    ))
+    .slice(0, limit)
+    .map((row, index) => ({
+    rank: index + 1,
+    displayName: row.displayName,
+    bestLevel: row.bestLevel,
+    bestScore: row.bestScore,
+    totalStars: row.totalStars,
   }));
 
   json(res, 200, { ok: true, items });
