@@ -141,12 +141,12 @@ export function LegalModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[90] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+      className="absolute inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/75 p-3 pt-6 backdrop-blur-sm sm:items-center sm:p-4"
     >
       <motion.div
         initial={{ y: 18, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative w-full max-w-2xl rounded-3xl border border-white/20 bg-slate-950/95 p-5 shadow-2xl"
+        className="relative my-auto w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/20 bg-slate-950/95 p-5 shadow-2xl max-h-[min(88dvh,48rem)]"
       >
         <button
           type="button"

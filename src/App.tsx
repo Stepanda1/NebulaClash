@@ -1531,8 +1531,8 @@ function App() {
   );
 
   const renderWeeklyLoopModal = () => (
-    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[2rem] border border-violet-200/20 bg-[linear-gradient(180deg,rgba(24,10,46,0.96),rgba(10,8,24,0.98))] p-5 shadow-[0_24px_80px_rgba(139,92,246,0.22)]">
+      <div className="fixed inset-0 z-[130] flex items-start justify-center overflow-y-auto bg-slate-950/86 px-3 pt-6 backdrop-blur-sm sm:items-center sm:px-4">
+        <div className="my-auto max-h-[min(88dvh,46rem)] w-full max-w-md overflow-y-auto rounded-[2rem] border border-violet-200/20 bg-[linear-gradient(180deg,rgba(24,10,46,0.96),rgba(10,8,24,0.98))] p-5 shadow-[0_24px_80px_rgba(139,92,246,0.22)]">
         <div className="mb-4 flex items-center justify-between">
           <div className="text-sm font-black uppercase tracking-[0.2em] text-violet-100">{language === 'ru' ? 'Недельный цикл' : 'Weekly loop'}</div>
           <button type="button" onClick={() => setIsWeeklyLoopOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">

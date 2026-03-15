@@ -28,13 +28,13 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_50%_15%,rgba(34,211,238,0.14),transparent_45%),radial-gradient(circle_at_78%_72%,rgba(168,85,247,0.14),transparent_50%),rgba(2,6,23,0.78)] backdrop-blur-sm p-4"
+            className="absolute inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[radial-gradient(circle_at_50%_15%,rgba(34,211,238,0.14),transparent_45%),radial-gradient(circle_at_78%_72%,rgba(168,85,247,0.14),transparent_50%),rgba(2,6,23,0.78)] p-3 pt-6 backdrop-blur-sm sm:items-center sm:p-4"
         >
             <motion.div
                 initial={{ scale: 0.9, opacity: 0, y: 16 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 transition={{ type: 'spring', stiffness: 240, damping: 20 }}
-                className="relative w-full max-w-sm rounded-[2rem] border border-cyan-200/20 bg-slate-950/80 backdrop-blur-xl shadow-[0_20px_80px_rgba(0,0,0,0.55),0_0_60px_rgba(34,211,238,0.08)] p-5 sm:p-6 flex flex-col gap-4 text-center overflow-hidden"
+                className="relative my-auto flex max-h-[min(88dvh,46rem)] w-full max-w-sm flex-col gap-4 overflow-y-auto rounded-[2rem] border border-cyan-200/20 bg-slate-950/80 p-5 text-center shadow-[0_20px_80px_rgba(0,0,0,0.55),0_0_60px_rgba(34,211,238,0.08)] backdrop-blur-xl sm:p-6"
             >
                 <div className="pointer-events-none absolute inset-0">
                     <div className="absolute -top-16 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-cyan-400/15 blur-3xl" />

@@ -30,8 +30,8 @@ export function AdminModal({
   const actionClassName = 'rounded-2xl border border-cyan-200/20 bg-white/8 px-3 py-3 text-left transition-all hover:bg-white/12 active:scale-[0.98]';
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/78 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
+    <div className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-slate-950/78 px-3 pt-6 backdrop-blur-sm sm:items-center sm:px-4">
+      <div className="my-auto max-h-[min(88dvh,46rem)] w-full max-w-md overflow-y-auto rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)]">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-200/70">Admin</div>

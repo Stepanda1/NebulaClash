@@ -19,13 +19,13 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, score, starsE
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_50%_15%,rgba(34,211,238,0.16),transparent_48%),radial-gradient(circle_at_75%_75%,rgba(168,85,247,0.14),transparent_52%),rgba(2,6,23,0.72)] backdrop-blur-sm p-4"
+            className="absolute inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[radial-gradient(circle_at_50%_15%,rgba(34,211,238,0.16),transparent_48%),radial-gradient(circle_at_75%_75%,rgba(168,85,247,0.14),transparent_52%),rgba(2,6,23,0.72)] p-3 pt-6 backdrop-blur-sm sm:items-center sm:p-4"
         >
             <motion.div
                 initial={{ scale: 0.72, y: 34, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-                className="w-full max-w-sm rounded-[2rem] border border-cyan-200/20 bg-slate-950/75 backdrop-blur-xl shadow-[0_20px_80px_rgba(0,0,0,0.55),0_0_60px_rgba(34,211,238,0.12)] p-7 flex flex-col gap-6 items-center text-center relative overflow-hidden"
+                className="relative my-auto flex max-h-[min(88dvh,44rem)] w-full max-w-sm flex-col items-center gap-5 overflow-y-auto rounded-[2rem] border border-cyan-200/20 bg-slate-950/75 p-5 text-center shadow-[0_20px_80px_rgba(0,0,0,0.55),0_0_60px_rgba(34,211,238,0.12)] backdrop-blur-xl sm:gap-6 sm:p-7"
             >
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute -top-16 left-1/2 h-44 w-44 -translate-x-1/2 rounded-full bg-cyan-400/18 blur-3xl" />

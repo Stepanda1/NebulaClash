@@ -64,12 +64,12 @@ export function FeedbackModal({ language, feedbackEmail, onClose }: FeedbackModa
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[94] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className="absolute inset-0 z-[94] flex items-start justify-center overflow-y-auto bg-black/80 p-3 pt-6 backdrop-blur-sm sm:items-center sm:p-4"
     >
       <motion.div
         initial={{ y: 18, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative w-full max-w-lg rounded-3xl border border-cyan-200/20 bg-slate-950/95 p-5 text-white shadow-[0_20px_70px_rgba(0,0,0,0.55)]"
+        className="relative my-auto w-full max-w-lg overflow-y-auto rounded-3xl border border-cyan-200/20 bg-slate-950/95 p-5 text-white shadow-[0_20px_70px_rgba(0,0,0,0.55)] max-h-[min(88dvh,44rem)]"
       >
         <button
           type="button"

@@ -414,8 +414,8 @@ export function SpaceRoadmap({
       )}
 
       {isSettingsOpen && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-xs rounded-3xl border border-white/25 bg-slate-950/80 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+        <div className="absolute inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/50 p-3 pt-6 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="relative my-auto max-h-[min(88dvh,42rem)] w-full max-w-xs overflow-y-auto rounded-3xl border border-white/25 bg-slate-950/80 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
             <button
               type="button"
               onClick={() => setIsSettingsOpen(false)}

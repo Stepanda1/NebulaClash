@@ -89,13 +89,13 @@ export function ShopModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[80] flex items-center justify-center overflow-hidden bg-slate-950/72 backdrop-blur-sm p-3 sm:p-4"
+      className="absolute inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-slate-950/72 p-3 pt-6 backdrop-blur-sm sm:items-center sm:p-4"
     >
       <CosmicBackdrop variant="shop" className="opacity-95" />
       <motion.div
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative flex max-h-[min(92vh,760px)] w-full max-w-[min(100%,30rem)] flex-col overflow-hidden rounded-3xl border border-cyan-100/20 bg-[linear-gradient(155deg,rgba(2,6,23,0.9)_0%,rgba(8,20,43,0.92)_34%,rgba(8,17,38,0.94)_100%)] text-white shadow-[0_20px_70px_rgba(0,0,0,0.55),0_0_60px_rgba(34,211,238,0.08)]"
+        className="relative my-auto flex max-h-[min(88dvh,760px)] w-full max-w-[min(100%,30rem)] flex-col overflow-hidden rounded-3xl border border-cyan-100/20 bg-[linear-gradient(155deg,rgba(2,6,23,0.9)_0%,rgba(8,20,43,0.92)_34%,rgba(8,17,38,0.94)_100%)] text-white shadow-[0_20px_70px_rgba(0,0,0,0.55),0_0_60px_rgba(34,211,238,0.08)]"
       >
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-16 left-1/2 h-44 w-44 -translate-x-1/2 rounded-full bg-cyan-400/16 blur-3xl" />

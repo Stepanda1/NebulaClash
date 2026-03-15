@@ -65,12 +65,12 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-sm p-4"
+      className="absolute inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/45 p-3 pt-6 backdrop-blur-sm sm:items-center sm:p-4"
     >
       <motion.div
         initial={{ scale: 0.92, opacity: 0, y: 16 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="relative w-full max-w-sm rounded-[2rem] border border-white/30 bg-slate-950/75 p-6 shadow-[0_20px_60px_rgba(6,182,212,0.25)]"
+        className="relative my-auto w-full max-w-sm overflow-y-auto rounded-[2rem] border border-white/30 bg-slate-950/75 p-5 shadow-[0_20px_60px_rgba(6,182,212,0.25)] max-h-[min(88dvh,44rem)] sm:p-6"
       >
         <button
           type="button"

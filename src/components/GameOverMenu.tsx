@@ -29,13 +29,13 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_50%_20%,rgba(239,68,68,0.18),transparent_45%),radial-gradient(circle_at_20%_80%,rgba(168,85,247,0.14),transparent_50%),rgba(2,6,23,0.88)] backdrop-blur-md p-4"
+            className="absolute inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[radial-gradient(circle_at_50%_20%,rgba(239,68,68,0.18),transparent_45%),radial-gradient(circle_at_20%_80%,rgba(168,85,247,0.14),transparent_50%),rgba(2,6,23,0.88)] p-3 pt-6 backdrop-blur-md sm:items-center sm:p-4"
         >
             <motion.div
                 initial={{ scale: 0.86, y: 28, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 220, damping: 20 }}
-                className="w-full max-w-sm rounded-[2rem] border border-rose-200/15 bg-slate-950/80 p-7 shadow-[0_18px_80px_rgba(0,0,0,0.6),0_0_70px_rgba(244,63,94,0.12)] flex flex-col gap-6 items-center text-center relative overflow-hidden"
+                className="relative my-auto flex max-h-[min(88dvh,46rem)] w-full max-w-sm flex-col items-center gap-5 overflow-y-auto rounded-[2rem] border border-rose-200/15 bg-slate-950/80 p-5 text-center shadow-[0_18px_80px_rgba(0,0,0,0.6),0_0_70px_rgba(244,63,94,0.12)] sm:gap-6 sm:p-7"
             >
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute -top-20 left-1/2 h-44 w-44 -translate-x-1/2 rounded-full bg-rose-500/20 blur-3xl" />
