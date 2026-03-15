@@ -16,6 +16,9 @@ output
 .env.*
 !.env.example
 data/wallet-state.json
+data/wallet-state.sqlite
+data/wallet-state.sqlite-shm
+data/wallet-state.sqlite-wal
 
 # Editor directories and files
 .vscode/*
