@@ -8,8 +8,11 @@
     "server": "node server/index.mjs",
     "server:reset-state": "node server/reset-state.mjs",
     "build": "tsc -b && vite build",
+    "build:analyze": "tsc -b && cross-env ANALYZE_BUNDLE=1 vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:smoke:mobile": "playwright test tests/mobile-smoke.spec.ts --project=mobile-chrome",
+    "test:a11y:landing": "playwright test tests/mobile-smoke.spec.ts --project=mobile-chrome --grep @a11y"
   },
   "dependencies": {
     "@babylonjs/core": "^8.54.1",
@@ -29,19 +32,23 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.23",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "playwright": "^1.58.2",
     "postcss": "^8.5.6",
+    "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^4.2.1",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.22.0",

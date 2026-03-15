@@ -1,9 +1,20 @@
+import { visualizer } from 'rollup-plugin-visualizer'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   base: '/',
-  plugins: [react()],
+  plugins: [
+    react(),
+    process.env.ANALYZE_BUNDLE === '1'
+      ? visualizer({
+          filename: 'output/bundle-analysis/stats.html',
+          gzipSize: true,
+          brotliSize: true,
+          open: false,
+        })
+      : null,
+  ].filter(Boolean),
   build: {
     emptyOutDir: true,
     rollupOptions: {
