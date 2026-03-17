@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Gift, Lock, LogOut, Share2, Star, Trophy, Volume2, VolumeX, X } from 'lucide-react';
+import { Gift, Lock, LogOut, Share2, Sparkles, Star, Trophy, Volume2, VolumeX, X } from 'lucide-react';
 import type { Language } from '../i18n';
 import type { LegalSection } from '../types/legal';
 import { COPY } from '../i18n';
@@ -316,7 +316,7 @@ export function SpaceRoadmap({
               title={eventActive ? `${eventTitle}: ${eventMissionProgress}` : (language === 'ru' ? 'Ивент скоро' : 'Event soon')}
               aria-label={eventActive ? `${eventTitle}: ${eventMissionProgress}` : (language === 'ru' ? 'Ивент скоро' : 'Event soon')}
             >
-              <Star className="h-6 w-6" />
+              <Sparkles className="h-6 w-6" />
             </button>
             <button
               ref={topButtonRef}

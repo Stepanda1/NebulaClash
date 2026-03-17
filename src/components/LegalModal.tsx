@@ -15,7 +15,7 @@ type LegalModalProps = {
 function TikTokIcon(props: LucideProps) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M14.23 3c.2 1.7 1.16 3.29 2.58 4.24a6.1 6.1 0 0 0 3.19 1v3.05a9.1 9.1 0 0 1-2.93-.48 9.3 9.3 0 0 1-2.84-1.42v6.34a5.9 5.9 0 1 1-5.9-5.9c.34 0 .67.03 1 .08v3.1a2.84 2.84 0 1 0 1.84 2.66V3h3.06Z" />
+      <path d="M15.74 3.5c.43 1.84 1.63 3.35 3.18 4.16c.74.39 1.55.64 2.39.73v2.52a8.84 8.84 0 0 1-3.69-.83a8.97 8.97 0 0 1-2.24-1.36v5.87a5.44 5.44 0 1 1-5.44-5.44c.34 0 .67.03 1 .09v2.57a2.86 2.86 0 1 0 1.87 2.68V3.5h2.93Z" />
     </svg>
   );
 }
@@ -100,7 +100,7 @@ export function LegalModal({
               >
                 <span className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${item.style} ${item.glow} transition-transform duration-200 group-hover:scale-105`}>
                   <span className="flex h-[3.15rem] w-[3.15rem] items-center justify-center rounded-full border border-white/30 bg-slate-950 text-white">
-                    <Icon size={item.id === 'tiktok' ? 16 : 20} />
+                    <Icon size={item.id === 'tiktok' ? 14 : 20} className={item.id === 'tiktok' ? 'translate-y-[0.5px]' : undefined} />
                   </span>
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/90">{item.label}</span>

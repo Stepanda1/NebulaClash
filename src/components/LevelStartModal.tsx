@@ -104,12 +104,18 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
         </div>
 
         {eventActive && onToggleEventRun && (
-          <div className="mt-4 rounded-2xl border border-cyan-200/18 bg-cyan-300/10 p-4">
+          <div className={`mt-4 rounded-2xl border p-4 ${eventRunEnabled ? 'border-cyan-200/38 bg-cyan-300/16 shadow-[0_0_18px_rgba(34,211,238,0.16)]' : 'border-cyan-200/18 bg-cyan-300/10'}`}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/78">{language === 'ru' ? 'Ивент-забег' : 'Event run'}</div>
                 <div className="mt-1 text-sm font-black text-white">{eventTitle}</div>
                 <div className="mt-1 text-xs text-white/70">{eventDescription}</div>
+                {eventRunEnabled && (
+                  <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-cyan-200/25 bg-slate-950/35 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {language === 'ru' ? 'Этот запуск пойдёт в ивент' : 'This run counts for the event'}
+                  </div>
+                )}
               </div>
               <button
                 type="button"
@@ -121,8 +127,8 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
             </div>
             <div className="mt-3 text-xs text-cyan-50/84">
               {language === 'ru'
-                ? `Добавит ${eventIceTiles} крио-щитов в забег и зачтёт прогресс недельного сектора.`
-                : `Adds ${eventIceTiles} cryo shields to the run and counts progress for the weekly sector.`}
+                ? `Добавит ${eventIceTiles} крио-щитов в забег и зачтёт крио/босс/уровни в недельный сектор.`
+                : `Adds ${eventIceTiles} cryo shields and routes cryo, boss, and level progress into the weekly sector.`}
             </div>
           </div>
         )}

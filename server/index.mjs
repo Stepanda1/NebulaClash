@@ -15,6 +15,7 @@ const port = Number(process.env.PORT || 8787);
 const authSecret = String(process.env.API_AUTH_SECRET || '');
 const adminLogin = String(process.env.ADMIN_LOGIN || '').trim();
 const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim();
+const calendarTimeZone = String(process.env.GAME_TIMEZONE || 'Asia/Yekaterinburg').trim() || 'Asia/Yekaterinburg';
 const sessionTtlSeconds = Number(process.env.SESSION_TTL_SECONDS || 60 * 60 * 24 * 30);
 const initialCoins = Math.max(0, Math.floor(Number(process.env.INITIAL_COINS || 50)));
 const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
@@ -968,15 +969,69 @@ function updatePlayerProfileState(playerId, payload = {}) {
 function getUtcDateKey(offsetDays = 0) {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+  return formatCalendarDateKey(d);
 }
 
 function getUtcWeekKey(now = new Date()) {
-  const d = new Date(now);
-  const day = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() - (day - 1));
-  d.setUTCHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
+  const zoned = getCalendarParts(now);
+  const pseudoUtc = new Date(Date.UTC(zoned.year, zoned.month - 1, zoned.day, 12, 0, 0));
+  const day = pseudoUtc.getUTCDay() || 7;
+  pseudoUtc.setUTCDate(pseudoUtc.getUTCDate() - (day - 1));
+  return pseudoUtc.toISOString().slice(0, 10);
+}
+
+function getCalendarParts(date = new Date()) {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: calendarTimeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = formatter.formatToParts(date);
+  const pick = (type) => parts.find((part) => part.type === type)?.value || '00';
+  return {
+    year: Number(pick('year')),
+    month: Number(pick('month')),
+    day: Number(pick('day')),
+  };
+}
+
+function formatCalendarDateKey(date = new Date()) {
+  const { year, month, day } = getCalendarParts(date);
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function parseTimeZoneOffsetMinutes(rawOffset) {
+  const normalized = String(rawOffset || '').trim().replace(/^GMT/, '').replace(/^UTC/, '');
+  if (!normalized) return 0;
+  const match = normalized.match(/^([+-])(\d{1,2})(?::?(\d{2}))?$/);
+  if (!match) return 0;
+  const sign = match[1] === '-' ? -1 : 1;
+  const hours = Number(match[2] || 0);
+  const minutes = Number(match[3] || 0);
+  return sign * (hours * 60 + minutes);
+}
+
+function getTimeZoneOffsetMinutes(date = new Date()) {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: calendarTimeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'longOffset',
+  });
+  const parts = formatter.formatToParts(date);
+  const offsetLabel = parts.find((part) => part.type === 'timeZoneName')?.value || 'GMT+00:00';
+  return parseTimeZoneOffsetMinutes(offsetLabel);
+}
+
+function getWeekStartIso(weekKey = getUtcWeekKey()) {
+  const [year, month, day] = String(weekKey || '').split('-').map((part) => Number(part || 0));
+  if (!year || !month || !day) {
+    return `${weekKey}T00:00:00.000Z`;
+  }
+  const localMidnightUtc = Date.UTC(year, month - 1, day, 0, 0, 0);
+  const offsetMinutes = getTimeZoneOffsetMinutes(new Date(Date.UTC(year, month - 1, day, 12, 0, 0)));
+  return new Date(localMidnightUtc - offsetMinutes * 60 * 1000).toISOString();
 }
 
 function hashStringToUnitInterval(value) {
@@ -1132,11 +1187,12 @@ function getMissionCurrentProgress(progress, missionId) {
 
 function buildWeeklyMissionTrack(playerId) {
   const weekKey = getUtcWeekKey();
+  const weekStartIso = getWeekStartIso(weekKey);
   const claimedMissionCount = Math.max(0, Math.floor(Number(db.prepare(`
     SELECT COUNT(*) AS total
     FROM reward_claims
     WHERE player_id = ? AND reward_key LIKE 'daily_mission_%' AND reward_key NOT LIKE 'daily_mission_completion_%' AND claimed_at >= ?
-  `).get(playerId, `${weekKey}T00:00:00.000Z`)?.total || 0)));
+  `).get(playerId, weekStartIso)?.total || 0)));
   const rewardKey = `weekly_mission_track_${weekKey}_${WEEKLY_MISSION_TARGET}`;
   const claimed = db.prepare(`
     SELECT 1 AS ok

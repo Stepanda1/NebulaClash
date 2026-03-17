@@ -8,6 +8,7 @@ import { LevelUpModal } from './components/LevelUpModal';
 import { StarProgress } from './components/StarProgress';
 import { AudioPlayer } from './components/AudioPlayer';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 import { TutorialHint } from './components/TutorialHint';
 import { SpaceRoadmap } from './components/SpaceRoadmap';
 import { MarketingLanding } from './components/MarketingLanding';
@@ -1410,6 +1411,12 @@ function App() {
           </div>
         </div>
 
+        <div className="mt-4 rounded-2xl border border-cyan-200/14 bg-white/[0.04] p-3 text-xs leading-relaxed text-cyan-50/84">
+          {language === 'ru'
+            ? `Чтобы ивент реально работал, включай "Ивент-забег" перед стартом уровня. Такой запуск добавляет ${eventConfig.eventRunIceTiles} крио-щитов и пишет прогресс в сектор.`
+            : `Turn on "Event run" before starting a level. That run adds ${eventConfig.eventRunIceTiles} cryo shields and writes progress into the sector event.`}
+        </div>
+
         <div className="mt-4 space-y-3">
           {eventMissions.map((mission) => (
             <div key={mission.id} className="rounded-2xl border border-cyan-200/14 bg-cyan-300/8 p-4 text-white">
@@ -1494,8 +1501,11 @@ function App() {
             type="button"
             onClick={async () => {
               await handleClaimDailyReward();
-              setIsDailyRewardsOpen(false);
+              if (dailyCanClaim) {
+                setIsDailyRewardsOpen(false);
+              }
             }}
+            disabled={!dailyCanClaim}
             className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide transition-all ${dailyCanClaim ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 hover:from-emerald-300 hover:to-teal-400' : 'bg-white/10 text-white/70'}`}
           >
             {dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}
@@ -2947,6 +2957,16 @@ function App() {
               <div className="text-[10px] sm:text-xs font-black tracking-[0.22em] uppercase text-slate-800/82">{t.goal}</div>
               <div className="text-xl sm:text-2xl font-extrabold leading-tight text-slate-950">{renderGoalContent()}</div>
             </div>
+            {activeEventRun && (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-fuchsia-200/28 bg-fuchsia-300/14 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-50 shadow-[0_0_16px_rgba(217,70,239,0.16)]">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>
+                  {language === 'ru'
+                    ? `Ивент-забег активен: +${eventConfig.eventRunIceTiles} крио-щитов и прогресс в сектор`
+                    : `Event run active: +${eventConfig.eventRunIceTiles} cryo shields and sector progress`}
+                </span>
+              </div>
+            )}
             {isBossLevel && (
               <div className="relative mt-2 w-full max-w-xs sm:max-w-sm px-2">
                 <div className="relative overflow-hidden rounded-2xl border border-rose-200/60 bg-slate-950/80 px-2 py-2 shadow-[0_0_22px_rgba(244,63,94,0.28)]">

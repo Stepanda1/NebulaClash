@@ -101,6 +101,10 @@ if ($UploadBackend) {
 EOF"
     Invoke-Remote "chmod 644 '$BackendPath/data/wallet-state.json'"
   }
+
+  Write-Host "Restarting backend with persisted runtime env..."
+  Invoke-Remote "pkill -f 'node server/index.mjs' || true"
+  Invoke-Remote "cd '$BackendPath' && nohup sh '$BackendPath/start-backend.sh' > '$BackendPath/backend.log' 2>&1 < /dev/null &"
 }
 
 Write-Host "Done."
