@@ -26,19 +26,30 @@ export function MarketingLanding({
   onOpenFeedback,
 }: MarketingLandingProps) {
   const [isCompactViewport, setIsCompactViewport] = useState(() => shouldUseCompactLandingLayout());
-  const heroTitle = language === 'ru' ? 'Матч-3 с боссами прямо в браузере' : 'Boss match-3 you can play in your browser';
-  const heroBody = language === 'ru'
-    ? 'Без установки. Первый уровень запускается сразу: быстрые комбо, спец-фигуры, щиты босса и магазин монет уже в первой сессии.'
-    : 'No install. Jump into the first level right away: fast combos, special pieces, boss shields, and the coin shop all show up in the first session.';
+  const tx = (ru: string, en: string, zh: string) => language === 'ru' ? ru : language === 'zh' ? zh : en;
+  const heroTitle = tx('Матч-3 с боссами прямо в браузере', 'Boss match-3 you can play in your browser', '浏览器里直接开玩的 Boss 三消');
+  const heroBody = tx(
+    'Без установки. Первый уровень запускается сразу: быстрые комбо, спец-фигуры, щиты босса и магазин монет уже в первой сессии.',
+    'No install. Jump into the first level right away: fast combos, special pieces, boss shields, and the coin shop all show up in the first session.',
+    '无需安装。第一关可直接开始：快速连击、特殊棋子、Boss 护盾和金币商店都会在第一局里出现。',
+  );
   const proofBadges = language === 'ru'
     ? ['Без установки', 'Первый уровень за минуту', 'Монеты и бустеры сразу']
-    : ['No install', 'First level in under a minute', 'Coins and boosters live'];
+    : language === 'zh'
+      ? ['无需安装', '一分钟内进第一关', '金币和增益立即可用']
+      : ['No install', 'First level in under a minute', 'Coins and boosters live'];
   const featureCards = language === 'ru'
     ? [
       { label: 'Первые секунды', value: 'Быстрый payoff' },
       { label: 'Спец-фигуры', value: 'Бомба + молния' },
       { label: 'Бои', value: 'Боссы и щиты' },
     ]
+    : language === 'zh'
+      ? [
+        { label: '开局前几秒', value: '快速回报' },
+        { label: '特殊棋子', value: '炸弹 + 闪电' },
+        { label: '战斗', value: 'Boss 与护盾' },
+      ]
     : [
       { label: 'First seconds', value: 'Fast payoff' },
       { label: 'Special pieces', value: 'Bomb + lightning' },
@@ -46,7 +57,9 @@ export function MarketingLanding({
     ];
   const secondaryProof = language === 'ru'
     ? ['Играй бесплатно на сайте', 'Покупки монет за пару тапов', 'Цель уровня видна с первого экрана']
-    : ['Play free on the site', 'Coin purchases in a couple taps', 'Goal is readable from the first screen'];
+    : language === 'zh'
+      ? ['在网站上免费玩', '点几下就能购买金币', '从第一屏就能看清关卡目标']
+      : ['Play free on the site', 'Coin purchases in a couple taps', 'Goal is readable from the first screen'];
 
   useEffect(() => {
     trackEvent('landing_view', { entry: 'marketing_landing' });
@@ -95,11 +108,11 @@ export function MarketingLanding({
   }, [buildTrackedUrl]);
 
   const legalLinks = [
-    { label: language === 'ru' ? 'Оферта' : 'Offer', href: '/LegalDocsPDF/01_Oferta.html' },
-    { label: language === 'ru' ? 'Политика ПД' : 'Privacy Policy', href: '/LegalDocsPDF/02_Privacy.html' },
-    { label: language === 'ru' ? 'Возврат' : 'Refunds', href: '/LegalDocsPDF/03_Refunds.html' },
-    { label: language === 'ru' ? 'Реквизиты' : 'Requisites', href: '/LegalDocsPDF/04_Requisites.html' },
-    { label: language === 'ru' ? 'Ассеты' : 'Assets', href: '/LegalDocsPDF/05_Asset_Sources.html' },
+    { label: tx('Оферта', 'Offer', '条款报价'), href: '/LegalDocsPDF/01_Oferta.html' },
+    { label: tx('Политика ПД', 'Privacy Policy', '隐私政策'), href: '/LegalDocsPDF/02_Privacy.html' },
+    { label: tx('Возврат', 'Refunds', '退款'), href: '/LegalDocsPDF/03_Refunds.html' },
+    { label: tx('Реквизиты', 'Requisites', '公司信息'), href: '/LegalDocsPDF/04_Requisites.html' },
+    { label: tx('Ассеты', 'Assets', '素材'), href: '/LegalDocsPDF/05_Asset_Sources.html' },
   ] as const;
 
   return (
@@ -118,7 +131,7 @@ export function MarketingLanding({
           <div className={`relative border border-white/10 bg-[linear-gradient(160deg,rgba(2,6,23,0.4),rgba(15,23,42,0.28))] ${isCompactViewport ? 'mt-5 rounded-[1.7rem] p-3' : 'mt-6 rounded-3xl p-5'}`}>
             <div className={`inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] font-bold uppercase text-white/70 ${isCompactViewport ? 'mb-2 px-2.5 py-1 text-[10px] tracking-[0.14em]' : 'mb-3 px-3 py-1 text-[11px] tracking-[0.16em]'}`}>
               <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
-              {language === 'ru' ? 'Играй сразу в браузере' : 'Play instantly in your browser'}
+              {tx('Играй сразу в браузере', 'Play instantly in your browser', '立即在浏览器中开玩')}
             </div>
             <div className={`flex items-center justify-center ${isCompactViewport ? 'mb-2' : 'mb-4'}`}>
               <div className={`relative flex items-center justify-center ${isCompactViewport ? 'h-16 w-16' : 'h-24 w-24'}`}>
@@ -174,7 +187,7 @@ export function MarketingLanding({
                 <span className={`flex items-center justify-center border border-white/15 bg-white/10 ${isCompactViewport ? 'h-9 w-9 rounded-xl' : 'h-10 w-10 rounded-2xl'}`}>
                   <LaunchGlyph className={`text-cyan-100 ${isCompactViewport ? 'h-4.5 w-4.5' : 'h-5 w-5'}`} />
                 </span>
-                {language === 'ru' ? 'Запустить первый уровень' : 'Play the first level now'}
+                {tx('Запустить первый уровень', 'Play the first level now', '立即开始第一关')}
               </button>
 
               <div className="grid grid-cols-2 gap-2">
@@ -195,7 +208,7 @@ export function MarketingLanding({
                   className={`inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200/20 bg-amber-300/[0.08] px-3 text-[10px] font-black uppercase text-amber-100 ${isCompactViewport ? 'py-2.5 tracking-[0.12em]' : 'py-3 tracking-[0.16em]'}`}
                 >
                   <SignalGlyph className="h-4 w-4 text-amber-100" />
-                  {language === 'ru' ? 'Отзыв' : 'Feedback'}
+                  {tx('Отзыв', 'Feedback', '反馈')}
                 </button>
               </div>
             </div>
@@ -205,19 +218,19 @@ export function MarketingLanding({
         {!isCompactViewport && (
           <div className="mb-2 rounded-[1.4rem] border border-white/8 bg-slate-950/42 px-3 py-3 shadow-[0_0_24px_rgba(0,0,0,0.16)] backdrop-blur-md">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] leading-none text-white/62">
-            <span>{language === 'ru' ? '99 / 199 / 499 ₽' : '99 / 199 / 499 RUB'}</span>
+            <span>{tx('99 / 199 / 499 ₽', '99 / 199 / 499 RUB', '99 / 199 / 499 卢布')}</span>
             <span className="text-white/28">•</span>
-            <span>{language === 'ru' ? 'сразу после оплаты' : 'instant delivery'}</span>
+            <span>{tx('сразу после оплаты', 'instant delivery', '支付后立即到账')}</span>
             <span className="text-white/28">•</span>
-            <a href={`mailto:${contacts.email}`} className="transition hover:text-white">{language === 'ru' ? 'Почта' : 'Email'}</a>
+            <a href={`mailto:${contacts.email}`} className="transition hover:text-white">{tx('Почта', 'Email', '邮箱')}</a>
             <span className="text-white/28">•</span>
             <a href={contacts.tiktok} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">TikTok</a>
             <span className="text-white/28">•</span>
-            <a href={contacts.telegram} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">{language === 'ru' ? 'Телеграм' : 'Telegram'}</a>
+            <a href={contacts.telegram} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">{tx('Телеграм', 'Telegram', 'Telegram')}</a>
             <span className="text-white/28">•</span>
             <span>{contacts.sellerName}</span>
             <span className="text-white/28">•</span>
-            <span>{language === 'ru' ? 'ИНН' : 'TIN'} {contacts.sellerInn}</span>
+            <span>{tx('ИНН', 'TIN', '税号')} {contacts.sellerInn}</span>
           </div>
 
           <div className="mt-2 flex flex-wrap gap-1.5">

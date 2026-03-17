@@ -31,7 +31,7 @@ export function ConsentBanner({
 }: ConsentBannerProps) {
   if (!isOpen) return null;
 
-  const isRu = language === 'ru';
+  const tx = (ru: string, en: string, zh: string) => language === 'ru' ? ru : language === 'zh' ? zh : en;
 
   return (
     <div className="absolute inset-x-3 bottom-3 z-[120] sm:left-1/2 sm:w-[min(34rem,calc(100%-2rem))] sm:-translate-x-1/2">
@@ -39,10 +39,10 @@ export function ConsentBanner({
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200/75">
-              {isRu ? 'Приватность' : 'Privacy'}
+              {tx('Приватность', 'Privacy', '隐私')}
             </div>
             <div className="mt-1 text-sm font-black text-white">
-              {isRu ? 'Выберите, какие данные можно передавать внешним сервисам' : 'Choose which data can be sent to external services'}
+              {tx('Выберите, какие данные можно передавать внешним сервисам', 'Choose which data can be sent to external services', '选择哪些数据可以发送到外部服务')}
             </div>
           </div>
           <button
@@ -50,14 +50,16 @@ export function ConsentBanner({
             onClick={onClose}
             className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70 transition hover:bg-white/10"
           >
-            {isRu ? 'Скрыть' : 'Hide'}
+            {tx('Скрыть', 'Hide', '隐藏')}
           </button>
         </div>
 
         <p className="mt-2 text-xs leading-relaxed text-white/72">
-          {isRu
-            ? 'Необязательные трекеры, маркетинговые пиксели и внешние сервисы аналитики не запускаются, пока вы их не разрешите. Обязательные данные нужны только для работы игры, платежей и защиты от злоупотреблений.'
-            : 'Optional trackers, marketing pixels, and external analytics services stay off until you allow them. Required data is used only to run the game, payments, and abuse protection.'}
+          {tx(
+            'Необязательные трекеры, маркетинговые пиксели и внешние сервисы аналитики не запускаются, пока вы их не разрешите. Обязательные данные нужны только для работы игры, платежей и защиты от злоупотреблений.',
+            'Optional trackers, marketing pixels, and external analytics services stay off until you allow them. Required data is used only to run the game, payments, and abuse protection.',
+            '在你允许之前，可选追踪器、营销像素和外部分析服务都不会启动。必要数据仅用于游戏运行、支付和防滥用保护。',
+          )}
         </p>
 
         <div className="mt-3 grid gap-2">
@@ -70,14 +72,14 @@ export function ConsentBanner({
           >
             <span>
               <span className="block text-xs font-black uppercase tracking-[0.16em]">
-                {isRu ? 'Аналитика и ошибки' : 'Analytics and errors'}
+                {tx('Аналитика и ошибки', 'Analytics and errors', '分析与错误')}
               </span>
               <span className="mt-1 block text-[11px] text-white/70">
-                {isRu ? 'GA / PostHog / Yandex / Sentry' : 'GA / PostHog / Yandex / Sentry'}
+                GA / PostHog / Yandex / Sentry
               </span>
             </span>
             <span className="text-[11px] font-black uppercase tracking-[0.14em]">
-              {analytics ? (isRu ? 'Вкл' : 'On') : (isRu ? 'Выкл' : 'Off')}
+              {analytics ? tx('Вкл', 'On', '开') : tx('Выкл', 'Off', '关')}
             </span>
           </button>
 
@@ -90,27 +92,27 @@ export function ConsentBanner({
           >
             <span>
               <span className="block text-xs font-black uppercase tracking-[0.16em]">
-                {isRu ? 'Маркетинговые пиксели' : 'Marketing pixels'}
+                {tx('Маркетинговые пиксели', 'Marketing pixels', '营销像素')}
               </span>
               <span className="mt-1 block text-[11px] text-white/70">
-                {isRu ? 'TikTok и рекламные теги' : 'TikTok and ad tags'}
+                {tx('TikTok и рекламные теги', 'TikTok and ad tags', 'TikTok 与广告标签')}
               </span>
             </span>
             <span className="text-[11px] font-black uppercase tracking-[0.14em]">
-              {marketing ? (isRu ? 'Вкл' : 'On') : (isRu ? 'Выкл' : 'Off')}
+              {marketing ? tx('Вкл', 'On', '开') : tx('Выкл', 'Off', '关')}
             </span>
           </button>
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-cyan-100/80">
           <a href={legalLinks.privacy} target="_blank" rel="noopener noreferrer" className="rounded-full border border-cyan-200/15 bg-cyan-300/[0.06] px-2.5 py-1 hover:bg-cyan-300/[0.12]">
-            {isRu ? 'Политика ПД' : 'Privacy policy'}
+            {tx('Политика ПД', 'Privacy policy', '隐私政策')}
           </a>
           <a href={legalLinks.offer} target="_blank" rel="noopener noreferrer" className="rounded-full border border-cyan-200/15 bg-cyan-300/[0.06] px-2.5 py-1 hover:bg-cyan-300/[0.12]">
-            {isRu ? 'Оферта' : 'Offer'}
+            {tx('Оферта', 'Offer', '条款报价')}
           </a>
           <a href={legalLinks.refunds} target="_blank" rel="noopener noreferrer" className="rounded-full border border-cyan-200/15 bg-cyan-300/[0.06] px-2.5 py-1 hover:bg-cyan-300/[0.12]">
-            {isRu ? 'Возвраты' : 'Refunds'}
+            {tx('Возвраты', 'Refunds', '退款')}
           </a>
         </div>
 
@@ -120,14 +122,14 @@ export function ConsentBanner({
             onClick={onSaveEssentialOnly}
             className="rounded-2xl border border-white/12 bg-white/6 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-white/82 transition hover:bg-white/10"
           >
-            {isRu ? 'Только обязательное' : 'Required only'}
+            {tx('Только обязательное', 'Required only', '仅必要项')}
           </button>
           <button
             type="button"
             onClick={onAcceptAll}
             className="rounded-2xl bg-gradient-to-r from-cyan-300 to-sky-400 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-slate-950 transition hover:from-cyan-200 hover:to-sky-300"
           >
-            {isRu ? 'Принять выбранное' : 'Save selection'}
+            {tx('Принять выбранное', 'Save selection', '保存选择')}
           </button>
         </div>
       </div>

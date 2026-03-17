@@ -22,6 +22,11 @@ interface PauseMenuProps {
 
 export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClose, onOpenLegal, onOpenGuide, onShareGame, isMuted, onToggleMute, volume, onVolumeChange, language, onLanguageChange }) => {
     const t = COPY[language];
+    const tx = (ru: string, en: string, zh: string) => {
+        if (language === 'ru') return ru;
+        if (language === 'zh') return zh;
+        return en;
+    };
 
     return (
         <motion.div
@@ -47,7 +52,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
                     type="button"
                     onClick={onClose}
                     className="absolute right-3 top-3 z-10 h-10 w-10 rounded-full border border-white/25 bg-rose-500/85 text-white hover:bg-rose-400 active:scale-95 transition-all flex items-center justify-center shadow-[0_6px_20px_rgba(244,63,94,0.28)]"
-                    aria-label={language === 'ru' ? 'Закрыть настройки' : 'Close settings'}
+                    aria-label={tx('Закрыть настройки', 'Close settings', '关闭设置')}
                 >
                     <X size={18} strokeWidth={3} />
                 </button>
@@ -60,7 +65,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
                 <div className="relative z-10 mb-1">
                     <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-cyan-200/75">
                         <Sparkles size={12} />
-                        {language === 'ru' ? 'Навигационный модуль' : 'Navigation Module'}
+                        {tx('Навигационный модуль', 'Navigation Module', '导航模块')}
                     </div>
                     <h2 className="mt-1 text-2xl sm:text-3xl font-black text-white drop-shadow-lg tracking-wide">{t.paused}</h2>
                 </div>
@@ -105,7 +110,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
 
                 <div className="relative z-10 w-full p-3 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner shadow-black/20">
                     <div className="text-left text-white/80 text-sm font-bold tracking-wide mb-2">{t.language}</div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         <button
                             onClick={() => onLanguageChange('ru')}
                             className={`flex items-center justify-center gap-2 rounded-xl py-2 border text-sm font-black tracking-wide transition-all active:scale-95 ${language === 'ru' ? 'bg-cyan-300 text-slate-900 border-cyan-200 shadow' : 'bg-white/10 border-white/15 text-white/80 hover:bg-white/20'}`}
@@ -120,6 +125,13 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
                         >
                             <span aria-hidden="true">EN</span>
                         </button>
+                        <button
+                            onClick={() => onLanguageChange('zh')}
+                            className={`flex items-center justify-center gap-2 rounded-xl py-2 border text-sm font-black tracking-wide transition-all active:scale-95 ${language === 'zh' ? 'bg-cyan-300 text-slate-900 border-cyan-200 shadow' : 'bg-white/10 border-white/15 text-white/80 hover:bg-white/20'}`}
+                            aria-label="Chinese language"
+                        >
+                            <span aria-hidden="true">中文</span>
+                        </button>
                     </div>
                 </div>
 
@@ -131,13 +143,13 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onResume, onRestart, onClo
                             className="inline-flex items-center justify-center gap-2 rounded-xl px-2 py-2 border bg-fuchsia-300/12 border-fuchsia-200/30 text-fuchsia-100 hover:bg-fuchsia-300/22 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"
                         >
                             <Share2 size={14} />
-                            {language === 'ru' ? 'Поделиться игрой' : 'Share game'}
+                            {tx('Поделиться игрой', 'Share game', '分享游戏')}
                         </button>
                         <button
                             onClick={onOpenGuide}
                             className="rounded-xl px-2 py-2 border bg-cyan-300/15 border-cyan-200/25 text-cyan-100 hover:bg-cyan-300/25 transition-all active:scale-95 text-xs sm:text-sm font-semibold leading-tight break-words"
                         >
-                            {language === 'ru' ? 'Руководство' : 'Guide'}
+                            {tx('Руководство', 'Guide', '指南')}
                         </button>
                         <button
                             onClick={() => onOpenLegal('contacts')}

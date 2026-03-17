@@ -325,13 +325,16 @@ function normalizeEventProgressState(raw: Partial<EventProgressState> | null | u
 function getDefaultLanguage(): Language {
   if (typeof window !== 'undefined') {
     const savedLanguage = window.localStorage.getItem('match3_language');
-    if (savedLanguage === 'ru' || savedLanguage === 'en') {
+    if (savedLanguage === 'ru' || savedLanguage === 'en' || savedLanguage === 'zh') {
       return savedLanguage;
     }
   }
 
   if (typeof navigator !== 'undefined') {
-    return navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en';
+    const normalized = navigator.language.toLowerCase();
+    if (normalized.startsWith('ru')) return 'ru';
+    if (normalized.startsWith('zh')) return 'zh';
+    return 'en';
   }
 
   return 'en';
@@ -476,6 +479,11 @@ function App() {
     ? Math.max(1, TUTORIAL_MODAL_STEPS.findIndex((value) => value === tutorialStep) + 1)
     : 1;
   const t = COPY[language];
+  const tx = useCallback((ru: string, en: string, zh: string) => {
+    if (language === 'ru') return ru;
+    if (language === 'zh') return zh;
+    return en;
+  }, [language]);
   const legalContacts = useMemo(() => getLegalContactsFromEnv(), []);
   const marketingLinks = useMemo(() => getMarketingLinksFromEnv(legalContacts.telegram), [legalContacts]);
   const envCoinPacks = useMemo(() => getCoinPacksFromEnv(), []);
@@ -526,7 +534,7 @@ function App() {
     () => Object.values(levelStars).reduce((sum, value) => sum + Math.max(0, Math.floor(value || 0)), 0),
     [levelStars],
   );
-  const bossAttackLabel = language === 'ru' ? 'Мусор после хода' : 'Debris After Move';
+  const bossAttackLabel = tx('Мусор после хода', 'Debris After Move', '回合后坠落杂物');
   const selectedLevelConfig = useMemo(
     () => (levelToLaunch == null ? null : getLevelConfigPreview(levelToLaunch)),
     [levelToLaunch],
@@ -560,44 +568,44 @@ function App() {
     }
 
     if (selectedLevelConfig.goal.type === 'bombs') {
-      return <span>{language === 'ru' ? 'Бомбы' : 'Bombs'}: 0/{selectedLevelConfig.goal.value}</span>;
+      return <span>{tx('Бомбы', 'Bombs', '炸弹')}: 0/{selectedLevelConfig.goal.value}</span>;
     }
 
     if (selectedLevelConfig.goal.type === 'lightning') {
-      return <span>{language === 'ru' ? 'Молнии' : 'Lightnings'}: 0/{selectedLevelConfig.goal.value}</span>;
+      return <span>{tx('Молнии', 'Lightnings', '闪电')}: 0/{selectedLevelConfig.goal.value}</span>;
     }
 
     if (selectedLevelConfig.goal.type === 'special') {
       const specialLabel = (() => {
-        if (selectedLevelConfig.goal.special === 'bomb') return language === 'ru' ? 'Бомбы' : 'Bombs';
-        if (selectedLevelConfig.goal.special === 'lightning') return language === 'ru' ? 'Молнии' : 'Lightnings';
-        if (selectedLevelConfig.goal.special === 'cross') return language === 'ru' ? 'Кресты' : 'Cross';
-        if (selectedLevelConfig.goal.special === 'pulse') return language === 'ru' ? 'Импульсы' : 'Pulse';
-        if (selectedLevelConfig.goal.special === 'nova') return language === 'ru' ? 'Новы' : 'Nova';
-        return language === 'ru' ? 'Smash-события' : 'Smash Events';
+        if (selectedLevelConfig.goal.special === 'bomb') return tx('Бомбы', 'Bombs', '炸弹');
+        if (selectedLevelConfig.goal.special === 'lightning') return tx('Молнии', 'Lightnings', '闪电');
+        if (selectedLevelConfig.goal.special === 'cross') return tx('Кресты', 'Cross', '十字');
+        if (selectedLevelConfig.goal.special === 'pulse') return tx('Импульсы', 'Pulse', '脉冲');
+        if (selectedLevelConfig.goal.special === 'nova') return tx('Новы', 'Nova', '新星');
+        return tx('Smash-события', 'Smash Events', '粉碎事件');
       })();
       return <span>{specialLabel}: 0/{selectedLevelConfig.goal.value}</span>;
     }
 
     if (selectedLevelConfig.goal.type === 'combo_x5') {
-      return <span>{language === 'ru' ? 'Комбо x4+' : 'Combo x4+'}: 0/{selectedLevelConfig.goal.value}</span>;
+      return <span>{tx('Комбо x4+', 'Combo x4+', '连击 x4+')}: 0/{selectedLevelConfig.goal.value}</span>;
     }
 
     if (selectedLevelConfig.goal.type === 'boss') {
-      return <span>{language === 'ru' ? 'Босс' : 'Boss'}: {selectedLevelConfig.goal.value}/{selectedLevelConfig.goal.value}</span>;
+      return <span>{tx('Босс', 'Boss', '首领')}: {selectedLevelConfig.goal.value}/{selectedLevelConfig.goal.value}</span>;
     }
 
     if (selectedLevelConfig.goal.type === 'ice') {
-      return <span>{language === 'ru' ? 'Крио-щиты' : 'Cryo shields'}: 0/{selectedLevelConfig.goal.value}</span>;
+      return <span>{tx('Крио-щиты', 'Cryo shields', '冰盾')}: 0/{selectedLevelConfig.goal.value}</span>;
     }
 
-    return <span>{language === 'ru' ? 'Космический мусор' : 'Space debris'}: 0/{selectedLevelConfig.goal.value}</span>;
+    return <span>{tx('Космический мусор', 'Space debris', '太空杂物')}: 0/{selectedLevelConfig.goal.value}</span>;
   }, [language, selectedLevelConfig]);
   const selectedLevelPacePreview = useMemo(() => {
     if (!selectedLevelConfig) return '';
     return selectedLevelConfig.mode === 'moves'
-      ? (language === 'ru' ? `Доступно ${selectedLevelConfig.limit} ходов` : `${selectedLevelConfig.limit} moves available`)
-      : (language === 'ru' ? `Доступно ${selectedLevelConfig.limit} секунд` : `${selectedLevelConfig.limit} seconds available`);
+      ? tx(`Доступно ${selectedLevelConfig.limit} ходов`, `${selectedLevelConfig.limit} moves available`, `可用 ${selectedLevelConfig.limit} 步`)
+      : tx(`Доступно ${selectedLevelConfig.limit} секунд`, `${selectedLevelConfig.limit} seconds available`, `可用 ${selectedLevelConfig.limit} 秒`);
   }, [language, selectedLevelConfig]);
 
   const renderGoalContent = () => {
@@ -628,21 +636,21 @@ function App() {
     }
 
     if (levelConfig.goal.type === 'bombs') {
-      return <span>{language === 'ru' ? 'Бомбы' : 'Bombs'}: {levelBombActivations}/{levelConfig.goal.value}</span>;
+      return <span>{tx('Бомбы', 'Bombs', '炸弹')}: {levelBombActivations}/{levelConfig.goal.value}</span>;
     }
 
     if (levelConfig.goal.type === 'lightning') {
-      return <span>{language === 'ru' ? 'Молнии' : 'Lightnings'}: {levelLightningActivations}/{levelConfig.goal.value}</span>;
+      return <span>{tx('Молнии', 'Lightnings', '闪电')}: {levelLightningActivations}/{levelConfig.goal.value}</span>;
     }
 
     if (levelConfig.goal.type === 'special') {
       const specialLabel = (() => {
-        if (levelConfig.goal.special === 'bomb') return language === 'ru' ? 'Бомбы' : 'Bombs';
-        if (levelConfig.goal.special === 'lightning') return language === 'ru' ? 'Молнии' : 'Lightnings';
-        if (levelConfig.goal.special === 'cross') return language === 'ru' ? 'Кресты' : 'Cross';
-        if (levelConfig.goal.special === 'pulse') return language === 'ru' ? 'Импульсы' : 'Pulse';
-        if (levelConfig.goal.special === 'nova') return language === 'ru' ? 'Новы' : 'Nova';
-        return language === 'ru' ? 'Smash-события' : 'Smash Events';
+        if (levelConfig.goal.special === 'bomb') return tx('Бомбы', 'Bombs', '炸弹');
+        if (levelConfig.goal.special === 'lightning') return tx('Молнии', 'Lightnings', '闪电');
+        if (levelConfig.goal.special === 'cross') return tx('Кресты', 'Cross', '十字');
+        if (levelConfig.goal.special === 'pulse') return tx('Импульсы', 'Pulse', '脉冲');
+        if (levelConfig.goal.special === 'nova') return tx('Новы', 'Nova', '新星');
+        return tx('Smash-события', 'Smash Events', '粉碎事件');
       })();
       const progress = (() => {
         if (levelConfig.goal.special === 'bomb') return levelBombActivations;
@@ -656,18 +664,18 @@ function App() {
     }
 
     if (levelConfig.goal.type === 'combo_x5') {
-      return <span>{language === 'ru' ? 'Комбо x4+' : 'Combo x4+'}: {comboX5Count}/{levelConfig.goal.value}</span>;
+      return <span>{tx('Комбо x4+', 'Combo x4+', '连击 x4+')}: {comboX5Count}/{levelConfig.goal.value}</span>;
     }
 
     if (isBossLevel) {
-      return <span>{language === 'ru' ? 'Босс' : 'Boss'}: {Math.max(0, bossHp)}/{Math.max(1, bossMaxHp)}</span>;
+      return <span>{tx('Босс', 'Boss', '首领')}: {Math.max(0, bossHp)}/{Math.max(1, bossMaxHp)}</span>;
     }
 
     if (levelConfig.goal.type === 'ice') {
-      return <span>{language === 'ru' ? 'Крио-щиты' : 'Cryo shields'}: {iceCleared}/{levelConfig.goal.value}</span>;
+      return <span>{tx('Крио-щиты', 'Cryo shields', '冰盾')}: {iceCleared}/{levelConfig.goal.value}</span>;
     }
 
-    return <span>{language === 'ru' ? 'Космический мусор' : 'Space debris'}: {trashDestroyed}/{Math.max(levelConfig.goal.value, trashTotal)}</span>;
+    return <span>{tx('Космический мусор', 'Space debris', '太空杂物')}: {trashDestroyed}/{Math.max(levelConfig.goal.value, trashTotal)}</span>;
   };
 
   // Game Over only when limit reached AND animations are done
@@ -699,7 +707,7 @@ function App() {
         applyProfileState(profile);
         const applied = levelConfig.mode === 'moves' ? addExtraMoves(moveBoostAmount) : addExtraTime(timeBoostSeconds);
         if (applied) {
-          setShopNotice(language === 'ru' ? 'Продолжение активировано из стартового резерва' : 'Continue used from starter reserve');
+          setShopNotice(tx('Продолжение активировано из стартового резерва', 'Continue used from starter reserve', '已使用新手储备续关'));
           trackEvent('economy_source', { source: 'continue_reserve', amount: 1, remaining_reserve: profile.continueReserve });
           return;
         }
@@ -764,9 +772,11 @@ function App() {
     setIsGuideOpen(true);
   };
 
-  const walletUnavailableMessage = language === 'ru'
-    ? 'Сервис кошелька временно недоступен'
-    : 'Wallet service is temporarily unavailable';
+  const walletUnavailableMessage = tx(
+    'Сервис кошелька временно недоступен',
+    'Wallet service is temporarily unavailable',
+    '钱包服务暂时不可用',
+  );
 
   const {
     buyCoinsPack,
@@ -924,12 +934,12 @@ function App() {
   }, [openShopWithSource]);
 
   const quickBoostLabel = levelConfig.mode === 'moves'
-    ? (language === 'ru' ? `+${moveBoostAmount} ходов` : `+${moveBoostAmount} moves`)
-    : (language === 'ru' ? `+${timeBoostSeconds} сек` : `+${timeBoostSeconds}s`);
+    ? tx(`+${moveBoostAmount} ходов`, `+${moveBoostAmount} moves`, `+${moveBoostAmount} 步`)
+    : tx(`+${timeBoostSeconds} сек`, `+${timeBoostSeconds}s`, `+${timeBoostSeconds} 秒`);
 
   const quickBoostHint = levelConfig.mode === 'moves'
-    ? (language === 'ru' ? 'Экстренный буст ходов' : 'Emergency move boost')
-    : (language === 'ru' ? 'Экстренный буст времени' : 'Emergency time boost');
+    ? tx('Экстренный буст ходов', 'Emergency move boost', '紧急步数增益')
+    : tx('Экстренный буст времени', 'Emergency time boost', '紧急时间增益');
 
   const triggerQuickBoost = levelConfig.mode === 'moves' ? buyExtraMoves : buyExtraTime;
 
@@ -939,9 +949,9 @@ function App() {
 
     if (nearMission.id === 'bomb_activations') {
       return {
-        title: language === 'ru' ? 'Осталась 1 бомба до миссии' : '1 bomb left for the mission',
-        description: language === 'ru' ? 'Возьми старт с бомбой и закрой задачу в следующем забеге.' : 'Grab a starting bomb and close the mission in the next run.',
-        cta: language === 'ru' ? 'К модификаторам' : 'Open modifiers',
+        title: tx('Осталась 1 бомба до миссии', '1 bomb left for the mission', '距离任务还差 1 次炸弹'),
+        description: tx('Возьми старт с бомбой и закрой задачу в следующем забеге.', 'Grab a starting bomb and close the mission in the next run.', '带着炸弹开局，在下一局里把任务收掉。'),
+        cta: tx('К модификаторам', 'Open modifiers', '打开增益'),
         onActivate: () => {
           setIsShopOpen(false);
           setIsMapOpen(true);
@@ -951,9 +961,9 @@ function App() {
     }
 
     return {
-      title: language === 'ru' ? 'Ты в одном шаге от награды' : 'You are one step from a reward',
-      description: language === 'ru' ? 'Быстрый буст поможет дожать миссию прямо в этой сессии.' : 'A quick boost can close this mission in the current session.',
-      cta: language === 'ru' ? 'Купить буст' : 'Buy boost',
+      title: tx('Ты в одном шаге от награды', 'You are one step from a reward', '你离奖励只差一步'),
+      description: tx('Быстрый буст поможет дожать миссию прямо в этой сессии.', 'A quick boost can close this mission in the current session.', '一个快速增益就能让你在本次会话里完成任务。'),
+      cta: tx('Купить буст', 'Buy boost', '购买增益'),
       onActivate: () => {
         void triggerQuickBoost();
       },
@@ -973,28 +983,28 @@ function App() {
     if (modifierId === 'startBomb') {
       return {
         cost,
-        title: language === 'ru' ? 'Старт с бомбой' : 'Start with bomb',
-        description: language === 'ru' ? 'Сразу даёт взрывной ход и помогает быстро раскачать поле.' : 'Start with an explosive opener and break open the board immediately.',
+        title: tx('Старт с бомбой', 'Start with bomb', '炸弹开局'),
+        description: tx('Сразу даёт взрывной ход и помогает быстро раскачать поле.', 'Start with an explosive opener and break open the board immediately.', '开局就有爆发回合，能立刻把棋盘打开。'),
       };
     }
     if (modifierId === 'startLightning') {
       return {
         cost,
-        title: language === 'ru' ? 'Старт с молнией' : 'Start with lightning',
-        description: language === 'ru' ? 'Даёт мощную зачистку линии уже в начале матча.' : 'Start with an early line clear to spike tempo from move one.',
+        title: tx('Старт с молнией', 'Start with lightning', '闪电开局'),
+        description: tx('Даёт мощную зачистку линии уже в начале матча.', 'Start with an early line clear to spike tempo from move one.', '开局就能强力清线，从第一步拉高节奏。'),
       };
     }
     if (modifierId === 'bossShield') {
       return {
         cost,
-        title: language === 'ru' ? 'Щит от босса' : 'Boss shield',
-        description: language === 'ru' ? 'Отменяет первую атаку босса и сохраняет темп в решающий момент.' : 'Cancel the first boss debris wave and keep your run alive.',
+        title: tx('Щит от босса', 'Boss shield', 'Boss 护盾'),
+        description: tx('Отменяет первую атаку босса и сохраняет темп в решающий момент.', 'Cancel the first boss debris wave and keep your run alive.', '抵消 Boss 的第一次攻击，在关键时刻保住节奏。'),
       };
     }
     return {
       cost,
-      title: language === 'ru' ? 'Очистка мусора' : 'Trash cleaner',
-      description: language === 'ru' ? 'Убирает часть мусора до первого хода и делает старт чище.' : 'Scrub part of the trash before your first move for a cleaner start.',
+      title: tx('Очистка мусора', 'Trash cleaner', '垃圾清理'),
+      description: tx('Убирает часть мусора до первого хода и делает старт чище.', 'Scrub part of the trash before your first move for a cleaner start.', '在第一步之前先清掉部分垃圾，让起手更干净。'),
     };
   }, [language, level, levelConfig, levelToLaunch, runModifierCosts, selectedLevelConfig]);
 
@@ -1022,9 +1032,11 @@ function App() {
         [modifierId]: true,
       }));
       setShopNotice(
-        language === 'ru'
-          ? `${meta.title} активирован за жетон модификатора`
-          : `${meta.title} activated with a modifier token`,
+        tx(
+          `${meta.title} активирован за жетон модификатора`,
+          `${meta.title} activated with a modifier token`,
+          `${meta.title} 已用增益代币激活`,
+        ),
       );
       trackEvent('economy_source', { source: 'starter_modifier_token', item: modifierId, remaining_tokens: profile.modifierTokens });
       return;
@@ -1037,9 +1049,11 @@ function App() {
       [modifierId]: true,
     }));
     setShopNotice(
-      language === 'ru'
-        ? `${meta.title} куплен и готов к запуску`
-        : `${meta.title} is armed for the next run`,
+      tx(
+        `${meta.title} куплен и готов к запуску`,
+        `${meta.title} is armed for the next run`,
+        `${meta.title} 已购买，下一局可用`,
+      ),
     );
     trackEvent('shop_spend_coins', {
       item: `run_modifier_${modifierId}`,
@@ -1146,9 +1160,11 @@ function App() {
     if (weeklyLoop.challengeCompleted && !weeklyChallengeUnlockedNoticeRef.current) {
       weeklyChallengeUnlockedNoticeRef.current = true;
       setShopNotice(
-        language === 'ru'
-          ? `Челлендж недели закрыт: ${weeklyLoop.challengeTargetScore} очков побито`
-          : `Weekly challenge done: beat ${weeklyLoop.challengeTargetScore}`,
+        tx(
+          `Челлендж недели закрыт: ${weeklyLoop.challengeTargetScore} очков побито`,
+          `Weekly challenge done: beat ${weeklyLoop.challengeTargetScore}`,
+          `每周挑战已完成：突破 ${weeklyLoop.challengeTargetScore} 分`,
+        ),
       );
       return;
     }
@@ -1203,16 +1219,18 @@ function App() {
     try {
       const payload = await claimDailyMission(missionId);
       if (!payload) {
-        setShopNotice(language === 'ru' ? 'Награда за миссию недоступна' : 'Mission reward unavailable');
+        setShopNotice(tx('Награда за миссию недоступна', 'Mission reward unavailable', '任务奖励暂不可领取'));
         return;
       }
       applyMissionStatus(payload);
       const claimedMission = payload.missions?.find((item) => item.id === missionId);
       if (claimedMission?.claimed) {
         setShopNotice(
-          language === 'ru'
-            ? `Награда за миссию: +${payload.reward ?? claimedMission.reward}`
-            : `Mission reward: +${payload.reward ?? claimedMission.reward}`,
+          tx(
+            `Награда за миссию: +${payload.reward ?? claimedMission.reward}`,
+            `Mission reward: +${payload.reward ?? claimedMission.reward}`,
+            `任务奖励：+${payload.reward ?? claimedMission.reward}`,
+          ),
         );
         trackEvent('economy_source', { source: `daily_mission_${missionId}`, amount: payload.reward ?? claimedMission.reward });
       }
@@ -1224,7 +1242,7 @@ function App() {
   const claimLeaderboardTierChestReward = useCallback(async () => {
     const payload = await claimLeaderboardChest();
     if (!payload?.ok) {
-      setShopNotice(language === 'ru' ? 'Сундук ранга пока недоступен' : 'Rank chest is not available yet');
+      setShopNotice(tx('Сундук ранга пока недоступен', 'Rank chest is not available yet', '段位宝箱暂不可领取'));
       return;
     }
     setLeaderboardOverview((prev) => ({
@@ -1234,9 +1252,11 @@ function App() {
       chest: payload.chest ?? prev.chest,
     }));
     setShopNotice(
-      language === 'ru'
-        ? `Награда рейтинга: +${payload.reward ?? 0}`
-        : `Ranking reward: +${payload.reward ?? 0}`,
+      tx(
+        `Награда рейтинга: +${payload.reward ?? 0}`,
+        `Ranking reward: +${payload.reward ?? 0}`,
+        `排行奖励：+${payload.reward ?? 0}`,
+      ),
     );
     trackEvent('economy_source', { source: 'leaderboard_tier_chest', amount: payload.reward ?? 0 });
   }, [claimLeaderboardChest, language, setShopNotice]);
@@ -1244,15 +1264,19 @@ function App() {
   const rerollMission = useCallback(async (slotIndex: number) => {
     const payload = await rerollDailyMission(slotIndex);
     if (!payload) {
-      setShopNotice(language === 'ru' ? 'Реролл миссии недоступен' : 'Mission reroll unavailable');
+      setShopNotice(tx('Реролл миссии недоступен', 'Mission reroll unavailable', '任务刷新暂不可用'));
       return;
     }
     applyMissionStatus(payload);
     const usedFree = Number(payload.freeRerollsRemaining ?? 0) < dailyMissionFreeRerolls;
     setShopNotice(
       usedFree
-        ? (language === 'ru' ? 'Миссия обновлена бесплатно' : 'Mission rerolled for free')
-        : (language === 'ru' ? `Миссия обновлена за ${payload.paidRerollCost ?? dailyMissionPaidRerollCost} монет` : `Mission rerolled for ${payload.paidRerollCost ?? dailyMissionPaidRerollCost} coins`),
+        ? tx('Миссия обновлена бесплатно', 'Mission rerolled for free', '任务已免费刷新')
+        : tx(
+          `Миссия обновлена за ${payload.paidRerollCost ?? dailyMissionPaidRerollCost} монет`,
+          `Mission rerolled for ${payload.paidRerollCost ?? dailyMissionPaidRerollCost} coins`,
+          `任务已用 ${payload.paidRerollCost ?? dailyMissionPaidRerollCost} 金币刷新`,
+        ),
     );
     if (!usedFree) {
       trackEvent('economy_sink', { sink: 'daily_mission_reroll', amount: payload.paidRerollCost ?? dailyMissionPaidRerollCost });
@@ -1262,40 +1286,40 @@ function App() {
   const claimDailyCompletionChestReward = useCallback(async () => {
     const payload = await claimDailyMissionCompletionChest();
     if (!payload) {
-      setShopNotice(language === 'ru' ? 'Сундук дня пока недоступен' : 'Daily chest is not available yet');
+      setShopNotice(tx('Сундук дня пока недоступен', 'Daily chest is not available yet', '每日宝箱暂不可领取'));
       return;
     }
     applyMissionStatus(payload);
-    setShopNotice(language === 'ru' ? `Сундук дня: +${payload.reward ?? 0}` : `Daily chest: +${payload.reward ?? 0}`);
+    setShopNotice(tx(`Сундук дня: +${payload.reward ?? 0}`, `Daily chest: +${payload.reward ?? 0}`, `每日宝箱：+${payload.reward ?? 0}`));
     trackEvent('economy_source', { source: 'daily_mission_completion_chest', amount: payload.reward ?? 0 });
   }, [applyMissionStatus, claimDailyMissionCompletionChest, language, setShopNotice]);
 
   const claimWeeklyTrackReward = useCallback(async () => {
     const payload = await claimWeeklyMissionTrackChest();
     if (!payload?.ok) {
-      setShopNotice(language === 'ru' ? 'Недельный сундук миссий пока закрыт' : 'Weekly mission chest is not available yet');
+      setShopNotice(tx('Недельный сундук миссий пока закрыт', 'Weekly mission chest is not available yet', '每周任务宝箱暂未开启'));
       return;
     }
     setWeeklyMissionTrack(payload.weeklyTrack ?? null);
-    setShopNotice(language === 'ru' ? `Недельный сундук: +${payload.reward ?? 0}` : `Weekly mission chest: +${payload.reward ?? 0}`);
+    setShopNotice(tx(`Недельный сундук: +${payload.reward ?? 0}`, `Weekly mission chest: +${payload.reward ?? 0}`, `每周任务宝箱：+${payload.reward ?? 0}`));
     trackEvent('economy_source', { source: 'weekly_mission_track_chest', amount: payload.reward ?? 0 });
   }, [claimWeeklyMissionTrackChest, language, setShopNotice]);
 
   const saveDisplayName = useCallback(async () => {
     const trimmed = displayNameDraft.trim().slice(0, 24);
     if (!trimmed) {
-      setShopNotice(language === 'ru' ? 'Введите имя для рейтинга' : 'Enter a leaderboard name');
+      setShopNotice(tx('Введите имя для рейтинга', 'Enter a leaderboard name', '请输入排行榜昵称'));
       return;
     }
     setIsSavingDisplayName(true);
     try {
       const profile = await updateProfile({ displayName: trimmed });
       if (!profile) {
-        setShopNotice(language === 'ru' ? 'Не удалось сохранить имя' : 'Failed to save name');
+        setShopNotice(tx('Не удалось сохранить имя', 'Failed to save name', '保存名字失败'));
         return;
       }
       applyProfileState(profile);
-      setShopNotice(language === 'ru' ? 'Имя сохранено' : 'Name saved');
+      setShopNotice(tx('Имя сохранено', 'Name saved', '名字已保存'));
     } finally {
       setIsSavingDisplayName(false);
     }
@@ -1304,7 +1328,7 @@ function App() {
   const handleClaimDailyReward = async () => {
     const result = await claimDailyReward();
     if (!result) {
-      setShopNotice(language === 'ru' ? 'Ежедневная награда недоступна' : 'Daily reward unavailable');
+      setShopNotice(tx('Ежедневная награда недоступна', 'Daily reward unavailable', '每日奖励暂不可用'));
       return;
     }
     if (result.granted) {
@@ -1320,14 +1344,16 @@ function App() {
         dailyClaimed: true,
       }));
       setShopNotice(
-        language === 'ru'
-          ? `Ежедневная награда: +${result.reward}${result.milestoneBonus ? ` и +${result.milestoneBonus} бонус серии` : ''}`
-          : `Daily reward: +${result.reward}${result.milestoneBonus ? ` and +${result.milestoneBonus} milestone bonus` : ''}`,
+        tx(
+          `Ежедневная награда: +${result.reward}${result.milestoneBonus ? ` и +${result.milestoneBonus} бонус серии` : ''}`,
+          `Daily reward: +${result.reward}${result.milestoneBonus ? ` and +${result.milestoneBonus} milestone bonus` : ''}`,
+          `每日奖励：+${result.reward}${result.milestoneBonus ? `，另加 +${result.milestoneBonus} 里程碑奖励` : ''}`,
+        ),
       );
       trackEvent('economy_source', { source: 'daily_reward', amount: result.reward + (result.milestoneBonus || 0) });
     } else {
       setDailyCanClaim(false);
-      setShopNotice(language === 'ru' ? 'Награда уже получена сегодня' : 'Daily reward already claimed');
+      setShopNotice(tx('今天已经领取过奖励', 'Daily reward already claimed', '今天已经领取过奖励'));
     }
     await refreshDailyMissions();
   };
@@ -1375,9 +1401,11 @@ function App() {
     if (typeof payload.reward === 'number') {
       trackEvent('economy_source', { source: 'weekly_event_mission', mission_id: missionId, amount: payload.reward });
       setShopNotice(
-        language === 'ru'
-          ? `Ивент-награда получена: +${payload.reward} монет`
-          : `Event reward claimed: +${payload.reward} coins`,
+        tx(
+          `Ивент-награда получена: +${payload.reward} монет`,
+          `Event reward claimed: +${payload.reward} coins`,
+          `活动奖励已领取：+${payload.reward} 金币`,
+        ),
       );
     }
   };
@@ -1387,34 +1415,36 @@ function App() {
       <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(6,18,32,0.98),rgba(5,12,24,0.99))] p-5 shadow-[0_24px_90px_rgba(34,211,238,0.18)] max-h-[88vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <div className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100/82">{language === 'ru' ? 'Недельный ивент' : 'Weekly Event'}</div>
+            <div className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100/82">{tx('Недельный ивент', 'Weekly Event', '每周活动')}</div>
             <div className="mt-2 text-2xl font-black text-white">{eventConfig.title}</div>
             <div className="mt-1 text-sm text-cyan-50/72">{eventConfig.description}</div>
           </div>
           <button type="button" onClick={() => setIsEventOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
-            {language === 'ru' ? 'Закрыть' : 'Close'}
+            {tx('Закрыть', 'Close', '关闭')}
           </button>
         </div>
 
         <div className="grid grid-cols-3 gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-center text-white">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{language === 'ru' ? 'Миссии' : 'Missions'}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{tx('Миссии', 'Missions', '任务')}</div>
             <div className="mt-1 text-2xl font-black">{eventMissionsCompleted}/{eventMissions.length}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{language === 'ru' ? 'Крио' : 'Cryo'}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{tx('Крио', 'Cryo', '冰盾')}</div>
             <div className="mt-1 text-2xl font-black">{eventProgress.iceCleared}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{language === 'ru' ? 'Завершено' : 'Runs'}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{tx('Завершено', 'Runs', '完成局数')}</div>
             <div className="mt-1 text-2xl font-black">{eventProgress.levelsCompleted}</div>
           </div>
         </div>
 
         <div className="mt-4 rounded-2xl border border-cyan-200/14 bg-white/[0.04] p-3 text-xs leading-relaxed text-cyan-50/84">
-          {language === 'ru'
-            ? `Чтобы ивент реально работал, включай "Ивент-забег" перед стартом уровня. Такой запуск добавляет ${eventConfig.eventRunIceTiles} крио-щитов и пишет прогресс в сектор.`
-            : `Turn on "Event run" before starting a level. That run adds ${eventConfig.eventRunIceTiles} cryo shields and writes progress into the sector event.`}
+          {tx(
+            `Чтобы ивент реально работал, включай "Ивент-забег" перед стартом уровня. Такой запуск добавляет ${eventConfig.eventRunIceTiles} крио-щитов и пишет прогресс в сектор.`,
+            `Turn on "Event run" before starting a level. That run adds ${eventConfig.eventRunIceTiles} cryo shields and writes progress into the sector event.`,
+            `想让活动真正生效，请在开局前开启“活动局”。该模式会增加 ${eventConfig.eventRunIceTiles} 个冰盾，并把进度记入活动扇区。`,
+          )}
         </div>
 
         <div className="mt-4 space-y-3">
@@ -1440,7 +1470,7 @@ function App() {
                   disabled={!mission.completed || mission.claimed}
                   className={`rounded-full px-3 py-1.5 font-black uppercase tracking-[0.14em] ${mission.claimed ? 'bg-emerald-300/18 text-emerald-100' : mission.completed ? 'bg-gradient-to-r from-cyan-300 to-sky-400 text-slate-950' : 'bg-white/10 text-white/45'}`}
                 >
-                  {mission.claimed ? (language === 'ru' ? 'Получено' : 'Claimed') : mission.completed ? (language === 'ru' ? 'Забрать' : 'Claim') : (language === 'ru' ? 'В процессе' : 'In progress')}
+                  {mission.claimed ? tx('Получено', 'Claimed', '已领取') : mission.completed ? tx('Забрать', 'Claim', '领取') : tx('В процессе', 'In progress', '进行中')}
                 </button>
               </div>
             </div>
@@ -1454,28 +1484,28 @@ function App() {
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-[2rem] border border-emerald-200/20 bg-[linear-gradient(180deg,rgba(6,24,20,0.96),rgba(4,16,14,0.98))] p-5 shadow-[0_24px_80px_rgba(16,185,129,0.2)] max-h-[88vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between">
-          <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{language === 'ru' ? 'Ежедневная награда' : 'Daily Reward'}</div>
+          <div className="text-sm font-black uppercase tracking-[0.2em] text-emerald-100">{tx('Ежедневная награда', 'Daily Reward', '每日奖励')}</div>
           <button type="button" onClick={() => setIsDailyRewardsOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
-            {language === 'ru' ? 'Закрыть' : 'Close'}
+            {tx('Закрыть', 'Close', '关闭')}
           </button>
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-white">
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Серия' : 'Streak'}</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{tx('Серия', 'Streak', '连续')}</div>
               <div className="mt-1 text-2xl font-black">{dailyStreak}</div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'День цикла' : 'Cycle day'}</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{tx('День цикла', 'Cycle day', '循环天数')}</div>
               <div className="mt-1 text-2xl font-black">{dailyClaimDay}/30</div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Следующая' : 'Next'}</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{tx('Следующая', 'Next', '下一次')}</div>
               <div className="mt-1 text-2xl font-black">+{dailyNextReward}</div>
             </div>
           </div>
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-white/60">{language === 'ru' ? '30-дневная лента наград' : '30-day reward track'}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-white/60">{tx('30-дневная лента наград', '30-day reward track', '30 天奖励轨道')}</div>
             <div className="mt-3 grid grid-cols-5 gap-2">
               {dailyCalendarRewards.slice(0, 30).map((reward, index) => {
                 const day = index + 1;
@@ -1493,9 +1523,11 @@ function App() {
             </div>
           </div>
           <div className="mt-3 text-xs leading-relaxed text-white/72">
-            {language === 'ru'
-              ? `Всего получено ежедневных наград: ${dailyTotalClaims}. ${dailyMilestoneBonus > 0 ? `На этом дне действует бонус серии +${dailyMilestoneBonus}.` : 'Следи за бонусными днями 7 / 14 / 21 / 30.'}`
-              : `Total daily claims: ${dailyTotalClaims}. ${dailyMilestoneBonus > 0 ? `This day includes a +${dailyMilestoneBonus} milestone bonus.` : 'Watch milestone days 7 / 14 / 21 / 30.'}`}
+            {tx(
+              `Всего получено ежедневных наград: ${dailyTotalClaims}. ${dailyMilestoneBonus > 0 ? `На этом дне действует бонус серии +${dailyMilestoneBonus}.` : 'Следи за бонусными днями 7 / 14 / 21 / 30.'}`,
+              `Total daily claims: ${dailyTotalClaims}. ${dailyMilestoneBonus > 0 ? `This day includes a +${dailyMilestoneBonus} milestone bonus.` : 'Watch milestone days 7 / 14 / 21 / 30.'}`,
+              `累计领取每日奖励：${dailyTotalClaims}。${dailyMilestoneBonus > 0 ? `今天包含 +${dailyMilestoneBonus} 里程碑奖励。` : '请留意第 7 / 14 / 21 / 30 天的额外奖励。'}`,
+            )}
           </div>
           <button
             type="button"
@@ -1508,35 +1540,33 @@ function App() {
             disabled={!dailyCanClaim}
             className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wide transition-all ${dailyCanClaim ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-900 hover:from-emerald-300 hover:to-teal-400' : 'bg-white/10 text-white/70'}`}
           >
-            {dailyCanClaim ? (language === 'ru' ? 'Получить' : 'Claim reward') : (language === 'ru' ? 'Уже получено сегодня' : 'Already claimed today')}
+            {dailyCanClaim ? tx('Получить', 'Claim reward', '领取奖励') : tx('Уже получено сегодня', 'Already claimed today', '今天已领取')}
           </button>
 
           <div className="mt-4 rounded-2xl border border-amber-200/18 bg-amber-300/10 p-3">
             <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">
-              {language === 'ru' ? 'Ежедневные миссии' : 'Daily missions'}
+              {tx('Ежедневные миссии', 'Daily missions', '每日任务')}
             </div>
             <div className="mt-1 text-xs text-white/72">
-              {language === 'ru'
-                ? `Дата миссий: ${dailyMissionDate || 'сегодня'}`
-                : `Cycle date: ${dailyMissionDate || 'today'}`}
+              {tx(`Дата миссий: ${dailyMissionDate || 'сегодня'}`, `Cycle date: ${dailyMissionDate || 'today'}`, `任务日期：${dailyMissionDate || '今天'}`)}
             </div>
             <div className="mt-2 flex items-center justify-between gap-2 text-xs text-white/72">
-              <span>{language === 'ru' ? `Бесплатный реролл: ${dailyMissionFreeRerolls}` : `Free rerolls: ${dailyMissionFreeRerolls}`}</span>
-              <span>{language === 'ru' ? `Платный реролл: ${dailyMissionPaidRerollCost}` : `Paid reroll: ${dailyMissionPaidRerollCost}`}</span>
+              <span>{tx(`Бесплатный реролл: ${dailyMissionFreeRerolls}`, `Free rerolls: ${dailyMissionFreeRerolls}`, `免费刷新：${dailyMissionFreeRerolls}`)}</span>
+              <span>{tx(`Платный реролл: ${dailyMissionPaidRerollCost}`, `Paid reroll: ${dailyMissionPaidRerollCost}`, `付费刷新：${dailyMissionPaidRerollCost}`)}</span>
             </div>
             <div className="mt-3 space-y-2">
               {dailyMissions.map((mission) => {
                 const missionTitle = mission.id === 'bomb_activations'
-                  ? (language === 'ru' ? 'Активируй 3 бомбы' : 'Activate 3 bombs')
+                  ? tx('Активируй 3 бомбы', 'Activate 3 bombs', '触发 3 次炸弹')
                   : mission.id === 'score_1800'
-                    ? (language === 'ru' ? 'Набери 1800 очков' : 'Beat 1800 score')
+                    ? tx('Набери 1800 очков', 'Beat 1800 score', '达到 1800 分')
                     : mission.id === 'clean_clears'
-                      ? (language === 'ru' ? 'Пройди 2 уровня без продолжения' : 'Clear 2 levels without continue')
+                      ? tx('Пройди 2 уровня без продолжения', 'Clear 2 levels without continue', '无续关通关 2 关')
                       : mission.id === 'lightning_activations'
-                        ? (language === 'ru' ? 'Активируй 2 молнии' : 'Activate 2 lightnings')
+                        ? tx('Активируй 2 молнии', 'Activate 2 lightnings', '触发 2 次闪电')
                         : mission.id === 'level_completions'
-                          ? (language === 'ru' ? 'Пройди 2 уровня' : 'Complete 2 levels')
-                          : (language === 'ru' ? 'Набери 2600 очков' : 'Beat 2600 score');
+                          ? tx('Пройди 2 уровня', 'Complete 2 levels', '完成 2 关')
+                          : tx('Набери 2600 очков', 'Beat 2600 score', '达到 2600 分');
                 const progressValue = Math.min(mission.target, mission.progress);
                 return (
                   <div key={mission.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
@@ -1560,10 +1590,10 @@ function App() {
                         }`}
                       >
                         {mission.claimed
-                          ? (language === 'ru' ? 'Получено' : 'Claimed')
+                          ? tx('Получено', 'Claimed', '已领取')
                           : mission.completed
-                            ? (language === 'ru' ? 'Забрать' : 'Claim')
-                            : (language === 'ru' ? 'Прогресс' : 'In progress')}
+                            ? tx('Забрать', 'Claim', '领取')
+                            : tx('Прогресс', 'In progress', '进行中')}
                       </button>
                     </div>
                     {!mission.claimed && (
@@ -1573,8 +1603,8 @@ function App() {
                         className="mt-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/75 transition hover:bg-white/15"
                       >
                         {dailyMissionFreeRerolls > 0
-                          ? (language === 'ru' ? 'Бесплатно сменить' : 'Free reroll')
-                          : (language === 'ru' ? `Сменить за ${dailyMissionPaidRerollCost}` : `Reroll for ${dailyMissionPaidRerollCost}`)}
+                          ? tx('Бесплатно сменить', 'Free reroll', '免费刷新')
+                          : tx(`Сменить за ${dailyMissionPaidRerollCost}`, `Reroll for ${dailyMissionPaidRerollCost}`, `花费 ${dailyMissionPaidRerollCost} 刷新`)}
                       </button>
                     )}
                     <div className="mt-2 h-2 rounded-full bg-white/10">
@@ -1591,7 +1621,7 @@ function App() {
               <div className="mt-3 rounded-xl border border-emerald-200/20 bg-emerald-300/10 p-3 text-white">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-black">{language === 'ru' ? 'Сундук за все 3 миссии' : 'All-missions chest'}</div>
+                    <div className="text-xs font-black">{tx('Сундук за все 3 миссии', 'All-missions chest', '完成 3 个任务的宝箱')}</div>
                     <div className="mt-1 text-xs text-white/72">
                       {dailyMissionCompletionChest.progress}/{dailyMissionCompletionChest.target} • +{dailyMissionCompletionChest.reward}
                     </div>
@@ -1603,10 +1633,10 @@ function App() {
                     className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${dailyMissionCompletionChest.claimable ? 'bg-gradient-to-r from-emerald-300 to-teal-400 text-slate-900' : 'bg-white/10 text-white/55'}`}
                   >
                     {dailyMissionCompletionChest.claimed
-                      ? (language === 'ru' ? 'Получено' : 'Claimed')
+                      ? tx('Получено', 'Claimed', '已领取')
                       : dailyMissionCompletionChest.claimable
-                        ? (language === 'ru' ? 'Открыть' : 'Claim')
-                        : (language === 'ru' ? 'Сначала закрой все' : 'Finish all first')}
+                        ? tx('Открыть', 'Claim', '领取')
+                        : tx('Сначала закрой все', 'Finish all first', '先完成全部任务')}
                   </button>
                 </div>
               </div>
@@ -1615,7 +1645,7 @@ function App() {
               <div className="mt-3 rounded-xl border border-cyan-200/18 bg-cyan-300/10 p-3 text-white">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-black">{language === 'ru' ? 'Недельный трек миссий' : 'Weekly mission track'}</div>
+                    <div className="text-xs font-black">{tx('Недельный трек миссий', 'Weekly mission track', '每周任务轨道')}</div>
                     <div className="mt-1 text-xs text-white/72">
                       {weeklyMissionTrack.progress}/{weeklyMissionTrack.target} • +{weeklyMissionTrack.reward}
                     </div>
@@ -1627,10 +1657,10 @@ function App() {
                     className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${weeklyMissionTrack.claimable ? 'bg-gradient-to-r from-cyan-300 to-sky-400 text-slate-900' : 'bg-white/10 text-white/55'}`}
                   >
                     {weeklyMissionTrack.claimed
-                      ? (language === 'ru' ? 'Получено' : 'Claimed')
+                      ? tx('Получено', 'Claimed', '已领取')
                       : weeklyMissionTrack.claimable
-                        ? (language === 'ru' ? 'Открыть' : 'Claim')
-                        : (language === 'ru' ? 'В процессе' : 'In progress')}
+                        ? tx('Открыть', 'Claim', '领取')
+                        : tx('В процессе', 'In progress', '进行中')}
                   </button>
                 </div>
               </div>
@@ -1645,47 +1675,51 @@ function App() {
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(8,16,38,0.96),rgba(5,10,24,0.98))] p-5 shadow-[0_24px_80px_rgba(8,145,178,0.22)] max-h-[88vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between">
-          <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{language === 'ru' ? 'Рейтинг игроков' : 'Player Ranking'}</div>
+          <div className="text-sm font-black uppercase tracking-[0.2em] text-cyan-100">{tx('Рейтинг игроков', 'Player Ranking', '玩家排行')}</div>
           <button type="button" onClick={() => setIsLeaderboardOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
-            {language === 'ru' ? 'Закрыть' : 'Close'}
+            {tx('Закрыть', 'Close', '关闭')}
           </button>
         </div>
         <div className="mb-3 rounded-2xl border border-amber-200/18 bg-amber-300/10 px-4 py-3 text-sm text-white">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">{language === 'ru' ? 'Цель рейтинга' : 'Beat this rival'}</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">{tx('Цель рейтинга', 'Beat this rival', '超越这个对手')}</div>
           <div className="mt-1 text-xl font-black">
             {leaderboardOverview.nextRival?.bestScore ?? weeklyLoop.challengeTargetScore}
           </div>
           <div className="mt-1 text-xs text-white/72">
             {leaderboardOverview.nextRival
-              ? (language === 'ru'
-                  ? `Обгони ${leaderboardOverview.nextRival.displayName}. До следующего места осталось ${leaderboardOverview.nextRival.gapScore} очков.`
-                  : `Pass ${leaderboardOverview.nextRival.displayName}. ${leaderboardOverview.nextRival.gapScore} score to the next place.`)
-              : (language === 'ru'
-                  ? `Твой лучший: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Челлендж недели уже закрыт.' : 'Обгони эту планку, чтобы закрыть недельный челлендж.'}`
-                  : `Your best: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Weekly challenge already cleared.' : 'Beat this line to close the weekly challenge.'}`)}
+              ? tx(
+                `Обгони ${leaderboardOverview.nextRival.displayName}. До следующего места осталось ${leaderboardOverview.nextRival.gapScore} очков.`,
+                `Pass ${leaderboardOverview.nextRival.displayName}. ${leaderboardOverview.nextRival.gapScore} score to the next place.`,
+                `超过 ${leaderboardOverview.nextRival.displayName}。距离下一名还差 ${leaderboardOverview.nextRival.gapScore} 分。`,
+              )
+              : tx(
+                `Твой лучший: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Челлендж недели уже закрыт.' : 'Обгони эту планку, чтобы закрыть недельный челлендж.'}`,
+                `Your best: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Weekly challenge already cleared.' : 'Beat this line to close the weekly challenge.'}`,
+                `你的最佳成绩：${bestScore}。${weeklyLoop.challengeCompleted ? '每周挑战已完成。' : '超过这条线来完成每周挑战。'}`,
+              )}
           </div>
         </div>
         <div className="mb-3 grid grid-cols-2 gap-2">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">{language === 'ru' ? 'Твой ранг' : 'Your rank'}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">{tx('Твой ранг', 'Your rank', '你的排名')}</div>
             <div className="mt-1 text-2xl font-black">{leaderboardOverview.playerRank ? `#${leaderboardOverview.playerRank}` : '--'}</div>
           </div>
           <div className="rounded-2xl border border-violet-200/20 bg-violet-300/10 px-4 py-3 text-white">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-violet-100/75">{language === 'ru' ? 'Недельная лига' : 'Weekly tier'}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-violet-100/75">{tx('Недельная лига', 'Weekly tier', '每周段位')}</div>
             <div className="mt-1 text-lg font-black">
               {leaderboardOverview.weeklyTier
                 ? `${leaderboardOverview.weeklyTier.id.toUpperCase()}`
-                : (language === 'ru' ? 'Пока вне лиги' : 'No tier yet')}
+                : tx('Пока вне лиги', 'No tier yet', '暂未进入段位')}
             </div>
           </div>
         </div>
         <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">{language === 'ru' ? 'Имя в рейтинге' : 'Leaderboard name'}</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">{tx('Имя в рейтинге', 'Leaderboard name', '排行榜昵称')}</div>
           <div className="mt-2 flex gap-2">
             <input
               value={displayNameDraft}
               onChange={(event) => setDisplayNameDraft(event.target.value)}
-              placeholder={language === 'ru' ? 'Например, StarPilot' : 'For example, StarPilot'}
+              placeholder={tx('Например, StarPilot', 'For example, StarPilot', '例如：StarPilot')}
               className="flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none"
             />
             <button
@@ -1694,24 +1728,28 @@ function App() {
               disabled={isSavingDisplayName}
               className="rounded-xl bg-gradient-to-r from-cyan-300 to-sky-400 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-900"
             >
-              {language === 'ru' ? 'Сохранить' : 'Save'}
+              {tx('Сохранить', 'Save', '保存')}
             </button>
           </div>
           <div className="mt-2 text-xs text-white/60">
-            {language === 'ru'
-              ? `Текущее имя: ${playerDisplayName || 'не задано'}`
-              : `Current name: ${playerDisplayName || 'not set'}`}
+            {tx(
+              `Текущее имя: ${playerDisplayName || 'не задано'}`,
+              `Current name: ${playerDisplayName || 'not set'}`,
+              `当前名字：${playerDisplayName || '未设置'}`,
+            )}
           </div>
         </div>
         {leaderboardOverview.chest && (
           <div className="mb-3 rounded-2xl border border-emerald-200/18 bg-emerald-300/10 px-4 py-3 text-white">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{language === 'ru' ? 'Сундук за ранг' : 'Reward chest for rank tier'}</div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/80">{tx('Сундук за ранг', 'Reward chest for rank tier', '段位奖励宝箱')}</div>
                 <div className="mt-1 text-sm font-bold">
-                  {language === 'ru'
-                    ? `Лига ${leaderboardOverview.chest.tierId.toUpperCase()} даёт +${leaderboardOverview.chest.reward}`
-                    : `Tier ${leaderboardOverview.chest.tierId.toUpperCase()} awards +${leaderboardOverview.chest.reward}`}
+                  {tx(
+                    `Лига ${leaderboardOverview.chest.tierId.toUpperCase()} даёт +${leaderboardOverview.chest.reward}`,
+                    `Tier ${leaderboardOverview.chest.tierId.toUpperCase()} awards +${leaderboardOverview.chest.reward}`,
+                    `段位 ${leaderboardOverview.chest.tierId.toUpperCase()} 奖励 +${leaderboardOverview.chest.reward}`,
+                  )}
                 </div>
               </div>
               <button
@@ -1727,19 +1765,19 @@ function App() {
                 }`}
               >
                 {leaderboardOverview.chest.claimed
-                  ? (language === 'ru' ? 'Получено' : 'Claimed')
+                  ? tx('Получено', 'Claimed', '已领取')
                   : leaderboardOverview.chest.claimable
-                    ? (language === 'ru' ? 'Забрать' : 'Claim')
-                    : (language === 'ru' ? 'Пока закрыто' : 'Locked')}
+                    ? tx('Забрать', 'Claim', '领取')
+                    : tx('Пока закрыто', 'Locked', '未解锁')}
               </button>
             </div>
           </div>
         )}
         <div className="max-h-[58vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-2">
           {isLeaderboardLoading ? (
-            <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Загрузка...' : 'Loading...'}</div>
+            <div className="px-3 py-6 text-center text-sm text-white/70">{tx('Загрузка...', 'Loading...', '加载中...')}</div>
           ) : leaderboardItems.length === 0 ? (
-            <div className="px-3 py-6 text-center text-sm text-white/70">{language === 'ru' ? 'Пока нет данных' : 'No entries yet'}</div>
+            <div className="px-3 py-6 text-center text-sm text-white/70">{tx('Пока нет данных', 'No entries yet', '暂无数据')}</div>
           ) : (
             <div className="space-y-2">
               {leaderboardItems.map((item) => (
@@ -1749,8 +1787,8 @@ function App() {
                     <span className="max-w-[130px] truncate font-bold">{item.displayName}</span>
                   </div>
                   <div className="text-right text-[11px] text-white/80">
-                    <div>{language === 'ru' ? 'Уровень' : 'Level'}: <span className="font-black text-white">{item.bestLevel}</span></div>
-                    <div>{language === 'ru' ? 'Счёт' : 'Score'}: <span className="font-black text-white">{item.bestScore}</span></div>
+                    <div>{tx('Уровень', 'Level', '关卡')}: <span className="font-black text-white">{item.bestLevel}</span></div>
+                    <div>{tx('Счёт', 'Score', '分数')}: <span className="font-black text-white">{item.bestScore}</span></div>
                   </div>
                 </div>
               ))}
@@ -1765,23 +1803,23 @@ function App() {
       <div className="fixed inset-0 z-[130] flex items-start justify-center overflow-y-auto bg-slate-950/86 px-3 pt-6 backdrop-blur-sm sm:items-center sm:px-4">
         <div className="my-auto max-h-[min(88dvh,46rem)] w-full max-w-md overflow-y-auto rounded-[2rem] border border-violet-200/20 bg-[linear-gradient(180deg,rgba(24,10,46,0.96),rgba(10,8,24,0.98))] p-5 shadow-[0_24px_80px_rgba(139,92,246,0.22)]">
         <div className="mb-4 flex items-center justify-between">
-          <div className="text-sm font-black uppercase tracking-[0.2em] text-violet-100">{language === 'ru' ? 'Недельный цикл' : 'Weekly loop'}</div>
+          <div className="text-sm font-black uppercase tracking-[0.2em] text-violet-100">{tx('Недельный цикл', 'Weekly loop', '每周循环')}</div>
           <button type="button" onClick={() => setIsWeeklyLoopOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
-            {language === 'ru' ? 'Закрыть' : 'Close'}
+            {tx('Закрыть', 'Close', '关闭')}
           </button>
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-white">
-          <div className="text-xs uppercase tracking-[0.18em] text-violet-100/80">{language === 'ru' ? 'Прогресс недели' : 'Weekly progress'}</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-violet-100/80">{tx('Прогресс недели', 'Weekly progress', '每周进度')}</div>
           <div className="mt-1 text-2xl font-black">{weeklyTasksCompleted}/3</div>
             <div className="mt-4 space-y-2">
               <div className={`rounded-xl border px-3 py-3 text-sm ${weeklyLoop.dailyClaimed ? 'border-emerald-200/30 bg-emerald-300/10 text-emerald-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
-              {language === 'ru' ? `1. Забери ежедневную награду ${weeklyLoop.dailyClaimed ? 'выполнено' : 'на этой неделе'}` : `1. Claim a daily reward ${weeklyLoop.dailyClaimed ? 'done' : 'this week'}`}
+              {tx(`1. Забери ежедневную награду ${weeklyLoop.dailyClaimed ? 'выполнено' : 'на этой неделе'}`, `1. Claim a daily reward ${weeklyLoop.dailyClaimed ? 'done' : 'this week'}`, `1. 领取每日奖励 ${weeklyLoop.dailyClaimed ? '已完成' : '本周内完成'}`)}
               </div>
             <div className={`rounded-xl border px-3 py-3 text-sm ${weeklyLoop.challengeCompleted ? 'border-cyan-200/30 bg-cyan-300/10 text-cyan-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
-              {language === 'ru' ? `2. Побей ${weeklyLoop.challengeTargetScore} очков (${bestScore} сейчас)` : `2. Beat ${weeklyLoop.challengeTargetScore} score (${bestScore} now)`}
+              {tx(`2. Побей ${weeklyLoop.challengeTargetScore} очков (${bestScore} сейчас)`, `2. Beat ${weeklyLoop.challengeTargetScore} score (${bestScore} now)`, `2. 达到 ${weeklyLoop.challengeTargetScore} 分（当前 ${bestScore}）`)}
             </div>
             <div className={`rounded-xl border px-3 py-3 text-sm ${weeklyLevelsCompleted >= WEEKLY_LEVEL_TARGET ? 'border-amber-200/30 bg-amber-300/10 text-amber-50' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
-              {language === 'ru' ? `3. Пройди ${WEEKLY_LEVEL_TARGET} уровней (${weeklyLevelsCompleted}/${WEEKLY_LEVEL_TARGET})` : `3. Finish ${WEEKLY_LEVEL_TARGET} levels (${weeklyLevelsCompleted}/${WEEKLY_LEVEL_TARGET})`}
+              {tx(`3. Пройди ${WEEKLY_LEVEL_TARGET} уровней (${weeklyLevelsCompleted}/${WEEKLY_LEVEL_TARGET})`, `3. Finish ${WEEKLY_LEVEL_TARGET} levels (${weeklyLevelsCompleted}/${WEEKLY_LEVEL_TARGET})`, `3. 完成 ${WEEKLY_LEVEL_TARGET} 关（${weeklyLevelsCompleted}/${WEEKLY_LEVEL_TARGET}）`)}
             </div>
           </div>
         </div>
@@ -1792,19 +1830,21 @@ function App() {
   const shareGame = async () => {
     const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/play` : 'https://nebulaclash.com/play';
     const shareTitle = 'Nebula Clash';
-    const shareText = language === 'ru'
-      ? 'Залетай в Nebula Clash: матч-3 с боссами, бустерами и космическим вайбом.'
-      : 'Join me in Nebula Clash: boss battles, boosters, and cosmic match-3 vibes.';
+    const shareText = tx(
+      'Залетай в Nebula Clash: матч-3 с боссами, бустерами и космическим вайбом.',
+      'Join me in Nebula Clash: boss battles, boosters, and cosmic match-3 vibes.',
+      '来玩 Nebula Clash：有 Boss 战、增益和宇宙风格的三消。',
+    );
 
     try {
       if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
         await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
-        setShopNotice(language === 'ru' ? 'Ссылка отправлена' : 'Shared successfully');
+        setShopNotice(tx('Ссылка отправлена', 'Shared successfully', '链接已发送'));
         return;
       }
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(shareUrl);
-        setShopNotice(language === 'ru' ? 'Ссылка скопирована' : 'Link copied');
+        setShopNotice(tx('Ссылка скопирована', 'Link copied', '链接已复制'));
       }
     } catch {
       // Ignore cancelled share dialogs and clipboard failures.
@@ -1842,37 +1882,37 @@ function App() {
         });
 
         if (!response.ok) {
-          setShopNotice(language === 'ru' ? 'Админ: не удалось начислить монеты' : 'Admin: failed to grant coins');
+          setShopNotice(tx('Админ: не удалось начислить монеты', 'Admin: failed to grant coins', '管理员：发放金币失败'));
           return;
         }
 
         await syncWalletBalance();
       } catch {
-        setShopNotice(language === 'ru' ? 'Админ: не удалось начислить монеты' : 'Admin: failed to grant coins');
+        setShopNotice(tx('Админ: не удалось начислить монеты', 'Admin: failed to grant coins', '管理员：发放金币失败'));
         return;
       }
     }
 
-    setShopNotice(language === 'ru' ? `Админ: начислено ${amount} монет` : `Admin: granted ${amount} coins`);
+    setShopNotice(tx(`Админ: начислено ${amount} монет`, `Admin: granted ${amount} coins`, `管理员：已发放 ${amount} 金币`));
   };
 
   const adminAddMoves = () => {
     const applied = addExtraMoves(moveBoostAmount);
     setShopNotice(applied
-      ? (language === 'ru' ? `Админ: +${moveBoostAmount} ходов` : `Admin: +${moveBoostAmount} moves`)
-      : (language === 'ru' ? 'Админ: режим без ходов' : 'Admin: not in moves mode'));
+      ? tx(`Админ: +${moveBoostAmount} ходов`, `Admin: +${moveBoostAmount} moves`, `管理员：+${moveBoostAmount} 步`)
+      : tx('Админ: режим без ходов', 'Admin: not in moves mode', '管理员：当前不是步数模式'));
   };
 
   const adminAddTime = () => {
     const applied = addExtraTime(timeBoostSeconds);
     setShopNotice(applied
-      ? (language === 'ru' ? `Админ: +${timeBoostSeconds} секунд` : `Admin: +${timeBoostSeconds} seconds`)
-      : (language === 'ru' ? 'Админ: режим без таймера' : 'Admin: not in timer mode'));
+      ? tx(`Админ: +${timeBoostSeconds} секунд`, `Admin: +${timeBoostSeconds} seconds`, `管理员：+${timeBoostSeconds} 秒`)
+      : tx('Админ: режим без таймера', 'Admin: not in timer mode', '管理员：当前不是计时模式'));
   };
 
   const adminUnlockAllLevels = () => {
     setUnlockedLevel((prev) => Math.max(prev, MAX_ADMIN_UNLOCK_LEVEL));
-    setShopNotice(language === 'ru' ? 'Админ: все уровни открыты' : 'Admin: all levels unlocked');
+    setShopNotice(tx('Админ: все уровни открыты', 'Admin: all levels unlocked', '管理员：所有关卡已解锁'));
   };
 
   const adminResetLocalProgress = () => {
@@ -1890,7 +1930,7 @@ function App() {
     localStorage.removeItem(TUTORIAL_SEEN_KEY);
     localStorage.removeItem(BEST_SCORE_STORAGE_KEY);
     localStorage.removeItem(WEEKLY_LOOP_STORAGE_KEY);
-    setShopNotice(language === 'ru' ? 'Админ: локальный прогресс сброшен' : 'Admin: local progress reset');
+    setShopNotice(tx('Админ: локальный прогресс сброшен', 'Admin: local progress reset', '管理员：本地进度已重置'));
   };
 
   const handleAdminLogin = async (username: string, password: string) => {
@@ -1908,7 +1948,7 @@ function App() {
 
       const payload = await response.json().catch(() => ({})) as { token?: string };
       if (!response.ok || !payload.token) {
-        setAdminAuthError(language === 'ru' ? 'Неверный логин или пароль' : 'Invalid login or password');
+        setAdminAuthError(tx('Неверный логин или пароль', 'Invalid login or password', '用户名或密码错误'));
         return;
       }
 
@@ -1919,7 +1959,7 @@ function App() {
       setIsMapOpen(false);
       replaceAppPath('/admin');
     } catch {
-      setAdminAuthError(language === 'ru' ? 'Сервис админки недоступен' : 'Admin service is unavailable');
+      setAdminAuthError(tx('Сервис админки недоступен', 'Admin service is unavailable', '管理服务暂不可用'));
     } finally {
       setAdminAuthLoading(false);
     }
@@ -2383,9 +2423,11 @@ function App() {
       const levelReward = await claimLevelCompletionReward(level, score, stars);
       if (levelReward?.granted) {
         setShopNotice(
-          language === 'ru'
-            ? `Награда за уровень: +${levelReward.reward}${levelReward.milestoneBonus ? ` и +${levelReward.milestoneBonus} за ${levelReward.completedLevelsCount} уровней` : ''}`
-            : `Level reward: +${levelReward.reward}${levelReward.milestoneBonus ? ` and +${levelReward.milestoneBonus} for ${levelReward.completedLevelsCount} levels` : ''}`,
+          tx(
+            `Награда за уровень: +${levelReward.reward}${levelReward.milestoneBonus ? ` и +${levelReward.milestoneBonus} за ${levelReward.completedLevelsCount} уровней` : ''}`,
+            `Level reward: +${levelReward.reward}${levelReward.milestoneBonus ? ` and +${levelReward.milestoneBonus} for ${levelReward.completedLevelsCount} levels` : ''}`,
+            `关卡奖励：+${levelReward.reward}${levelReward.milestoneBonus ? `，另加 ${levelReward.completedLevelsCount} 关里程碑奖励 +${levelReward.milestoneBonus}` : ''}`,
+          ),
         );
         trackEvent('economy_source', { source: 'level_completion_reward', amount: levelReward.reward, level });
       }
@@ -2568,7 +2610,7 @@ function App() {
 
   useEffect(() => {
     if (smashId <= 0) return;
-    setComboText(language === 'ru' ? 'SMASH x7!' : 'SMASH x7!');
+    setComboText('SMASH x7!');
     setComboStyle({ color: 'text-cyan-200', size: 'text-xl sm:text-3xl' });
     setComboPos({ x: 50, y: 22 });
     setComboFlash(true);
@@ -2620,7 +2662,9 @@ function App() {
     if (goalClearId <= 0) return;
     const phrases = language === 'ru'
       ? ['Отлично!', 'Великолепно!', 'Невероятно!', 'Идеально!', 'Космос!']
-      : ['Great!', 'Super!', 'Unbelievable!', 'Excellent!', 'Spectacular!'];
+      : language === 'zh'
+        ? ['漂亮！', '太强了！', '不可思议！', '完美！', '宇宙级！']
+        : ['Great!', 'Super!', 'Unbelievable!', 'Excellent!', 'Spectacular!'];
     const picked = phrases[(goalClearId - 1) % phrases.length];
     setGoalClearText(picked);
     const t1 = window.setTimeout(() => setGoalClearText(null), 420);
@@ -2670,11 +2714,11 @@ function App() {
               onAddTime={adminAddTime}
               onSpawnBomb={() => {
                 spawnSpecial('bomb');
-                setShopNotice(language === 'ru' ? 'Админ: бомба добавлена' : 'Admin: bomb added');
+                setShopNotice(tx('Админ: бомба добавлена', 'Admin: bomb added', '管理员：炸弹已添加'));
               }}
               onSpawnLightning={() => {
                 spawnSpecial('lightning');
-                setShopNotice(language === 'ru' ? 'Админ: молния добавлена' : 'Admin: lightning added');
+                setShopNotice(tx('Админ: молния добавлена', 'Admin: lightning added', '管理员：闪电已添加'));
               }}
               onUnlockAllLevels={adminUnlockAllLevels}
               onResetLocalProgress={adminResetLocalProgress}
@@ -2764,7 +2808,7 @@ function App() {
         {isLaunchingLevel && (
           <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/75 backdrop-blur-sm">
             <div className="rounded-2xl border border-cyan-200/35 bg-slate-950/70 px-6 py-4 text-center shadow-[0_0_28px_rgba(34,211,238,0.28)]">
-              <div className="text-xs uppercase tracking-[0.25em] text-cyan-200/80">{language === 'ru' ? 'Запуск' : 'Launching'}</div>
+              <div className="text-xs uppercase tracking-[0.25em] text-cyan-200/80">{tx('Запуск', 'Launching', '启动中')}</div>
               <div className="mt-2 text-lg font-black text-white">{levelToLaunch !== null ? t.level(levelToLaunch) : ''}</div>
             </div>
           </div>
@@ -2800,11 +2844,11 @@ function App() {
             onAddTime={adminAddTime}
             onSpawnBomb={() => {
               spawnSpecial('bomb');
-              setShopNotice(language === 'ru' ? 'Админ: бомба добавлена' : 'Admin: bomb added');
+              setShopNotice(tx('Админ: бомба добавлена', 'Admin: bomb added', '管理员：炸弹已添加'));
             }}
             onSpawnLightning={() => {
               spawnSpecial('lightning');
-              setShopNotice(language === 'ru' ? 'Админ: молния добавлена' : 'Admin: lightning added');
+              setShopNotice(tx('Админ: молния добавлена', 'Admin: lightning added', '管理员：闪电已添加'));
             }}
             onUnlockAllLevels={adminUnlockAllLevels}
             onResetLocalProgress={adminResetLocalProgress}
@@ -2892,7 +2936,7 @@ function App() {
             score={score}
             mode={levelConfig.mode}
             boostCost={continueReserve > 0 ? 0 : boosterCost}
-            boostAmountLabel={levelConfig.mode === 'moves' ? `+${moveBoostAmount} ${language === 'ru' ? 'ходов' : 'moves'}` : `+${timeBoostSeconds}${language === 'ru' ? ' сек' : 's'}`}
+            boostAmountLabel={levelConfig.mode === 'moves' ? tx(`+${moveBoostAmount} ходов`, `+${moveBoostAmount} moves`, `+${moveBoostAmount} 步`) : tx(`+${timeBoostSeconds} сек`, `+${timeBoostSeconds}s`, `+${timeBoostSeconds} 秒`)}
             canAffordContinue={continueReserve > 0 || spaceCoins >= boosterCost}
             onRestart={onRestart}
             onBuyContinue={buyContinueFromGameOver}
@@ -2924,7 +2968,7 @@ function App() {
             className="mx-4 w-[min(92%,560px)] rounded-3xl border border-amber-200/35 bg-slate-950/70 px-6 py-6 text-center shadow-[0_0_40px_rgba(251,191,36,0.2)]"
           >
             <div className="text-xs sm:text-sm uppercase tracking-[0.35em] text-amber-100/80">
-              {language === 'ru' ? 'Цель выполнена' : 'Goal Complete'}
+              {tx('Цель выполнена', 'Goal Complete', '目标完成')}
             </div>
             <div className="mt-2 text-4xl sm:text-6xl font-black text-amber-100 drop-shadow-[0_0_18px_rgba(251,191,36,0.45)]">
               {goalClearText}
@@ -2961,9 +3005,11 @@ function App() {
               <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-fuchsia-200/28 bg-fuchsia-300/14 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-50 shadow-[0_0_16px_rgba(217,70,239,0.16)]">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>
-                  {language === 'ru'
-                    ? `Ивент-забег активен: +${eventConfig.eventRunIceTiles} крио-щитов и прогресс в сектор`
-                    : `Event run active: +${eventConfig.eventRunIceTiles} cryo shields and sector progress`}
+                  {tx(
+                    `Ивент-забег активен: +${eventConfig.eventRunIceTiles} крио-щитов и прогресс в сектор`,
+                    `Event run active: +${eventConfig.eventRunIceTiles} cryo shields and sector progress`,
+                    `活动对局已激活：+${eventConfig.eventRunIceTiles} 个低温护盾，并计入活动进度`,
+                  )}
                 </span>
               </div>
             )}
@@ -2986,7 +3032,7 @@ function App() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.2em] text-rose-100/85">
-                        <span>{language === 'ru' ? 'Щит босса' : 'Boss Shield'}</span>
+                        <span>{tx('Щит босса', 'Boss Shield', 'Boss 护盾')}</span>
                         <span>{Math.max(0, bossHp)}/{Math.max(1, bossMaxHp)}</span>
                       </div>
                       <div className="h-3 rounded-full border border-white/10 bg-white/10 p-[2px]">
@@ -2996,7 +3042,7 @@ function App() {
                         />
                       </div>
                       <div className="mt-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.18em] text-rose-100/60">
-                        <span>{language === 'ru' ? 'Секторная угроза' : 'Sector Threat'}</span>
+                        <span>{tx('Секторная угроза', 'Sector Threat', '扇区威胁')}</span>
                         <span>{bossAttackLabel}</span>
                       </div>
                     </div>
@@ -3021,8 +3067,8 @@ function App() {
             type="button"
             onClick={openShop}
             className="mr-0.5 sm:mr-1 mt-1 sm:mt-2 flex h-10 w-10 items-center justify-center rounded-full border-2 sm:h-12 sm:w-12 sm:border-[3px] border-cyan-100/70 bg-[linear-gradient(145deg,#38bdf8_0%,#1d4ed8_52%,#312e81_100%)] text-white shadow-[0_10px_22px_rgba(30,64,175,0.55)] transition-all hover:scale-105 active:scale-95"
-            title={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
-            aria-label={language === 'ru' ? 'Открыть магазин' : 'Open shop'}
+            title={tx('Открыть магазин', 'Open shop', '打开商店')}
+            aria-label={tx('Открыть магазин', 'Open shop', '打开商店')}
           >
             <VaultGlyph className="h-5 w-5 text-white sm:h-6 sm:w-6" />
           </button>
@@ -3034,8 +3080,8 @@ function App() {
               type="button"
               onClick={openAdmin}
               className="relative z-30 mr-2 inline-flex items-center rounded-full border border-rose-200/35 bg-gradient-to-r from-rose-400/20 via-orange-300/18 to-amber-300/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-rose-100 shadow-[0_0_18px_rgba(251,113,133,0.18)] transition-all hover:from-rose-400/30 hover:via-orange-300/24 hover:to-amber-300/30"
-              title={language === 'ru' ? 'Открыть админку' : 'Open admin panel'}
-              aria-label={language === 'ru' ? 'Открыть админку' : 'Open admin panel'}
+              title={tx('Открыть админку', 'Open admin panel', '打开管理面板')}
+              aria-label={tx('Открыть админку', 'Open admin panel', '打开管理面板')}
             >
               ADM
             </button>
@@ -3044,8 +3090,8 @@ function App() {
             type="button"
             onClick={openShop}
             className="relative z-30 pointer-events-auto inline-flex items-center gap-2 rounded-full border border-amber-200/35 bg-[linear-gradient(140deg,rgba(251,191,36,0.24),rgba(251,191,36,0.12),rgba(251,146,60,0.2))] px-3 py-1.5 text-[11px] font-bold tracking-[0.1em] text-amber-50 shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all hover:from-amber-300/30 hover:via-yellow-300/22 hover:to-orange-300/30 sm:px-3.5 sm:py-1.5 sm:text-xs"
-            title={language === 'ru' ? 'Открыть магазин монет' : 'Open coin shop'}
-            aria-label={language === 'ru' ? 'Открыть магазин монет' : 'Open coin shop'}
+            title={tx('Открыть магазин монет', 'Open coin shop', '打开金币商店')}
+            aria-label={tx('Открыть магазин монет', 'Open coin shop', '打开金币商店')}
           >
             <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-emerald-200/50 bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.38)]">
               <span className="relative block h-2.5 w-2.5">
@@ -3056,7 +3102,7 @@ function App() {
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
               <CoinGlyph className="h-4.5 w-4.5" />
             </span>
-            <span className="hidden text-amber-100/88 sm:inline">{language === 'ru' ? 'Монеты' : 'Coins'}</span>
+            <span className="hidden text-amber-100/88 sm:inline">{tx('Монеты', 'Coins', '金币')}</span>
             <span className="min-w-[2.2rem] text-right text-sm font-black tabular-nums text-amber-50 sm:min-w-[2.8rem] sm:text-base">{spaceCoins}</span>
           </button>
         </div>
@@ -3166,8 +3212,8 @@ function App() {
             <button
               type="button"
               onClick={openShop}
-              title={language === 'ru' ? 'Магазин' : 'Shop'}
-              aria-label={language === 'ru' ? 'Магазин' : 'Shop'}
+              title={tx('Магазин', 'Shop', '商店')}
+              aria-label={tx('Магазин', 'Shop', '商店')}
               className="group flex h-7 w-7 items-center justify-center rounded-xl border-2 border-amber-200/30 bg-amber-300/12 text-amber-100 transition-all active:scale-95 hover:bg-amber-300/18 sm:h-12 sm:w-12"
             >
               <GiftGlyph className="h-3.5 w-3.5 sm:h-6 sm:w-6" />
@@ -3175,8 +3221,8 @@ function App() {
             <button
               type="button"
               onClick={openGuide}
-              title={language === 'ru' ? 'Гайд' : 'Guide'}
-              aria-label={language === 'ru' ? 'Гайд' : 'Guide'}
+              title={tx('Гайд', 'Guide', '指南')}
+              aria-label={tx('Гайд', 'Guide', '指南')}
               className="group flex h-7 w-7 items-center justify-center rounded-xl border-2 border-cyan-200/25 bg-cyan-300/10 text-cyan-100 transition-all active:scale-95 hover:bg-cyan-300/18 sm:h-12 sm:w-12"
             >
               <SignalGlyph className="h-3.5 w-3.5 sm:h-6 sm:w-6" />

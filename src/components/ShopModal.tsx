@@ -67,24 +67,25 @@ export function ShopModal({
   onBuyEventOffer,
 }: ShopModalProps) {
   const t = COPY[language];
-  const coinLabel = language === 'ru' ? 'Космический магазин' : 'Space Shop';
-  const boostersLabel = language === 'ru' ? 'Бустеры за монеты' : 'Boosters for coins';
+  const tx = (ru: string, en: string, zh: string) => language === 'ru' ? ru : language === 'zh' ? zh : en;
+  const coinLabel = tx('Космический магазин', 'Space Shop', '星际商店');
+  const boostersLabel = tx('Бустеры за монеты', 'Boosters for coins', '金币增益');
   const hookLine = offerContext === 'recovery'
-    ? (language === 'ru' ? 'Вернись в матч без паузы и не теряй прогресс' : 'Jump back in now and keep the run alive')
+    ? tx('Вернись в матч без паузы и не теряй прогресс', 'Jump back in now and keep the run alive', '立刻回到对局，不丢掉进度')
     : offerContext === 'momentum'
-      ? (language === 'ru' ? 'Поймай темп после победы и дожми следующую волну' : 'Keep the momentum after a win and push the next wave')
-      : (language === 'ru' ? 'Заряди запас и не выходи из ритма' : 'Load up and keep the streak alive');
+      ? tx('Поймай темп после победы и дожми следующую волну', 'Keep the momentum after a win and push the next wave', '趁胜追击，把节奏带进下一波')
+      : tx('Заряди запас и не выходи из ритма', 'Load up and keep the streak alive', '先补足储备，维持整段节奏');
   const premiumLine = offerContext === 'recovery'
-    ? (language === 'ru' ? 'Монеты сразу дают запас на продолжения, бусты и ещё один шанс прямо в этой сессии.' : 'Coins immediately fund continues, boosts, and another chance in this same session.')
+    ? tx('Монеты сразу дают запас на продолжения, бусты и ещё один шанс прямо в этой сессии.', 'Coins immediately fund continues, boosts, and another chance in this same session.', '金币能立刻换来续关、增益和这次会话里的再一次机会。')
     : offerContext === 'momentum'
-      ? (language === 'ru' ? 'Лучший момент для покупки: пока игра уже зашла, у тебя есть темп, а магазин конвертирует его в длинную сессию.' : 'Best purchase moment: the run already feels good, and coins stretch that momentum into a longer session.')
-      : (language === 'ru' ? 'Первый топ-ап нужен не ради коллекции, а ради более длинной серии, быстрых рестартов и меньшего трения.' : 'Your first top-up is not for vanity. It buys longer streaks, faster recoveries, and less friction.');
-  const hotDealLabel = language === 'ru' ? 'Стартовый оффер' : 'Starter Pick';
-  const totalValueLabel = language === 'ru' ? 'Максимальный запас' : 'Max Reserve';
-  const instantTopUpLabel = language === 'ru' ? 'Мгновенное пополнение' : 'Instant top-up';
-  const claimLabel = language === 'ru' ? 'Забрать монеты' : 'Get Coins';
-  const paymentsHintLine1 = language === 'ru' ? 'Оплата проходит на защищенной странице провайдера' : 'Payments are processed on a secure provider page';
-  const paymentsHintLine2 = language === 'ru' ? 'После подтверждения монеты начисляются автоматически.' : 'Coins are credited automatically after payment confirmation.';
+      ? tx('Лучший момент для покупки: пока игра уже зашла, у тебя есть темп, а магазин конвертирует его в длинную сессию.', 'Best purchase moment: the run already feels good, and coins stretch that momentum into a longer session.', '现在是最好的购买时机：手感正顺，金币能把这股节奏延长成更长的会话。')
+      : tx('Первый топ-ап нужен не ради коллекции, а ради более длинной серии, быстрых рестартов и меньшего трения.', 'Your first top-up is not for vanity. It buys longer streaks, faster recoveries, and less friction.', '第一次充值不是为了收藏，而是为了更长的连玩、更快的重开和更低的阻力。');
+  const hotDealLabel = tx('Стартовый оффер', 'Starter Pick', '新手推荐');
+  const totalValueLabel = tx('Максимальный запас', 'Max Reserve', '最大储备');
+  const instantTopUpLabel = tx('Мгновенное пополнение', 'Instant top-up', '即时补充');
+  const claimLabel = tx('Забрать монеты', 'Get Coins', '获取金币');
+  const paymentsHintLine1 = tx('Оплата проходит на защищенной странице провайдера', 'Payments are processed on a secure provider page', '支付将在受保护的服务商页面完成');
+  const paymentsHintLine2 = tx('После подтверждения монеты начисляются автоматически.', 'Coins are credited automatically after payment confirmation.', '确认支付后，金币会自动到账。');
   const starterPackId = packs[Math.min(1, Math.max(0, packs.length - 1))]?.id ?? packs[0]?.id ?? '';
   const maxPackCoins = Math.max(...packs.map((p) => p.coins), 0);
   const starterOfferCountdown = starterBundle?.active && starterBundle.expiresAt
@@ -92,7 +93,7 @@ export function ShopModal({
     : 0;
   const starterCountdownLabel = starterOfferCountdown > 0
     ? `${Math.floor(starterOfferCountdown / 3600)}h ${Math.floor((starterOfferCountdown % 3600) / 60)}m`
-    : (language === 'ru' ? 'До конца сессии' : 'This session');
+    : tx('До конца сессии', 'This session', '本次会话内');
   const visiblePacks = starterBundle?.active ? [starterBundle.pack, ...packs] : packs;
   const starterBundlePackId = starterBundle?.pack.id ?? '';
   const starterBundleTokenCount = starterBundle?.modifierTokens ?? 0;
@@ -126,7 +127,7 @@ export function ShopModal({
             type="button"
             onClick={onClose}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-rose-200/35 bg-gradient-to-br from-rose-500 to-red-600 text-white transition-all hover:from-rose-400 hover:to-red-500 active:scale-95 shadow-[0_8px_24px_rgba(239,68,68,0.35)]"
-            aria-label={language === 'ru' ? 'Закрыть магазин' : 'Close shop'}
+            aria-label={tx('Закрыть магазин', 'Close shop', '关闭商店')}
           >
             <CloseGlyph className="h-4.5 w-4.5 text-white" />
           </button>
@@ -140,10 +141,10 @@ export function ShopModal({
             <div className="max-w-[58%]">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200/80">
                 {offerContext === 'recovery'
-                  ? (language === 'ru' ? 'Оффер на возврат' : 'Recovery offer')
+                  ? tx('Оффер на возврат', 'Recovery offer', '回流优惠')
                   : offerContext === 'momentum'
-                    ? (language === 'ru' ? 'Оффер на темп' : 'Momentum offer')
-                    : (language === 'ru' ? 'Первый топ-ап' : 'First top-up')}
+                    ? tx('Оффер на темп', 'Momentum offer', '节奏优惠')
+                    : tx('Первый топ-ап', 'First top-up', '首次充值')}
               </div>
               <div className="mt-3 text-xl font-black leading-tight text-white sm:text-2xl">
                 {hookLine}
@@ -178,8 +179,8 @@ export function ShopModal({
               <div className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-100/75">{instantTopUpLabel}</div>
               <div className="mt-1 text-sm font-semibold text-white/80">
                 {offerContext === 'recovery'
-                  ? (language === 'ru' ? 'Монеты для продолжений и бустов прямо сейчас' : 'Coins for continues and boosts right now')
-                  : (language === 'ru' ? 'Монеты, чтобы не обрывать сессию' : 'Coins that keep the session going')}
+                  ? tx('Монеты для продолжений и бустов прямо сейчас', 'Coins for continues and boosts right now', '马上补充续关和增益所需金币')
+                  : tx('Монеты, чтобы не обрывать сессию', 'Coins that keep the session going', '让会话不断档的金币')}
               </div>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-200/35 bg-gradient-to-r from-amber-300/25 via-yellow-300/22 to-orange-300/24 px-3 py-1.5 shadow-[0_0_24px_rgba(251,191,36,0.2)]">
@@ -191,11 +192,11 @@ export function ShopModal({
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/78">
             <div>
-              <div className="uppercase tracking-[0.16em] text-white/55">{language === 'ru' ? 'Жетоны модификатора' : 'Modifier tokens'}</div>
+              <div className="uppercase tracking-[0.16em] text-white/55">{tx('Жетоны модификатора', 'Modifier tokens', '增益代币')}</div>
               <div className="mt-1 text-lg font-black text-white">{modifierTokens}</div>
             </div>
             <div>
-              <div className="uppercase tracking-[0.16em] text-white/55">{language === 'ru' ? 'Резерв продолжений' : 'Continue reserve'}</div>
+              <div className="uppercase tracking-[0.16em] text-white/55">{tx('Резерв продолжений', 'Continue reserve', '续关储备')}</div>
               <div className="mt-1 text-lg font-black text-white">{continueReserve}</div>
             </div>
           </div>
@@ -203,11 +204,13 @@ export function ShopModal({
             <div className="mt-3 rounded-2xl border border-amber-200/30 bg-gradient-to-r from-amber-300/18 to-orange-400/16 p-3 text-white">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-100/85">{language === 'ru' ? 'Starter offer v2' : 'Starter offer v2'}</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-100/85">{tx('Стартовый оффер v2', 'Starter offer v2', '新手礼包 v2')}</div>
                   <div className="mt-1 text-sm font-bold">
-                    {language === 'ru'
-                      ? `Первый платёж: +${starterBundle.pack.coins} монет, +${starterBundle.modifierTokens} жетон модификатора и ${starterBundle.continueReserve} продолжения`
-                      : `First purchase: +${starterBundle.pack.coins} coins, +${starterBundle.modifierTokens} modifier token, ${starterBundle.continueReserve} continues`}
+                    {tx(
+                      `Первый платёж: +${starterBundle.pack.coins} монет, +${starterBundle.modifierTokens} жетон модификатора и ${starterBundle.continueReserve} продолжения`,
+                      `First purchase: +${starterBundle.pack.coins} coins, +${starterBundle.modifierTokens} modifier token, ${starterBundle.continueReserve} continues`,
+                      `首次购买：+${starterBundle.pack.coins} 金币，+${starterBundle.modifierTokens} 个增益代币，${starterBundle.continueReserve} 次续关`,
+                    )}
                   </div>
                 </div>
                 <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-50">
@@ -218,7 +221,7 @@ export function ShopModal({
           )}
           {missionAssistOffer && (
             <div className="mt-3 rounded-2xl border border-cyan-200/20 bg-cyan-300/10 p-3 text-white">
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/80">{language === 'ru' ? 'Mission assist' : 'Mission assist'}</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/80">{tx('Помощь по миссии', 'Mission assist', '任务辅助')}</div>
               <div className="mt-1 text-sm font-bold">{missionAssistOffer.title}</div>
               <div className="mt-1 text-xs text-white/72">{missionAssistOffer.description}</div>
               <button
@@ -370,7 +373,7 @@ export function ShopModal({
                             </span>
                             {featured && (
                               <span className="rounded-full border border-amber-200/30 bg-amber-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100">
-                                {starterBundleCard ? (language === 'ru' ? 'Первый платёж' : 'First purchase') : hotDealLabel}
+                                {starterBundleCard ? tx('Первый платёж', 'First purchase', '首次购买') : hotDealLabel}
                               </span>
                             )}
                             {!featured && reservePack && (
@@ -382,12 +385,12 @@ export function ShopModal({
                         </div>
                         <div className={`mt-2 text-[11px] font-black uppercase tracking-[0.16em] ${accent.label}`}>
                           {starterBundleCard
-                            ? (language === 'ru' ? 'Пакет для первого платежа с бонусами профиля' : 'First-purchase bundle with profile perks')
+                            ? tx('Пакет для первого платежа с бонусами профиля', 'First-purchase bundle with profile perks', '附带资料加成的首购礼包')
                             : featured
-                            ? (language === 'ru' ? 'Лучший первый пак для реальной сессии' : 'Best first pack for a real session')
+                            ? tx('Лучший первый пак для реальной сессии', 'Best first pack for a real session', '最适合当前会话的首购礼包')
                             : reservePack
-                              ? (language === 'ru' ? 'Большой запас на длинную неделю' : 'Big reserve for a longer week')
-                              : (language === 'ru' ? 'Быстрый заряд для серии' : 'Fast fuel for your streak')}
+                              ? tx('Большой запас на длинную неделю', 'Big reserve for a longer week', '适合长周目的大储备')
+                              : tx('Быстрый заряд для серии', 'Fast fuel for your streak', '快速续航')}
                         </div>
                       </div>
                     </div>
@@ -395,8 +398,8 @@ export function ShopModal({
                       <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70">
                         <CoinGlyph className="h-3.5 w-3.5" />
                         {starterBundleCard
-                          ? (language === 'ru' ? `+${starterBundleTokenCount} жетон и ${continueCount} продолжения` : `+${starterBundleTokenCount} token and ${continueCount} continues`)
-                          : (language === 'ru' ? `${continueCount} продолжений` : `${continueCount} continue plays`)}
+                          ? tx(`+${starterBundleTokenCount} жетон и ${continueCount} продолжения`, `+${starterBundleTokenCount} token and ${continueCount} continues`, `+${starterBundleTokenCount} 代币和 ${continueCount} 次续关`)
+                          : tx(`${continueCount} продолжений`, `${continueCount} continue plays`, `${continueCount} 次续关`)}
                       </div>
                       <span className={`inline-flex items-center justify-center rounded-full bg-gradient-to-r px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] shadow-[0_8px_18px_rgba(0,0,0,0.2)] ${accent.button}`}>
                         {claimLabel}

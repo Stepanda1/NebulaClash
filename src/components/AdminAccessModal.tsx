@@ -9,7 +9,7 @@ type AdminAccessModalProps = {
 };
 
 export function AdminAccessModal({ language, onSubmit, isLoading, error }: AdminAccessModalProps) {
-  const isRu = language === 'ru';
+  const tx = (ru: string, en: string, zh: string) => language === 'ru' ? ru : language === 'zh' ? zh : en;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -24,17 +24,17 @@ export function AdminAccessModal({ language, onSubmit, isLoading, error }: Admin
       >
         <div className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200/70">Admin</div>
         <h2 className="mt-2 text-3xl font-black text-white">
-          {isRu ? 'Тестовый вход' : 'Admin Access'}
+          {tx('Тестовый вход', 'Admin Access', '管理入口')}
         </h2>
         <p className="mt-2 text-sm text-white/60">
-          {isRu ? 'Введите логин и пароль для отдельной тестовой панели.' : 'Enter login and password for the separate test panel.'}
+          {tx('Введите логин и пароль для отдельной тестовой панели.', 'Enter login and password for the separate test panel.', '请输入单独测试面板的账号和密码。')}
         </p>
 
         <div className="mt-5 space-y-3">
           <input
             value={username}
             onChange={(event) => setUsername(event.target.value)}
-            placeholder={isRu ? 'Логин' : 'Login'}
+            placeholder={tx('Логин', 'Login', '登录名')}
             className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-cyan-300/45"
             autoComplete="username"
           />
@@ -42,7 +42,7 @@ export function AdminAccessModal({ language, onSubmit, isLoading, error }: Admin
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             type="password"
-            placeholder={isRu ? 'Пароль' : 'Password'}
+            placeholder={tx('Пароль', 'Password', '密码')}
             className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-cyan-300/45"
             autoComplete="current-password"
           />
@@ -59,7 +59,7 @@ export function AdminAccessModal({ language, onSubmit, isLoading, error }: Admin
           disabled={isLoading}
           className="mt-5 w-full rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-black uppercase tracking-[0.16em] text-slate-950 transition-all hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLoading ? (isRu ? 'Входим...' : 'Signing in...') : (isRu ? 'Войти' : 'Sign in')}
+          {isLoading ? tx('Входим...', 'Signing in...', '正在登录...') : tx('Войти', 'Sign in', '登录')}
         </button>
       </form>
     </div>

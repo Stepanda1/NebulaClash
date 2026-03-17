@@ -13,6 +13,7 @@ interface LevelUpModalProps {
 
 export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, score, starsEarned, onNextLevel, language }) => {
     const t = COPY[language];
+    const tx = (ru: string, en: string, zh: string) => language === 'ru' ? ru : language === 'zh' ? zh : en;
 
     return (
         <motion.div
@@ -50,7 +51,7 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, score, starsE
 
                 <div className="space-y-1 relative z-10">
                     <div className="text-[11px] uppercase tracking-[0.28em] text-cyan-200/70">
-                        {language === 'ru' ? 'Сектор очищен' : 'Sector Cleared'}
+                        {tx('Сектор очищен', 'Sector Cleared', '区域已清除')}
                     </div>
                     <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-100 via-white to-violet-200 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.35))' }}>
                         {t.levelUp}

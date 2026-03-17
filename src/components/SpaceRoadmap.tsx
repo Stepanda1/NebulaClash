@@ -76,6 +76,11 @@ export function SpaceRoadmap({
   onOpenEvent,
   onShareGame,
 }: SpaceRoadmapProps) {
+  const tx = (ru: string, en: string, zh: string) => {
+    if (language === 'ru') return ru;
+    if (language === 'zh') return zh;
+    return en;
+  };
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showJumpToCurrent, setShowJumpToCurrent] = useState(false);
@@ -241,13 +246,13 @@ export function SpaceRoadmap({
     };
   }, [getMaxScrollTop]);
 
-  const levelLabel = language === 'ru' ? 'Карта уровней' : 'Level Map';
-  const currentLabel = language === 'ru' ? 'Текущий прогресс' : 'Current Progress';
-  const settingsLabel = language === 'ru' ? 'Настройки карты' : 'Map Settings';
-  const comingSoonLabel = language === 'ru' ? 'Скоро' : 'Coming Soon';
+  const levelLabel = tx('Карта уровней', 'Level Map', '关卡地图');
+  const currentLabel = tx('Текущий прогресс', 'Current Progress', '当前进度');
+  const settingsLabel = tx('Настройки карты', 'Map Settings', '地图设置');
+  const comingSoonLabel = tx('Скоро', 'Coming Soon', '即将推出');
   const endPoint = points[points.length - 1];
   const secondSectorStart = points.find((p) => p.level === 31);
-  const secondSectorLabel = language === 'ru' ? 'Локация 2: Квантовый Пояс' : 'Location 2: Quantum Belt';
+  const secondSectorLabel = tx('Локация 2: Квантовый Пояс', 'Location 2: Quantum Belt', '区域 2：量子带');
   const openLegalFromSettings = (section: LegalSection) => {
     setIsSettingsOpen(false);
     onOpenLegal(section);
@@ -291,8 +296,8 @@ export function SpaceRoadmap({
                   ? 'border-emerald-200/55 bg-emerald-300/25 text-emerald-50 shadow-[0_0_16px_rgba(74,222,128,0.28)]'
                   : 'border-white/20 bg-slate-900/70 text-white/80'
               }`}
-              title={language === 'ru' ? `Ежедневная награда: день ${dailyStreak}, +${dailyNextReward}` : `Daily reward: day ${dailyStreak}, +${dailyNextReward}`}
-              aria-label={language === 'ru' ? `Ежедневная награда: день ${dailyStreak}, +${dailyNextReward}` : `Daily reward: day ${dailyStreak}, +${dailyNextReward}`}
+              title={tx(`Ежедневная награда: день ${dailyStreak}, +${dailyNextReward}`, `Daily reward: day ${dailyStreak}, +${dailyNextReward}`, `每日奖励：第 ${dailyStreak} 天，+${dailyNextReward}`)}
+              aria-label={tx(`Ежедневная награда: день ${dailyStreak}, +${dailyNextReward}`, `Daily reward: day ${dailyStreak}, +${dailyNextReward}`, `每日奖励：第 ${dailyStreak} 天，+${dailyNextReward}`)}
             >
               <Gift className="h-6 w-6" />
             </button>
@@ -300,8 +305,8 @@ export function SpaceRoadmap({
               type="button"
               onClick={onOpenWeeklyLoop}
               className="inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border border-violet-200/45 bg-violet-300/20 text-violet-50 shadow-[0_0_14px_rgba(167,139,250,0.24)] transition-all hover:bg-violet-300/28"
-              title={language === 'ru' ? `Недельный цикл: ${weeklyTasksCompleted}/3` : `Weekly loop: ${weeklyTasksCompleted}/3`}
-              aria-label={language === 'ru' ? `Недельный цикл: ${weeklyTasksCompleted}/3` : `Weekly loop: ${weeklyTasksCompleted}/3`}
+              title={tx(`Недельный цикл: ${weeklyTasksCompleted}/3`, `Weekly loop: ${weeklyTasksCompleted}/3`, `每周循环：${weeklyTasksCompleted}/3`)}
+              aria-label={tx(`Недельный цикл: ${weeklyTasksCompleted}/3`, `Weekly loop: ${weeklyTasksCompleted}/3`, `每周循环：${weeklyTasksCompleted}/3`)}
             >
               <Star className="h-6 w-6" />
             </button>
@@ -313,8 +318,8 @@ export function SpaceRoadmap({
                   ? 'border-fuchsia-200/45 bg-fuchsia-300/22 text-fuchsia-50 shadow-[0_0_14px_rgba(217,70,239,0.24)] hover:bg-fuchsia-300/30'
                   : 'border-white/12 bg-slate-900/50 text-white/45'
               }`}
-              title={eventActive ? `${eventTitle}: ${eventMissionProgress}` : (language === 'ru' ? 'Ивент скоро' : 'Event soon')}
-              aria-label={eventActive ? `${eventTitle}: ${eventMissionProgress}` : (language === 'ru' ? 'Ивент скоро' : 'Event soon')}
+              title={eventActive ? `${eventTitle}: ${eventMissionProgress}` : tx('Ивент скоро', 'Event soon', '活动即将开启')}
+              aria-label={eventActive ? `${eventTitle}: ${eventMissionProgress}` : tx('Ивент скоро', 'Event soon', '活动即将开启')}
             >
               <Sparkles className="h-6 w-6" />
             </button>
@@ -327,8 +332,8 @@ export function SpaceRoadmap({
                   ? 'border-amber-200/45 bg-amber-300/22 text-amber-50 shadow-[0_0_14px_rgba(251,191,36,0.24)]'
                   : 'border-cyan-200/45 bg-cyan-300/22 text-cyan-50 shadow-[0_0_14px_rgba(34,211,238,0.24)] hover:bg-cyan-300/30'
               }`}
-              title={language === 'ru' ? `Рейтинг: цель ${weeklyChallengeScore}, лучший счёт ${bestScore}` : `Ranking: target ${weeklyChallengeScore}, best score ${bestScore}`}
-              aria-label={language === 'ru' ? `Рейтинг: цель ${weeklyChallengeScore}, лучший счёт ${bestScore}` : `Ranking: target ${weeklyChallengeScore}, best score ${bestScore}`}
+              title={tx(`Рейтинг: цель ${weeklyChallengeScore}, лучший счёт ${bestScore}`, `Ranking: target ${weeklyChallengeScore}, best score ${bestScore}`, `排行榜：目标 ${weeklyChallengeScore}，最佳分数 ${bestScore}`)}
+              aria-label={tx(`Рейтинг: цель ${weeklyChallengeScore}, лучший счёт ${bestScore}`, `Ranking: target ${weeklyChallengeScore}, best score ${bestScore}`, `排行榜：目标 ${weeklyChallengeScore}，最佳分数 ${bestScore}`)}
             >
               <Trophy className="h-6 w-6" />
             </button>
@@ -428,7 +433,7 @@ export function SpaceRoadmap({
           type="button"
           onClick={() => scrollToLevel(unlockedLevel)}
           className="absolute bottom-6 left-1/2 z-30 inline-flex -translate-x-1/2 items-center justify-center rounded-full border-2 border-white/85 bg-cyan-400/90 p-3 text-slate-900 shadow-[0_0_24px_rgba(34,211,238,0.45)] hover:scale-105 active:scale-95 transition-all"
-          aria-label={language === 'ru' ? 'К текущему уровню' : 'Go to current level'}
+          aria-label={tx('К текущему уровню', 'Go to current level', '跳到当前关卡')}
         >
           <JumpGlyph className="h-[18px] w-[18px] text-slate-900" />
         </button>
@@ -441,7 +446,7 @@ export function SpaceRoadmap({
               type="button"
               onClick={() => setIsSettingsOpen(false)}
               className="absolute right-3 top-3 h-10 w-10 rounded-full border-4 border-white bg-red-500/90 text-white hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center"
-              aria-label={language === 'ru' ? 'Закрыть' : 'Close'}
+              aria-label={tx('Закрыть', 'Close', '关闭')}
             >
               <X size={18} strokeWidth={4} />
             </button>
@@ -451,7 +456,7 @@ export function SpaceRoadmap({
 
             <div className="mt-5 w-full rounded-xl border border-white/20 bg-white/10 p-3 shadow-inner">
               <div className="mb-3 flex items-center justify-between gap-2">
-                <span className="text-sm font-bold tracking-wide text-white/80">{language === 'ru' ? 'Язык' : 'Language'}</span>
+                <span className="text-sm font-bold tracking-wide text-white/80">{tx('Язык', 'Language', '语言')}</span>
                 <div className="inline-flex rounded-full border border-white/20 bg-black/20 p-1">
                   <button
                     type="button"
@@ -468,6 +473,14 @@ export function SpaceRoadmap({
                     aria-pressed={language === 'en'}
                   >
                     EN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onLanguageChange('zh')}
+                    className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide transition-all ${language === 'zh' ? 'bg-cyan-300 text-slate-900 shadow' : 'text-white/80 hover:bg-white/10'}`}
+                    aria-pressed={language === 'zh'}
+                  >
+                    中文
                   </button>
                 </div>
               </div>
@@ -515,7 +528,7 @@ export function SpaceRoadmap({
                 className="inline-flex items-center justify-center gap-2 rounded-xl py-2 border border-fuchsia-200/30 bg-fuchsia-300/12 text-fuchsia-100 hover:bg-fuchsia-300/22 transition-all active:scale-95 text-xs font-semibold"
               >
                 <Share2 className="h-3.5 w-3.5" />
-                {language === 'ru' ? 'Поделиться игрой' : 'Share game'}
+                {tx('Поделиться игрой', 'Share game', '分享游戏')}
               </button>
               <button
                 type="button"
@@ -525,7 +538,7 @@ export function SpaceRoadmap({
                 }}
                 className="rounded-xl py-2 border bg-cyan-300/15 border-cyan-200/25 text-cyan-100 hover:bg-cyan-300/25 transition-all active:scale-95 text-xs font-semibold"
               >
-                {language === 'ru' ? 'Руководство' : 'Guide'}
+                {tx('Руководство', 'Guide', '指南')}
               </button>
               <button
                 type="button"

@@ -16,15 +16,17 @@ export function FeedbackModal({ language, feedbackEmail, onClose }: FeedbackModa
   const [message, setMessage] = useState('');
 
   const copy = useMemo(() => ({
-    title: language === 'ru' ? 'Быстрый фидбек' : 'Quick Feedback',
+    title: language === 'ru' ? 'Быстрый фидбек' : language === 'zh' ? '快速反馈' : 'Quick Feedback',
     subtitle: language === 'ru'
       ? 'Напишите коротко, что понравилось, что мешает и чего не хватает.'
-      : 'Briefly share what works, what blocks you, and what is missing.',
-    name: language === 'ru' ? 'Имя' : 'Name',
-    contact: language === 'ru' ? 'Telegram или email' : 'Telegram or email',
-    message: language === 'ru' ? 'Ваш отзыв' : 'Your feedback',
-    send: language === 'ru' ? 'Отправить' : 'Send',
-    close: language === 'ru' ? 'Закрыть форму' : 'Close form',
+      : language === 'zh'
+        ? '简单告诉我们什么好用、什么阻碍了你、还缺少什么。'
+        : 'Briefly share what works, what blocks you, and what is missing.',
+    name: language === 'ru' ? 'Имя' : language === 'zh' ? '名字' : 'Name',
+    contact: language === 'ru' ? 'Telegram или email' : language === 'zh' ? 'Telegram 或邮箱' : 'Telegram or email',
+    message: language === 'ru' ? 'Ваш отзыв' : language === 'zh' ? '你的反馈' : 'Your feedback',
+    send: language === 'ru' ? 'Отправить' : language === 'zh' ? '发送' : 'Send',
+    close: language === 'ru' ? 'Закрыть форму' : language === 'zh' ? '关闭表单' : 'Close form',
   }), [language]);
 
   const onSubmit = () => {

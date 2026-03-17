@@ -25,7 +25,7 @@ export function AdminModal({
   onUnlockAllLevels,
   onResetLocalProgress,
 }: AdminModalProps) {
-  const isRu = language === 'ru';
+  const tx = (ru: string, en: string, zh: string) => language === 'ru' ? ru : language === 'zh' ? zh : en;
 
   const actionClassName = 'rounded-2xl border border-cyan-200/20 bg-white/8 px-3 py-3 text-left transition-all hover:bg-white/12 active:scale-[0.98]';
 
@@ -36,10 +36,10 @@ export function AdminModal({
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-200/70">Admin</div>
             <h3 className="mt-1 text-2xl font-black text-white">
-              {isRu ? 'Панель управления' : 'Control Panel'}
+              {tx('Панель управления', 'Control Panel', '控制面板')}
             </h3>
             <p className="mt-2 text-xs text-white/65 break-all">
-              {playerId || (isRu ? 'Аккаунт не определен' : 'Account not resolved')}
+              {playerId || tx('Аккаунт не определен', 'Account not resolved', '账户未识别')}
             </p>
           </div>
           <button
@@ -47,34 +47,34 @@ export function AdminModal({
             onClick={onClose}
             className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12"
           >
-            {isRu ? 'Закрыть' : 'Close'}
+            {tx('Закрыть', 'Close', '关闭')}
           </button>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <button type="button" onClick={() => onGrantCoins(100)} className={actionClassName}>
-            <div className="text-xs font-black uppercase tracking-wide text-amber-200">{isRu ? '+100 монет' : '+100 coins'}</div>
-            <div className="mt-1 text-[11px] text-white/55">{isRu ? 'Мгновенно в кошелек' : 'Instant wallet top-up'}</div>
+            <div className="text-xs font-black uppercase tracking-wide text-amber-200">{tx('+100 монет', '+100 coins', '+100 金币')}</div>
+            <div className="mt-1 text-[11px] text-white/55">{tx('Мгновенно в кошелек', 'Instant wallet top-up', '立即充值到钱包')}</div>
           </button>
           <button type="button" onClick={() => onGrantCoins(500)} className={actionClassName}>
-            <div className="text-xs font-black uppercase tracking-wide text-amber-200">{isRu ? '+500 монет' : '+500 coins'}</div>
-            <div className="mt-1 text-[11px] text-white/55">{isRu ? 'Быстрый буст баланса' : 'Fast balance boost'}</div>
+            <div className="text-xs font-black uppercase tracking-wide text-amber-200">{tx('+500 монет', '+500 coins', '+500 金币')}</div>
+            <div className="mt-1 text-[11px] text-white/55">{tx('Быстрый буст баланса', 'Fast balance boost', '快速提升余额')}</div>
           </button>
           <button type="button" onClick={onAddMoves} className={actionClassName}>
-            <div className="text-xs font-black uppercase tracking-wide text-emerald-200">{isRu ? '+5 ходов' : '+5 moves'}</div>
-            <div className="mt-1 text-[11px] text-white/55">{isRu ? 'Только для режима ходов' : 'Moves mode only'}</div>
+            <div className="text-xs font-black uppercase tracking-wide text-emerald-200">{tx('+5 ходов', '+5 moves', '+5 步')}</div>
+            <div className="mt-1 text-[11px] text-white/55">{tx('Только для режима ходов', 'Moves mode only', '仅限步数模式')}</div>
           </button>
           <button type="button" onClick={onAddTime} className={actionClassName}>
-            <div className="text-xs font-black uppercase tracking-wide text-emerald-200">{isRu ? '+30 секунд' : '+30 seconds'}</div>
-            <div className="mt-1 text-[11px] text-white/55">{isRu ? 'Только для таймера' : 'Timer mode only'}</div>
+            <div className="text-xs font-black uppercase tracking-wide text-emerald-200">{tx('+30 секунд', '+30 seconds', '+30 秒')}</div>
+            <div className="mt-1 text-[11px] text-white/55">{tx('Только для таймера', 'Timer mode only', '仅限计时模式')}</div>
           </button>
           <button type="button" onClick={onSpawnBomb} className={actionClassName}>
-            <div className="text-xs font-black uppercase tracking-wide text-rose-200">{isRu ? 'Выдать бомбу' : 'Spawn bomb'}</div>
-            <div className="mt-1 text-[11px] text-white/55">{isRu ? 'Случайная клетка' : 'Random tile'}</div>
+            <div className="text-xs font-black uppercase tracking-wide text-rose-200">{tx('Выдать бомбу', 'Spawn bomb', '生成炸弹')}</div>
+            <div className="mt-1 text-[11px] text-white/55">{tx('Случайная клетка', 'Random tile', '随机格子')}</div>
           </button>
           <button type="button" onClick={onSpawnLightning} className={actionClassName}>
-            <div className="text-xs font-black uppercase tracking-wide text-sky-200">{isRu ? 'Выдать молнию' : 'Spawn lightning'}</div>
-            <div className="mt-1 text-[11px] text-white/55">{isRu ? 'Случайная клетка' : 'Random tile'}</div>
+            <div className="text-xs font-black uppercase tracking-wide text-sky-200">{tx('Выдать молнию', 'Spawn lightning', '生成闪电')}</div>
+            <div className="mt-1 text-[11px] text-white/55">{tx('Случайная клетка', 'Random tile', '随机格子')}</div>
           </button>
         </div>
 
@@ -84,16 +84,16 @@ export function AdminModal({
             onClick={onUnlockAllLevels}
             className="rounded-2xl border border-fuchsia-200/20 bg-fuchsia-400/10 px-3 py-3 text-left transition-all hover:bg-fuchsia-400/14 active:scale-[0.98]"
           >
-            <div className="text-xs font-black uppercase tracking-wide text-fuchsia-100">{isRu ? 'Открыть все уровни' : 'Unlock all levels'}</div>
-            <div className="mt-1 text-[11px] text-white/55">{isRu ? 'Только локально для этой сессии' : 'Local to this player only'}</div>
+            <div className="text-xs font-black uppercase tracking-wide text-fuchsia-100">{tx('Открыть все уровни', 'Unlock all levels', '解锁全部关卡')}</div>
+            <div className="mt-1 text-[11px] text-white/55">{tx('Только локально для этой сессии', 'Local to this player only', '仅当前本地会话有效')}</div>
           </button>
           <button
             type="button"
             onClick={onResetLocalProgress}
             className="rounded-2xl border border-orange-200/20 bg-orange-400/10 px-3 py-3 text-left transition-all hover:bg-orange-400/14 active:scale-[0.98]"
           >
-            <div className="text-xs font-black uppercase tracking-wide text-orange-100">{isRu ? 'Сбросить мой локальный прогресс' : 'Reset my local progress'}</div>
-            <div className="mt-1 text-[11px] text-white/55">{isRu ? 'Карта, звезды и обучение' : 'Map, stars, and tutorial'}</div>
+            <div className="text-xs font-black uppercase tracking-wide text-orange-100">{tx('Сбросить мой локальный прогресс', 'Reset my local progress', '重置我的本地进度')}</div>
+            <div className="mt-1 text-[11px] text-white/55">{tx('Карта, звезды и обучение', 'Map, stars, and tutorial', '地图、星级和教程')}</div>
           </button>
         </div>
       </div>

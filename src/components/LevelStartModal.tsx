@@ -31,37 +31,42 @@ type LevelStartModalProps = {
 
 export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPreview, pacePreview, language, runModifiers, coinsBalance, onBuyRunModifier, bossShieldCharges = 0, eventActive = false, eventTitle = '', eventDescription = '', eventRunEnabled = false, eventIceTiles = 0, onToggleEventRun, onPlay, onClose }) => {
   const t = COPY[language];
-  const title = language === 'ru' ? 'Подготовка к запуску' : 'Prepare for Launch';
-  const subtitle = language === 'ru' ? 'Проверь цель и начни уровень' : 'Check your goal and start the level';
-  const playLabel = language === 'ru' ? 'Играть' : 'Play';
-  const runModifiersTitle = language === 'ru' ? 'Усилители забега' : 'Run modifiers';
-  const runModifiersSubtitle = language === 'ru' ? 'Одноразовые покупки перед стартом уровня' : 'One-time boosts before the level starts';
+  const tx = (ru: string, en: string, zh: string) => {
+    if (language === 'ru') return ru;
+    if (language === 'zh') return zh;
+    return en;
+  };
+  const title = tx('Подготовка к запуску', 'Prepare for Launch', '开始前准备');
+  const subtitle = tx('Проверь цель и начни уровень', 'Check your goal and start the level', '确认目标后开始关卡');
+  const playLabel = tx('Играть', 'Play', '开始');
+  const runModifiersTitle = tx('Усилители забега', 'Run modifiers', '本局增益');
+  const runModifiersSubtitle = tx('Одноразовые покупки перед стартом уровня', 'One-time boosts before the level starts', '开局前的一次性增益购买');
 
   const getModifierVisuals = (modifierId: string) => {
     if (modifierId === 'startBomb') {
       return {
         icon: <Sparkles className="h-4 w-4" />,
-        badge: language === 'ru' ? 'Сильный старт' : 'Fast opener',
+        badge: tx('Сильный старт', 'Fast opener', '强势开局'),
         tone: 'from-amber-300/35 to-orange-500/20 border-amber-200/25 text-amber-50',
       };
     }
     if (modifierId === 'startLightning') {
       return {
         icon: <Zap className="h-4 w-4" />,
-        badge: language === 'ru' ? 'Линия сразу' : 'Line clear',
+        badge: tx('Линия сразу', 'Line clear', '立即清线'),
         tone: 'from-cyan-300/35 to-sky-500/20 border-cyan-200/25 text-cyan-50',
       };
     }
     if (modifierId === 'bossShield') {
       return {
         icon: <Shield className="h-4 w-4" />,
-        badge: language === 'ru' ? 'Против босса' : 'Boss safe',
+        badge: tx('Против босса', 'Boss safe', '克制首领'),
         tone: 'from-emerald-300/35 to-teal-500/20 border-emerald-200/25 text-emerald-50',
       };
     }
     return {
       icon: <Trash2 className="h-4 w-4" />,
-      badge: language === 'ru' ? 'Чистое поле' : 'Board cleanup',
+      badge: tx('Чистое поле', 'Board cleanup', '清理棋盘'),
       tone: 'from-violet-300/35 to-fuchsia-500/20 border-violet-200/25 text-violet-50',
     };
   };
@@ -82,7 +87,7 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
           type="button"
           onClick={onClose}
           className="absolute right-3 top-3 h-10 w-10 rounded-full border-4 border-white bg-red-500/90 text-white hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center"
-          aria-label={language === 'ru' ? 'Закрыть' : 'Close'}
+          aria-label={tx('Закрыть', 'Close', '关闭')}
         >
           <X size={18} strokeWidth={4} />
         </button>
@@ -107,13 +112,13 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
           <div className={`mt-4 rounded-2xl border p-4 ${eventRunEnabled ? 'border-cyan-200/38 bg-cyan-300/16 shadow-[0_0_18px_rgba(34,211,238,0.16)]' : 'border-cyan-200/18 bg-cyan-300/10'}`}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/78">{language === 'ru' ? 'Ивент-забег' : 'Event run'}</div>
+                <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/78">{tx('Ивент-забег', 'Event run', '活动局')}</div>
                 <div className="mt-1 text-sm font-black text-white">{eventTitle}</div>
                 <div className="mt-1 text-xs text-white/70">{eventDescription}</div>
                 {eventRunEnabled && (
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-cyan-200/25 bg-slate-950/35 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">
                     <Sparkles className="h-3.5 w-3.5" />
-                    {language === 'ru' ? 'Этот запуск пойдёт в ивент' : 'This run counts for the event'}
+                    {tx('Этот запуск пойдёт в ивент', 'This run counts for the event', '这一局会计入活动')}
                   </div>
                 )}
               </div>
@@ -122,13 +127,15 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
                 onClick={onToggleEventRun}
                 className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] ${eventRunEnabled ? 'bg-gradient-to-r from-cyan-300 to-sky-400 text-slate-950' : 'bg-white/10 text-white/72'}`}
               >
-                {eventRunEnabled ? (language === 'ru' ? 'Включено' : 'Enabled') : (language === 'ru' ? 'Включить' : 'Enable')}
+                {eventRunEnabled ? tx('Включено', 'Enabled', '已开启') : tx('Включить', 'Enable', '开启')}
               </button>
             </div>
             <div className="mt-3 text-xs text-cyan-50/84">
-              {language === 'ru'
-                ? `Добавит ${eventIceTiles} крио-щитов в забег и зачтёт крио/босс/уровни в недельный сектор.`
-                : `Adds ${eventIceTiles} cryo shields and routes cryo, boss, and level progress into the weekly sector.`}
+              {tx(
+                `Добавит ${eventIceTiles} крио-щитов в забег и зачтёт крио/босс/уровни в недельный сектор.`,
+                `Adds ${eventIceTiles} cryo shields and routes cryo, boss, and level progress into the weekly sector.`,
+                `本局会额外加入 ${eventIceTiles} 个冰盾，并将破冰、首领和通关进度记入每周活动。`,
+              )}
             </div>
           </div>
         )}
@@ -140,7 +147,7 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
                 {runModifiersTitle}
               </div>
               <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-black text-amber-50">
-                {language === 'ru' ? 'Монеты' : 'Coins'}: {coinsBalance}
+                {tx('Монеты', 'Coins', '金币')}: {coinsBalance}
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2 text-xs text-amber-50/80">
@@ -178,8 +185,8 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
                       }`}
                     >
                       {modifier.active
-                        ? (language === 'ru' ? 'Готово' : 'Armed')
-                        : (language === 'ru' ? `-${modifier.cost} мон.` : `-${modifier.cost}`)}
+                        ? tx('Готово', 'Armed', '已装备')
+                        : tx(`-${modifier.cost} мон.`, `-${modifier.cost}`, `-${modifier.cost} 金币`)}
                     </button>
                   </div>
                 </div>
@@ -187,7 +194,7 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
             </div>
             {bossShieldCharges > 0 && (
               <div className="mt-3 text-xs font-bold text-emerald-100">
-                {language === 'ru' ? `Щит уже заряжен для этого матча: ${bossShieldCharges}` : `Shield is already charged for this run: ${bossShieldCharges}`}
+                {tx(`Щит уже заряжен для этого матча: ${bossShieldCharges}`, `Shield is already charged for this run: ${bossShieldCharges}`, `本局已充能护盾：${bossShieldCharges}`)}
               </div>
             )}
           </div>

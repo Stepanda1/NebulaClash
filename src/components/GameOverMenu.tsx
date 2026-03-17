@@ -17,12 +17,13 @@ interface GameOverMenuProps {
 
 export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCost, boostAmountLabel, canAffordContinue, onRestart, onBuyContinue, onOpenShop, language }) => {
     const t = COPY[language];
+    const tx = (ru: string, en: string, zh: string) => language === 'ru' ? ru : language === 'zh' ? zh : en;
     const continueLabel = mode === 'moves'
-      ? (language === 'ru' ? `Взять ${boostAmountLabel}` : `Get ${boostAmountLabel}`)
-      : (language === 'ru' ? `Добавить ${boostAmountLabel}` : `Add ${boostAmountLabel}`);
+      ? tx(`Взять ${boostAmountLabel}`, `Get ${boostAmountLabel}`, `获得 ${boostAmountLabel}`)
+      : tx(`Добавить ${boostAmountLabel}`, `Add ${boostAmountLabel}`, `添加 ${boostAmountLabel}`);
     const continueHint = canAffordContinue
-      ? (language === 'ru' ? 'Продолжить за монеты' : 'Continue for coins')
-      : (language === 'ru' ? 'Не хватает монет, открой магазин' : 'Not enough coins, open the shop');
+      ? tx('Продолжить за монеты', 'Continue for coins', '用金币继续')
+      : tx('Не хватает монет, открой магазин', 'Not enough coins, open the shop', '金币不足，请打开商店');
 
     return (
         <motion.div
@@ -51,7 +52,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
 
                 <div className="space-y-1 relative z-10">
                     <div className="text-[11px] uppercase tracking-[0.28em] text-rose-200/70">
-                        {language === 'ru' ? 'Сигнал тревоги' : 'Distress Signal'}
+                        {tx('Сигнал тревоги', 'Distress Signal', '警报信号')}
                     </div>
                     <h2 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-lg">{t.outOfMoves}</h2>
                     <p className="text-slate-300/85 font-medium">{continueHint}</p>
@@ -64,7 +65,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
                     </div>
                     <div className="mt-3 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
                     <div className="mt-3 text-[11px] uppercase tracking-[0.22em] text-slate-400/80">
-                        {language === 'ru' ? 'Перезапустить сектор' : 'Reboot Sector'}
+                        {tx('Перезапустить сектор', 'Reboot Sector', '重启区域')}
                     </div>
                 </div>
 
@@ -72,7 +73,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
                     <div className="flex items-center justify-between gap-3">
                         <div>
                             <div className="text-[11px] uppercase tracking-[0.22em] text-emerald-100/75">
-                                {language === 'ru' ? 'Последний шанс' : 'Last chance'}
+                                {tx('Последний шанс', 'Last chance', '最后机会')}
                             </div>
                             <div className="mt-1 text-base font-black text-white">{continueLabel}</div>
                         </div>
@@ -82,7 +83,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
                     </div>
                     <div className="mt-2 flex items-center gap-2 text-sm text-emerald-50/80">
                         {mode === 'moves' ? <RotateCcw size={16} /> : <TimerReset size={16} />}
-                        <span>{language === 'ru' ? 'Сразу вернёт тебя в матч' : 'Drops you straight back into the run'}</span>
+                        <span>{tx('Сразу вернёт тебя в матч', 'Drops you straight back into the run', '立刻回到当前对局')}</span>
                     </div>
                 </div>
 
@@ -93,7 +94,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
                     <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.24)_45%,transparent_65%)] translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-700" />
                     <Coins size={24} className="text-white relative z-10" />
                     <span className="text-lg font-bold text-white uppercase tracking-[0.18em] relative z-10">
-                        {canAffordContinue ? continueLabel : (language === 'ru' ? 'Купить монеты' : 'Get coins')}
+                        {canAffordContinue ? continueLabel : tx('Купить монеты', 'Get coins', '购买金币')}
                     </span>
                 </button>
 

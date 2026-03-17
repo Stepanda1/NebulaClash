@@ -27,6 +27,11 @@ export function LegalModal({
   onClose,
 }: LegalModalProps) {
   const t = COPY[language];
+  const tx = (ru: string, en: string, zh: string) => {
+    if (language === 'ru') return ru;
+    if (language === 'zh') return zh;
+    return en;
+  };
   const contactItems = [
     {
       id: 'email',
@@ -76,17 +81,17 @@ export function LegalModal({
   ] as const;
 
   const legalPdfLinks = [
-    { id: 'offer', label: language === 'ru' ? 'Оферта' : 'Offer', href: '/LegalDocsPDF/01_Oferta.html' },
-    { id: 'privacy', label: language === 'ru' ? 'Политика ПД' : 'Privacy policy', href: '/LegalDocsPDF/02_Privacy.html' },
-    { id: 'refunds', label: language === 'ru' ? 'Возврат' : 'Refunds', href: '/LegalDocsPDF/03_Refunds.html' },
-    { id: 'requisites', label: language === 'ru' ? 'Реквизиты' : 'Requisites', href: '/LegalDocsPDF/04_Requisites.html' },
-    { id: 'assets', label: language === 'ru' ? 'Источники ассетов' : 'Asset sources', href: '/LegalDocsPDF/05_Asset_Sources.html' },
+    { id: 'offer', label: tx('Оферта', 'Offer', '条款报价'), href: '/LegalDocsPDF/01_Oferta.html' },
+    { id: 'privacy', label: tx('Политика ПД', 'Privacy policy', '隐私政策'), href: '/LegalDocsPDF/02_Privacy.html' },
+    { id: 'refunds', label: tx('Возврат', 'Refunds', '退款'), href: '/LegalDocsPDF/03_Refunds.html' },
+    { id: 'requisites', label: tx('Реквизиты', 'Requisites', '公司信息'), href: '/LegalDocsPDF/04_Requisites.html' },
+    { id: 'assets', label: tx('Источники ассетов', 'Asset sources', '素材来源'), href: '/LegalDocsPDF/05_Asset_Sources.html' },
   ] as const;
 
   const renderContent = () => {
     return (
       <div className="space-y-4 text-sm text-white/90">
-        <p>{language === 'ru' ? 'Контакты' : 'Contacts'}</p>
+        <p>{tx('Контакты', 'Contacts', '联系方式')}</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {contactItems.map((item) => {
             const Icon = item.icon;
@@ -109,15 +114,15 @@ export function LegalModal({
           })}
         </div>
         <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-relaxed text-white/85">
-          <p>{language === 'ru' ? 'Продавец:' : 'Seller:'} {contacts.sellerName}</p>
-          <p>{language === 'ru' ? 'ИНН:' : 'TIN:'} {contacts.sellerInn}</p>
+          <p>{tx('Продавец:', 'Seller:', '卖家：')} {contacts.sellerName}</p>
+          <p>{tx('ИНН:', 'TIN:', '税号：')} {contacts.sellerInn}</p>
         </div>
         <button
           type="button"
           onClick={onManageConsent}
           className="w-full rounded-xl border border-amber-200/25 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-300/18"
         >
-          {language === 'ru' ? 'Настроить аналитику и маркетинговые пиксели' : 'Manage analytics and marketing consent'}
+          {tx('Настроить аналитику и маркетинговые пиксели', 'Manage analytics and marketing consent', '管理分析与营销同意')}
         </button>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {legalPdfLinks.map((item) => (
