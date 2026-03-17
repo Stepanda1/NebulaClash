@@ -103,8 +103,7 @@ EOF"
   }
 
   Write-Host "Restarting backend with persisted runtime env..."
-  Invoke-Remote "pkill -f 'node server/index.mjs' || true"
-  Invoke-Remote "cd '$BackendPath' && nohup sh '$BackendPath/start-backend.sh' > '$BackendPath/backend.log' 2>&1 < /dev/null &"
+  Invoke-Remote "cd '$BackendPath' && if [ -f '$BackendPath/start-backend-remote.sh' ]; then sh '$BackendPath/start-backend-remote.sh'; else nohup sh '$BackendPath/start-backend.sh' > '$BackendPath/backend.log' 2>&1 < /dev/null & fi"
 }
 
 Write-Host "Done."
