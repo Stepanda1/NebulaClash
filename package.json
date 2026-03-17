@@ -10,6 +10,7 @@
     "build": "tsc -b && vite build",
     "build:analyze": "tsc -b && cross-env ANALYZE_BUNDLE=1 vite build",
     "lint": "eslint .",
+    "report:growth": "node scripts/generate-growth-review.mjs",
     "preview": "vite preview",
     "test:smoke:mobile": "playwright test tests/mobile-smoke.spec.ts --project=mobile-chrome",
     "test:a11y:landing": "playwright test tests/mobile-smoke.spec.ts --project=mobile-chrome --grep @a11y"

@@ -124,6 +124,14 @@ Lint:
 npm run lint
 ```
 
+Growth review:
+
+```bash
+npm run report:growth
+```
+
+This generates `output/growth/growth-review.md` from the paid traffic tracker and current reels planning files.
+
 ## Environment
 
 Important frontend env vars:
@@ -185,3 +193,4 @@ Use these files as the main control layer for the product:
 
 - `progress.md` is the best implementation changelog.
 - This README is intentionally product-oriented, not a generic Vite template.
+- `ops/n8n/` contains a separate automation starter for weekly growth review workflows.
