@@ -320,6 +320,22 @@ export const Tile: React.FC<TileProps> = ({ tile, isSelected, isExploding, isHin
                     </div>
                 )}
 
+                {!!tile.iceLayer && tile.iceLayer > 0 && (
+                    <div className="absolute inset-0 z-[19] pointer-events-none">
+                        <div className="absolute inset-[4%] rounded-2xl border border-cyan-100/55 bg-[linear-gradient(150deg,rgba(224,242,254,0.3),rgba(125,211,252,0.16),rgba(8,47,73,0.08))] shadow-[inset_0_0_18px_rgba(255,255,255,0.18),0_0_14px_rgba(103,232,249,0.2)]" />
+                        <div className="absolute left-[18%] top-[24%] h-[2px] w-[48%] -rotate-[26deg] rounded-full bg-white/55" />
+                        <div className="absolute right-[16%] top-[38%] h-[2px] w-[34%] rotate-[18deg] rounded-full bg-cyan-100/60" />
+                        <div className="absolute bottom-[22%] left-[22%] h-[2px] w-[42%] rotate-[12deg] rounded-full bg-white/45" />
+                        {!lowFX && (
+                            <motion.div
+                                className="absolute inset-[8%] rounded-2xl border border-cyan-50/45"
+                                animate={{ opacity: [0.24, 0.5, 0.24] }}
+                                transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                        )}
+                    </div>
+                )}
+
                 {/* Selection FX: Pulse & Glow */}
                 {isSelected && (
                     <motion.div

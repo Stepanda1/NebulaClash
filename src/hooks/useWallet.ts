@@ -3,6 +3,7 @@ import type { Language } from '../i18n';
 import { trackEvent } from '../analytics';
 import { PAYMENT_ORDER_ID_KEY, PAYMENT_RETURN_TO_GAME_KEY, WALLET_TOKEN_KEY } from '../config/appConfig';
 import type { ShopPack } from '../types/shop';
+import type { LiveConfig } from '../types/liveConfig';
 
 type UseWalletOptions = {
   language: Language;
@@ -97,6 +98,7 @@ type PlayerProfile = {
   levelStars: Record<number, number>;
   bestScore: number;
   weeklyLoop: Record<string, unknown>;
+  eventProgress: Record<string, unknown>;
   tutorialCompleted: boolean;
   modifierTokens: number;
   continueReserve: number;
@@ -460,6 +462,22 @@ export function useWallet({
     return payload?.profile ?? null;
   }, [authedJson]);
 
+  const getLiveConfig = useCallback(async (): Promise<LiveConfig | null> => {
+    if (!walletToken) {
+      try {
+        const response = await fetch('/api/live-config');
+        if (!response.ok) return null;
+        const payload = await response.json() as { config?: LiveConfig };
+        return payload?.config ?? null;
+      } catch {
+        return null;
+      }
+    }
+
+    const payload = await authedJson<{ ok: boolean; config?: LiveConfig }>('/api/live-config');
+    return payload?.config ?? null;
+  }, [authedJson, walletToken]);
+
   const updateProfile = useCallback(async (profile: Partial<PlayerProfile>) => {
     const payload = await authedJson<{ ok: boolean; profile?: PlayerProfile }>('/api/profile', {
       method: 'POST',
@@ -474,6 +492,33 @@ export function useWallet({
       body: JSON.stringify({ type }),
     });
     return payload?.profile ?? null;
+  }, [authedJson]);
+
+  const updateEventProgress = useCallback(async (progress: {
+    iceClearedDelta?: number;
+    levelsCompletedDelta?: number;
+    bossDamageDelta?: number;
+    coinsSpentDelta?: number;
+  }) => {
+    const payload = await authedJson<{ ok: boolean; profile?: PlayerProfile; config?: LiveConfig }>('/api/event/progress', {
+      method: 'POST',
+      body: JSON.stringify(progress),
+    });
+    if (payload?.profile && typeof payload.profile === 'object') {
+      return payload.profile;
+    }
+    return null;
+  }, [authedJson]);
+
+  const claimEventMission = useCallback(async (missionId: string) => {
+    const payload = await authedJson<{ ok: boolean; reward?: number; balance?: number; profile?: PlayerProfile; config?: LiveConfig }>('/api/event/claim-mission', {
+      method: 'POST',
+      body: JSON.stringify({ missionId }),
+    });
+    if (payload && typeof payload.balance === 'number' && Number.isFinite(payload.balance)) {
+      setSpaceCoins(Math.max(0, Math.floor(payload.balance)));
+    }
+    return payload ?? null;
   }, [authedJson]);
 
   useEffect(() => {
@@ -586,11 +631,13 @@ export function useWallet({
     claimDailyReward,
     claimDailyMission,
     claimDailyMissionCompletionChest,
+    claimEventMission,
     claimLevelCompletionReward,
     claimLeaderboardChest,
     claimWeeklyMissionTrackChest,
     consumeProfileBonus,
     getDailyRewardStatus,
+    getLiveConfig,
     getDailyMissionsStatus,
     getLeaderboardTop,
     getProfile,
@@ -603,6 +650,7 @@ export function useWallet({
     spendCoins,
     submitLeaderboardEntry,
     syncWalletBalance,
+    updateEventProgress,
     updateProfile,
     walletReady,
   };

@@ -10,6 +10,7 @@ export interface Tile {
   y: number;
   isMatched?: boolean;
   hasTrash?: boolean;
+  iceLayer?: number;
 }
 
 export type Grid = Tile[][];

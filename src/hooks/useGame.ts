@@ -29,6 +29,7 @@ type PersistedGameState = {
     levelSmashEvents: number;
     comboX5Count: number;
     trashDestroyed: number;
+    iceCleared: number;
     trashTotal: number;
     matchTick: number;
     comboLevel: number;
@@ -41,6 +42,7 @@ type PersistedGameState = {
     bossLastHitDamage: number;
     goalClearId: number;
     bossShieldCharges: number;
+    activeEventRun: boolean;
 };
 
 export type RunModifiers = {
@@ -48,6 +50,8 @@ export type RunModifiers = {
     startLightning: boolean;
     bossShield: boolean;
     trashCleaner: boolean;
+    eventRun?: boolean;
+    extraIceTiles?: number;
 };
 
 const BOSS_DEBRIS_CAP = 14;
@@ -102,6 +106,7 @@ export const useGame = () => {
     const [levelSmashEvents, setLevelSmashEvents] = useState(0);
     const [comboX5Count, setComboX5Count] = useState(0);
     const [trashDestroyed, setTrashDestroyed] = useState(0);
+    const [iceCleared, setIceCleared] = useState(0);
     const [trashTotal, setTrashTotal] = useState(0);
     const [matchTick, setMatchTick] = useState(0);
     const [comboLevel, setComboLevel] = useState(0);
@@ -114,6 +119,7 @@ export const useGame = () => {
     const [bossLastHitDamage, setBossLastHitDamage] = useState(0);
     const [goalClearId, setGoalClearId] = useState(0);
     const [bossShieldCharges, setBossShieldCharges] = useState(0);
+    const [activeEventRun, setActiveEventRun] = useState(false);
     const goalFinalizingRef = useRef(false);
     const gridRef = useRef<Grid>(grid);
     const upcomingRunModifiersRef = useRef<RunModifiers>({
@@ -121,6 +127,8 @@ export const useGame = () => {
         startLightning: false,
         bossShield: false,
         trashCleaner: false,
+        eventRun: false,
+        extraIceTiles: 0,
     });
 
     const levelIndex = (level - 1) % LEVEL_CONFIGS.length;
@@ -173,16 +181,44 @@ export const useGame = () => {
         return next;
     }, []);
 
+    const addIceToGrid = useCallback((baseGrid: Grid, count: number): Grid => {
+        const capped = Math.max(0, Math.min(count, ROWS * COLS));
+        if (capped === 0) return baseGrid;
+
+        const next = copyGrid(baseGrid);
+        const positions: Array<{ x: number; y: number }> = [];
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (next[y][x].hasTrash) continue;
+                positions.push({ x, y });
+            }
+        }
+
+        for (let i = positions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [positions[i], positions[j]] = [positions[j], positions[i]];
+        }
+
+        for (let i = 0; i < Math.min(capped, positions.length); i++) {
+            const p = positions[i];
+            next[p.y][p.x] = { ...next[p.y][p.x], iceLayer: 1 };
+        }
+
+        return next;
+    }, []);
+
     const createLevelSnapshot = useCallback((config: LevelConfig): LevelStateSnapshot => {
         const fresh = createBoard();
         const withTrash = addTrashToGrid(fresh, config.trashCount ?? 0);
+        const runIceCount = Math.max(0, Math.floor(Number(upcomingRunModifiersRef.current.extraIceTiles || 0)));
+        const withIce = addIceToGrid(withTrash, (config.iceCount ?? 0) + runIceCount);
 
         return {
-            grid: withTrash,
+            grid: withIce,
             moves: config.mode === 'moves' ? config.limit : 30,
             timeLeft: config.mode === 'time' ? config.limit : 60,
         };
-    }, [addTrashToGrid]);
+    }, [addIceToGrid, addTrashToGrid]);
 
     const removeRandomTrashFromGrid = useCallback((baseGrid: Grid, count: number): { grid: Grid; cleared: number } => {
         const normalizedCount = Math.max(0, Math.floor(count));
@@ -273,17 +309,21 @@ export const useGame = () => {
         setLevelSmashEvents(0);
         setComboX5Count(0);
         setTrashDestroyed(clearedTrashCount);
+        setIceCleared(0);
         setTrashTotal(config.trashCount ?? (config.goal.type === 'trash' ? config.goal.value : 0));
         setBossMaxHp(config.goal.type === 'boss' ? config.goal.value : 0);
         setBossHp(config.goal.type === 'boss' ? config.goal.value : 0);
         setBossLastHitDamage(0);
         setBossShieldCharges(modifiers.bossShield && config.goal.type === 'boss' ? 1 : 0);
+        setActiveEventRun(Boolean(modifiers.eventRun));
         setValidMoves(0);
         upcomingRunModifiersRef.current = {
             startBomb: false,
             startLightning: false,
             bossShield: false,
             trashCleaner: false,
+            eventRun: false,
+            extraIceTiles: 0,
         };
     };
 
@@ -328,6 +368,7 @@ export const useGame = () => {
             setLevelSmashEvents(Math.max(0, Math.floor(Number(parsed.levelSmashEvents) || 0)));
             setComboX5Count(Math.max(0, Math.floor(Number(parsed.comboX5Count) || 0)));
             setTrashDestroyed(Math.max(0, Math.floor(Number(parsed.trashDestroyed) || 0)));
+            setIceCleared(Math.max(0, Math.floor(Number(parsed.iceCleared) || 0)));
             setTrashTotal(Math.max(0, Math.floor(Number(parsed.trashTotal) || 0)));
             setMatchTick(Math.max(0, Math.floor(Number(parsed.matchTick) || 0)));
             setComboLevel(Math.max(0, Math.floor(Number(parsed.comboLevel) || 0)));
@@ -340,6 +381,7 @@ export const useGame = () => {
             setBossLastHitDamage(Math.max(0, Math.floor(Number(parsed.bossLastHitDamage) || 0)));
             setGoalClearId(Math.max(0, Math.floor(Number(parsed.goalClearId) || 0)));
             setBossShieldCharges(Math.max(0, Math.floor(Number(parsed.bossShieldCharges) || 0)));
+            setActiveEventRun(Boolean(parsed.activeEventRun));
             setSelectedTile(null);
             setIsProcessing(false);
             setIsLevelUp(false);
@@ -374,6 +416,7 @@ export const useGame = () => {
             levelSmashEvents,
             comboX5Count,
             trashDestroyed,
+            iceCleared,
             trashTotal,
             matchTick,
             comboLevel,
@@ -386,6 +429,7 @@ export const useGame = () => {
             bossLastHitDamage,
             goalClearId,
             bossShieldCharges,
+            activeEventRun,
         };
 
         window.localStorage.setItem(GAME_STATE_STORAGE_KEY, JSON.stringify(snapshot));
@@ -408,6 +452,7 @@ export const useGame = () => {
         levelSmashEvents,
         comboX5Count,
         trashDestroyed,
+        iceCleared,
         trashTotal,
         matchTick,
         comboLevel,
@@ -420,6 +465,7 @@ export const useGame = () => {
         bossLastHitDamage,
         goalClearId,
         bossShieldCharges,
+        activeEventRun,
     ]);
 
     const ensurePlayableGrid = useCallback((candidate: Grid): Grid => {
@@ -566,6 +612,21 @@ export const useGame = () => {
 
         setTrashDestroyed(prev => prev + trashToClear.size);
     }, [collectAdjacentTrash]);
+
+    const clearIceByImpact = useCallback((g: Grid, impactIds: Set<string>) => {
+        let clearedCount = 0;
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const tile = g[y][x];
+                if (!impactIds.has(tile.id) || !tile.iceLayer || tile.iceLayer <= 0) continue;
+                clearedCount += 1;
+                g[y][x] = { ...tile, iceLayer: Math.max(0, tile.iceLayer - 1) };
+            }
+        }
+        if (clearedCount > 0) {
+            setIceCleared((prev) => prev + clearedCount);
+        }
+    }, []);
 
     const countSpecialGoalActivations = useCallback((g: Grid, ids: Set<string>) => {
         let bombs = 0;
@@ -791,6 +852,7 @@ export const useGame = () => {
             await waitForBoardDelay(delayMs);
 
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
+            clearIceByImpact(activeGrid, removeSet);
             clearTrashByImpact(activeGrid, removeSet, allMatched);
             activeGrid = await runRemovalAndGravity(activeGrid, removeSet);
 
@@ -799,7 +861,7 @@ export const useGame = () => {
         }
 
         return activeGrid;
-    }, [applyBossDamage, clearTrashByImpact, countCollected, countSpecialGoalActivations, getMatchScoreGain, getTriggeredSpecialRemoval, runRemovalAndGravity, waitForBoardDelay]);
+    }, [applyBossDamage, clearIceByImpact, clearTrashByImpact, countCollected, countSpecialGoalActivations, getMatchScoreGain, getTriggeredSpecialRemoval, runRemovalAndGravity, waitForBoardDelay]);
 
     const applyComboRewards = useCallback(async (baseGrid: Grid, comboCount: number, includePlayerMove: boolean = true): Promise<Grid> => {
         let activeGrid = baseGrid;
@@ -863,6 +925,7 @@ export const useGame = () => {
 
             countCollected(activeGrid, affected);
             countSpecialGoalActivations(activeGrid, affected);
+            clearIceByImpact(activeGrid, affected);
             clearTrashByImpact(activeGrid, affected);
             setScore(prev => prev + affected.size * 14 + 40);
             if (levelConfig.mode === 'moves') {
@@ -896,7 +959,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         return activeGrid;
-    }, [clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, levelConfig.mode, moves, resolveAutoMatches, runRemovalAndGravity, timeLeft]);
+    }, [clearIceByImpact, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, levelConfig.mode, moves, resolveAutoMatches, runRemovalAndGravity, timeLeft]);
 
     const processBoard = useCallback(async (currentGrid: Grid) => {
         setIsProcessing(true);
@@ -946,6 +1009,7 @@ export const useGame = () => {
             await waitForBoardDelay(BOARD_MATCH_REVEAL_MS);
 
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
+            clearIceByImpact(activeGrid, removeSet);
             clearTrashByImpact(activeGrid, removeSet, allMatched);
             activeGrid = await runRemovalAndGravity(activeGrid, removeSet);
 
@@ -961,7 +1025,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getTriggeredSpecialRemoval, resolveAutoMatches, runRemovalAndGravity, waitForBoardDelay]);
+    }, [applyBossDamage, applyComboRewards, clearIceByImpact, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getTriggeredSpecialRemoval, resolveAutoMatches, runRemovalAndGravity, waitForBoardDelay]);
 
     useEffect(() => {
         const goalReached = isGoalReached(goal, {
@@ -975,6 +1039,7 @@ export const useGame = () => {
             levelPulseActivations,
             levelSmashEvents,
             trashDestroyed,
+            iceCleared,
         });
 
         if (!goalReached || isLevelUp || isProcessing || goalFinalizingRef.current) return;
@@ -992,7 +1057,7 @@ export const useGame = () => {
             }
             setIsLevelUp(true);
         })();
-    }, [bossHp, collected, comboX5Count, goal, isLevelUp, isProcessing, levelBombActivations, levelCrossActivations, levelLightningActivations, levelNovaActivations, levelPulseActivations, levelSmashEvents, levelConfig.mode, moves, runVictoryMoveBonus, timeLeft, trashDestroyed]);
+    }, [bossHp, collected, comboX5Count, goal, iceCleared, isLevelUp, isProcessing, levelBombActivations, levelCrossActivations, levelLightningActivations, levelNovaActivations, levelPulseActivations, levelSmashEvents, levelConfig.mode, moves, runVictoryMoveBonus, timeLeft, trashDestroyed]);
 
     useEffect(() => {
         if (!isTimeMode || isPaused || isProcessing || isLevelUp) return;
@@ -1076,6 +1141,7 @@ export const useGame = () => {
 
         await waitForBoardDelay(SPECIAL_TRIGGER_PAUSE_MS);
 
+        clearIceByImpact(activeGrid, toRemove);
         clearTrashByImpact(activeGrid, toRemove);
         activeGrid = await runRemovalAndGravity(activeGrid, toRemove);
 
@@ -1111,6 +1177,7 @@ export const useGame = () => {
             });
 
             const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
+            clearIceByImpact(activeGrid, removeSet);
             clearTrashByImpact(activeGrid, removeSet, allMatched);
             activeGrid = await runRemovalAndGravity(activeGrid, removeSet);
 
@@ -1128,7 +1195,7 @@ export const useGame = () => {
         if (finalizeProcessing) {
             setIsProcessing(false);
         }
-    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getPulseAffectedTiles, getTriggeredSpecialRemoval, resolveAutoMatches, runRemovalAndGravity, waitForBoardDelay]);
+    }, [applyBossDamage, applyComboRewards, clearIceByImpact, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getMatchScoreGain, getPulseAffectedTiles, getTriggeredSpecialRemoval, resolveAutoMatches, runRemovalAndGravity, waitForBoardDelay]);
 
     const activateSpecialCombo = useCallback(async (currentGrid: Grid, tiles: Tile[]) => {
         let activeGrid = copyGrid(currentGrid);
@@ -1172,6 +1239,7 @@ export const useGame = () => {
 
         await new Promise(r => setTimeout(r, SPECIAL_TRIGGER_PAUSE_MS));
 
+        clearIceByImpact(activeGrid, toRemove);
         clearTrashByImpact(activeGrid, toRemove);
         activeGrid = removeMatches(activeGrid, toRemove);
         setGrid(activeGrid);
@@ -1228,6 +1296,7 @@ export const useGame = () => {
             });
 
             const removeSet = new Set<string>([...allRegularMatches, ...triggeredByMatch]);
+            clearIceByImpact(activeGrid, removeSet);
             clearTrashByImpact(activeGrid, removeSet, allMatched);
             activeGrid = removeMatches(activeGrid, removeSet);
             setGrid(activeGrid);
@@ -1252,7 +1321,7 @@ export const useGame = () => {
             setGrid(activeGrid);
         }
         setIsProcessing(false);
-    }, [applyBossDamage, applyComboRewards, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getPulseAffectedTiles, getTriggeredSpecialRemoval, resolveAutoMatches]);
+    }, [applyBossDamage, applyComboRewards, clearIceByImpact, clearTrashByImpact, countCollected, countSpecialGoalActivations, ensurePlayableGrid, getPulseAffectedTiles, getTriggeredSpecialRemoval, resolveAutoMatches]);
 
     const attemptSwap = async (firstTile: Tile, secondTile: Tile) => {
         if (isProcessing || isPaused || (levelConfig.mode === 'moves' && moves <= 0) || (levelConfig.mode === 'time' && timeLeft <= 0) || isLevelUp) return;
@@ -1414,6 +1483,8 @@ export const useGame = () => {
             startLightning: Boolean(modifiers.startLightning),
             bossShield: Boolean(modifiers.bossShield),
             trashCleaner: Boolean(modifiers.trashCleaner),
+            eventRun: Boolean(modifiers.eventRun),
+            extraIceTiles: Math.max(0, Math.floor(Number(modifiers.extraIceTiles || 0))),
         };
     }, []);
 
@@ -1444,6 +1515,7 @@ export const useGame = () => {
         levelSmashEvents,
         comboX5Count,
         trashDestroyed,
+        iceCleared,
         trashTotal,
         spawnSpecial,
         handleTileSwipe,
@@ -1458,6 +1530,7 @@ export const useGame = () => {
         bossHitTick,
         bossLastHitDamage,
         bossShieldCharges,
+        activeEventRun,
         goalClearId,
         handleRestart,
         handleNextLevel,

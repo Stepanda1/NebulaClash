@@ -19,11 +19,17 @@ type LevelStartModalProps = {
   coinsBalance: number;
   onBuyRunModifier: (modifierId: string) => void;
   bossShieldCharges?: number;
+  eventActive?: boolean;
+  eventTitle?: string;
+  eventDescription?: string;
+  eventRunEnabled?: boolean;
+  eventIceTiles?: number;
+  onToggleEventRun?: () => void;
   onPlay: () => void;
   onClose: () => void;
 };
 
-export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPreview, pacePreview, language, runModifiers, coinsBalance, onBuyRunModifier, bossShieldCharges = 0, onPlay, onClose }) => {
+export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPreview, pacePreview, language, runModifiers, coinsBalance, onBuyRunModifier, bossShieldCharges = 0, eventActive = false, eventTitle = '', eventDescription = '', eventRunEnabled = false, eventIceTiles = 0, onToggleEventRun, onPlay, onClose }) => {
   const t = COPY[language];
   const title = language === 'ru' ? 'Подготовка к запуску' : 'Prepare for Launch';
   const subtitle = language === 'ru' ? 'Проверь цель и начни уровень' : 'Check your goal and start the level';
@@ -96,6 +102,30 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
             {pacePreview}
           </div>
         </div>
+
+        {eventActive && onToggleEventRun && (
+          <div className="mt-4 rounded-2xl border border-cyan-200/18 bg-cyan-300/10 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/78">{language === 'ru' ? 'Ивент-забег' : 'Event run'}</div>
+                <div className="mt-1 text-sm font-black text-white">{eventTitle}</div>
+                <div className="mt-1 text-xs text-white/70">{eventDescription}</div>
+              </div>
+              <button
+                type="button"
+                onClick={onToggleEventRun}
+                className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] ${eventRunEnabled ? 'bg-gradient-to-r from-cyan-300 to-sky-400 text-slate-950' : 'bg-white/10 text-white/72'}`}
+              >
+                {eventRunEnabled ? (language === 'ru' ? 'Включено' : 'Enabled') : (language === 'ru' ? 'Включить' : 'Enable')}
+              </button>
+            </div>
+            <div className="mt-3 text-xs text-cyan-50/84">
+              {language === 'ru'
+                ? `Добавит ${eventIceTiles} крио-щитов в забег и зачтёт прогресс недельного сектора.`
+                : `Adds ${eventIceTiles} cryo shields to the run and counts progress for the weekly sector.`}
+            </div>
+          </div>
+        )}
 
         {runModifiers.length > 0 && (
           <div className="mt-4 rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4">

@@ -25,9 +25,13 @@ type SpaceRoadmapProps = {
   weeklyChallengeScore: number;
   weeklyChallengeCompleted: boolean;
   weeklyTasksCompleted: number;
+  eventActive: boolean;
+  eventTitle: string;
+  eventMissionProgress: string;
   onOpenDailyRewards: () => void;
   onOpenLeaderboard: () => void;
   onOpenWeeklyLoop: () => void;
+  onOpenEvent: () => void;
   onShareGame: () => void;
 };
 
@@ -63,9 +67,13 @@ export function SpaceRoadmap({
   weeklyChallengeScore,
   weeklyChallengeCompleted,
   weeklyTasksCompleted,
+  eventActive,
+  eventTitle,
+  eventMissionProgress,
   onOpenDailyRewards,
   onOpenLeaderboard,
   onOpenWeeklyLoop,
+  onOpenEvent,
   onShareGame,
 }: SpaceRoadmapProps) {
   const [selectedLevel, setSelectedLevel] = useState(Math.max(1, unlockedLevel));
@@ -294,6 +302,19 @@ export function SpaceRoadmap({
               className="inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border border-violet-200/45 bg-violet-300/20 text-violet-50 shadow-[0_0_14px_rgba(167,139,250,0.24)] transition-all hover:bg-violet-300/28"
               title={language === 'ru' ? `Недельный цикл: ${weeklyTasksCompleted}/3` : `Weekly loop: ${weeklyTasksCompleted}/3`}
               aria-label={language === 'ru' ? `Недельный цикл: ${weeklyTasksCompleted}/3` : `Weekly loop: ${weeklyTasksCompleted}/3`}
+            >
+              <Star className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={onOpenEvent}
+              className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${
+                eventActive
+                  ? 'border-fuchsia-200/45 bg-fuchsia-300/22 text-fuchsia-50 shadow-[0_0_14px_rgba(217,70,239,0.24)] hover:bg-fuchsia-300/30'
+                  : 'border-white/12 bg-slate-900/50 text-white/45'
+              }`}
+              title={eventActive ? `${eventTitle}: ${eventMissionProgress}` : (language === 'ru' ? 'Ивент скоро' : 'Event soon')}
+              aria-label={eventActive ? `${eventTitle}: ${eventMissionProgress}` : (language === 'ru' ? 'Ивент скоро' : 'Event soon')}
             >
               <Star className="h-6 w-6" />
             </button>

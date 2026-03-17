@@ -28,10 +28,22 @@ type ShopModalProps = {
     cta: string;
     onActivate: () => void;
   } | null;
+  eventShop?: {
+    active: boolean;
+    title: string;
+    description: string;
+    offers: Array<{
+      id: string;
+      title: string;
+      description: string;
+      badge?: string;
+    }>;
+  } | null;
   onClose: () => void;
   onBuyMoves: () => void;
   onBuyTime: () => void;
   onBuyPack: (packId: string) => void;
+  onBuyEventOffer?: (offerId: string) => void;
 };
 
 export function ShopModal({
@@ -47,10 +59,12 @@ export function ShopModal({
   modifierTokens,
   continueReserve,
   missionAssistOffer,
+  eventShop,
   onClose,
   onBuyMoves,
   onBuyTime,
   onBuyPack,
+  onBuyEventOffer,
 }: ShopModalProps) {
   const t = COPY[language];
   const coinLabel = language === 'ru' ? 'Космический магазин' : 'Space Shop';
@@ -214,6 +228,34 @@ export function ShopModal({
               >
                 {missionAssistOffer.cta}
               </button>
+            </div>
+          )}
+          {eventShop?.active && eventShop.offers.length > 0 && (
+            <div className="mt-3 rounded-2xl border border-fuchsia-200/22 bg-fuchsia-300/10 p-3 text-white">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-fuchsia-100/80">{eventShop.title}</div>
+              <div className="mt-1 text-xs text-white/72">{eventShop.description}</div>
+              <div className="mt-3 space-y-2">
+                {eventShop.offers.map((offer) => (
+                  <button
+                    type="button"
+                    key={offer.id}
+                    onClick={() => onBuyEventOffer?.(offer.id)}
+                    className="w-full rounded-xl border border-fuchsia-200/18 bg-white/[0.04] px-3 py-3 text-left transition-all hover:bg-white/[0.08] active:scale-[0.99]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-black text-white">{offer.title}</div>
+                        <div className="mt-1 text-xs text-white/70">{offer.description}</div>
+                      </div>
+                      {offer.badge && (
+                        <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-300/16 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-fuchsia-50">
+                          {offer.badge}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -22,6 +22,7 @@ import { AdminAccessModal } from './components/AdminAccessModal';
 import type { GemType } from './types';
 import type { Language } from './i18n';
 import type { LegalSection } from './types/legal';
+import { DEFAULT_LIVE_CONFIG, type LiveConfig, type ShopTimingVariant } from './types/liveConfig';
 import { COPY } from './i18n';
 import { getConsentState, hasConsentDecision, initAnalytics, setConsentState, trackEvent } from './analytics';
 import { useWallet } from './hooks/useWallet';
@@ -68,6 +69,8 @@ function getEmptyRunModifiers(): RunModifiers {
     startLightning: false,
     bossShield: false,
     trashCleaner: false,
+    eventRun: false,
+    extraIceTiles: 0,
   };
 }
 
@@ -96,7 +99,6 @@ const SHOP_TIMING_VARIANT_KEY = 'match3_exp_shop_timing_v2_variant';
 const SHOP_TIMING_AUTO_SHOWN_KEY = 'match3_exp_shop_timing_v2_auto_shown';
 const APP_LEVEL_CONFIGS = buildLevelConfigs();
 
-type ShopTimingVariant = 'a' | 'b' | 'c';
 type ShopOpenSource = 'manual_button' | 'level_1_complete_auto' | 'level_1_fail_auto';
 type ShopOfferContext = 'manual' | 'momentum' | 'recovery';
 type RunModifierId = 'startBomb' | 'startLightning' | 'bossShield' | 'trashCleaner';
@@ -176,23 +178,44 @@ type WeeklyLoopState = {
   challengeTargetScore: number;
   challengeCompleted: boolean;
 };
-
-const RUN_MODIFIER_COSTS: Record<RunModifierId, number> = {
-  startBomb: 12,
-  startLightning: 12,
-  bossShield: 18,
-  trashCleaner: 14,
+type EventProgressState = {
+  eventId: string;
+  iceCleared: number;
+  levelsCompleted: number;
+  bossDamage: number;
+  coinsSpent: number;
+  claimedMissionIds: string[];
+  updatedAt?: string;
 };
 
-function getShopTimingVariant(): ShopTimingVariant {
+function getShopTimingVariant(config: LiveConfig): ShopTimingVariant {
   if (typeof window === 'undefined') return 'a';
+  const liveAssignedVariant = config.experiments.assignedVariant;
+  if (liveAssignedVariant === 'a' || liveAssignedVariant === 'b' || liveAssignedVariant === 'c') {
+    window.localStorage.setItem(SHOP_TIMING_VARIANT_KEY, liveAssignedVariant);
+    return liveAssignedVariant;
+  }
+  const forcedVariant = config.experiments.forcedVariant;
+  if (forcedVariant === 'a' || forcedVariant === 'b' || forcedVariant === 'c') {
+    window.localStorage.setItem(SHOP_TIMING_VARIANT_KEY, forcedVariant);
+    return forcedVariant;
+  }
   const stored = window.localStorage.getItem(SHOP_TIMING_VARIANT_KEY);
   if (stored === 'a' || stored === 'b' || stored === 'c') {
     return stored;
   }
 
+  const weights = config.experiments.shopTimingVariantWeights;
+  const weightA = Math.max(0, Number(weights.a ?? 0.34));
+  const weightB = Math.max(0, Number(weights.b ?? 0.33));
+  const weightC = Math.max(0, Number(weights.c ?? 0.33));
+  const totalWeight = weightA + weightB + weightC || 1;
   const roll = Math.random();
-  const assigned: ShopTimingVariant = roll < 0.34 ? 'a' : roll < 0.67 ? 'b' : 'c';
+  const assigned: ShopTimingVariant = roll < (weightA / totalWeight)
+    ? 'a'
+    : roll < ((weightA + weightB) / totalWeight)
+      ? 'b'
+      : 'c';
   window.localStorage.setItem(SHOP_TIMING_VARIANT_KEY, assigned);
   return assigned;
 }
@@ -275,6 +298,29 @@ function getStoredWeeklyLoopState(bestScore: number): WeeklyLoopState {
   }
 }
 
+function normalizeEventProgressState(raw: Partial<EventProgressState> | null | undefined, eventId: string): EventProgressState {
+  if (!raw || raw.eventId !== eventId) {
+    return {
+      eventId,
+      iceCleared: 0,
+      levelsCompleted: 0,
+      bossDamage: 0,
+      coinsSpent: 0,
+      claimedMissionIds: [],
+    };
+  }
+
+  return {
+    eventId,
+    iceCleared: Math.max(0, Math.floor(Number(raw.iceCleared || 0))),
+    levelsCompleted: Math.max(0, Math.floor(Number(raw.levelsCompleted || 0))),
+    bossDamage: Math.max(0, Math.floor(Number(raw.bossDamage || 0))),
+    coinsSpent: Math.max(0, Math.floor(Number(raw.coinsSpent || 0))),
+    claimedMissionIds: Array.isArray(raw.claimedMissionIds) ? raw.claimedMissionIds.map((value) => String(value || '')).filter(Boolean) : [],
+    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : undefined,
+  };
+}
+
 function getDefaultLanguage(): Language {
   if (typeof window !== 'undefined') {
     const savedLanguage = window.localStorage.getItem('match3_language');
@@ -316,7 +362,7 @@ function isAdminPath(): boolean {
 }
 
 function App() {
-  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, levelCrossActivations, levelPulseActivations, levelNovaActivations, levelSmashEvents, comboX5Count, trashDestroyed, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, bossShieldCharges, goalClearId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime, setNextRunModifiers } = useGame();
+  const { grid, score, moves, timeLeft, levelConfig, level, collected, isProcessing, isPaused, setIsPaused, selectedTile, explodingIds, isLevelTransition, validMoves, match3Moves, bombDoubleActivations, lightningSwaps, levelBombActivations, levelLightningActivations, levelCrossActivations, levelPulseActivations, levelNovaActivations, levelSmashEvents, comboX5Count, trashDestroyed, iceCleared, trashTotal, spawnSpecial, handleTileClick, handleTileSwipe, matchTick, comboLevel, comboId, bigBlastId, smashId, bossHp, bossMaxHp, bossHitTick, bossLastHitDamage, bossShieldCharges, activeEventRun, goalClearId, handleRestart, isLevelUp, startAtLevel, addExtraMoves, addExtraTime, setNextRunModifiers } = useGame();
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.4);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -370,6 +416,10 @@ function App() {
   const [weeklyMissionTrack, setWeeklyMissionTrack] = useState<WeeklyMissionTrack | null>(null);
   const [bestScore, setBestScore] = useState(getStoredBestScore);
   const [weeklyLoop, setWeeklyLoop] = useState<WeeklyLoopState>(() => getStoredWeeklyLoopState(getStoredBestScore()));
+  const [liveConfig, setLiveConfig] = useState<LiveConfig>(DEFAULT_LIVE_CONFIG);
+  const [isEventOpen, setIsEventOpen] = useState(false);
+  const [eventProgress, setEventProgress] = useState<EventProgressState>(() => normalizeEventProgressState(null, DEFAULT_LIVE_CONFIG.event.id));
+  const [eventRunEnabled, setEventRunEnabled] = useState(false);
   const [shopOfferContext, setShopOfferContext] = useState<ShopOfferContext>('manual');
   const [isWeeklyLoopOpen, setIsWeeklyLoopOpen] = useState(false);
   const [pendingRunModifiers, setPendingRunModifiers] = useState<RunModifiers>(getEmptyRunModifiers);
@@ -427,8 +477,43 @@ function App() {
   const t = COPY[language];
   const legalContacts = useMemo(() => getLegalContactsFromEnv(), []);
   const marketingLinks = useMemo(() => getMarketingLinksFromEnv(legalContacts.telegram), [legalContacts]);
-  const coinPacks = useMemo(() => getCoinPacksFromEnv(), []);
-  const shopTimingVariant = useMemo(() => getShopTimingVariant(), []);
+  const envCoinPacks = useMemo(() => getCoinPacksFromEnv(), []);
+  const coinPacks = useMemo(() => (
+    liveConfig.monetization.coinPacks.map((pack) => {
+      const envPack = envCoinPacks.find((item) => item.id === pack.id);
+      return {
+        id: pack.id,
+        coins: pack.coins,
+        priceLabel: envPack?.priceLabel ?? `${pack.amountRub} ₽`,
+        url: envPack?.url,
+      };
+    })
+  ), [envCoinPacks, liveConfig.monetization.coinPacks]);
+  const shopTimingVariant = useMemo(() => getShopTimingVariant(liveConfig), [liveConfig]);
+  const boosterCost = liveConfig.economy.boosterCost || BOOSTER_COST;
+  const moveBoostAmount = liveConfig.economy.moveBoostAmount || MOVE_BOOST_AMOUNT;
+  const timeBoostSeconds = liveConfig.economy.timeBoostSeconds || TIME_BOOST_SECONDS;
+  const runModifierCosts = liveConfig.economy.runModifierCosts;
+  const eventConfig = liveConfig.event;
+  const eventMissions = useMemo(() => (
+    eventConfig.missions.map((mission) => {
+      const progress = mission.metric === 'ice_cleared'
+        ? eventProgress.iceCleared
+        : mission.metric === 'levels_completed'
+          ? eventProgress.levelsCompleted
+          : mission.metric === 'boss_damage'
+            ? eventProgress.bossDamage
+            : eventProgress.coinsSpent;
+      const claimed = eventProgress.claimedMissionIds.includes(mission.id);
+      return {
+        ...mission,
+        progress,
+        claimed,
+        completed: progress >= mission.target,
+      };
+    })
+  ), [eventConfig.missions, eventProgress]);
+  const eventMissionsCompleted = eventMissions.filter((mission) => mission.claimed).length;
   const goalAnalyticsValue = levelConfig.goal.type === 'collect_multi'
     ? Object.values(levelConfig.goal.targets).reduce((sum, value) => sum + (value ?? 0), 0)
     : levelConfig.goal.value;
@@ -499,6 +584,10 @@ function App() {
 
     if (selectedLevelConfig.goal.type === 'boss') {
       return <span>{language === 'ru' ? 'Босс' : 'Boss'}: {selectedLevelConfig.goal.value}/{selectedLevelConfig.goal.value}</span>;
+    }
+
+    if (selectedLevelConfig.goal.type === 'ice') {
+      return <span>{language === 'ru' ? 'Крио-щиты' : 'Cryo shields'}: 0/{selectedLevelConfig.goal.value}</span>;
     }
 
     return <span>{language === 'ru' ? 'Космический мусор' : 'Space debris'}: 0/{selectedLevelConfig.goal.value}</span>;
@@ -573,6 +662,10 @@ function App() {
       return <span>{language === 'ru' ? 'Босс' : 'Boss'}: {Math.max(0, bossHp)}/{Math.max(1, bossMaxHp)}</span>;
     }
 
+    if (levelConfig.goal.type === 'ice') {
+      return <span>{language === 'ru' ? 'Крио-щиты' : 'Cryo shields'}: {iceCleared}/{levelConfig.goal.value}</span>;
+    }
+
     return <span>{language === 'ru' ? 'Космический мусор' : 'Space debris'}: {trashDestroyed}/{Math.max(levelConfig.goal.value, trashTotal)}</span>;
   };
 
@@ -603,7 +696,7 @@ function App() {
       const profile = await consumeProfileBonus('continue_reserve');
       if (profile) {
         applyProfileState(profile);
-        const applied = levelConfig.mode === 'moves' ? addExtraMoves(MOVE_BOOST_AMOUNT) : addExtraTime(TIME_BOOST_SECONDS);
+        const applied = levelConfig.mode === 'moves' ? addExtraMoves(moveBoostAmount) : addExtraTime(timeBoostSeconds);
         if (applied) {
           setShopNotice(language === 'ru' ? 'Продолжение активировано из стартового резерва' : 'Continue used from starter reserve');
           trackEvent('economy_source', { source: 'continue_reserve', amount: 1, remaining_reserve: profile.continueReserve });
@@ -661,7 +754,8 @@ function App() {
     trackEvent('language_change', { language: nextLanguage });
   };
 
-  const openLegal = (_section: LegalSection) => {
+  const openLegal = (section: LegalSection) => {
+    void section;
     setIsLegalOpen(true);
   };
 
@@ -678,11 +772,13 @@ function App() {
     claimDailyReward,
     claimDailyMission,
     claimDailyMissionCompletionChest,
+    claimEventMission,
     claimLevelCompletionReward,
     claimLeaderboardChest,
     claimWeeklyMissionTrackChest,
     consumeProfileBonus,
     getDailyRewardStatus,
+    getLiveConfig,
     getDailyMissionsStatus,
     getLeaderboardTop,
     getProfile,
@@ -695,6 +791,7 @@ function App() {
     spendCoins,
     submitLeaderboardEntry,
     syncWalletBalance,
+    updateEventProgress,
     updateProfile,
     walletReady,
   } = useWallet({
@@ -716,32 +813,38 @@ function App() {
 
   const buyExtraMoves = async () => {
     if (levelConfig.mode !== 'moves' || isLevelUp) return;
-    if (!await spendCoins(BOOSTER_COST)) return;
-    const applied = addExtraMoves(MOVE_BOOST_AMOUNT);
+    if (!await spendCoins(boosterCost)) return;
+    const applied = addExtraMoves(moveBoostAmount);
     if (!applied) {
       setShopNotice(walletUnavailableMessage);
       await syncWalletBalance();
       return;
     }
-    const notice = t.boughtExtraMoves(MOVE_BOOST_AMOUNT);
+    const notice = t.boughtExtraMoves(moveBoostAmount);
     setShopNotice(notice);
-    trackEvent('shop_spend_coins', { item: 'extra_moves', cost: BOOSTER_COST, value: MOVE_BOOST_AMOUNT, level, mode: levelConfig.mode });
-    trackEvent('economy_sink', { sink: 'extra_moves', amount: BOOSTER_COST, value: MOVE_BOOST_AMOUNT, level });
+    trackEvent('shop_spend_coins', { item: 'extra_moves', cost: boosterCost, value: moveBoostAmount, level, mode: levelConfig.mode });
+    trackEvent('economy_sink', { sink: 'extra_moves', amount: boosterCost, value: moveBoostAmount, level });
+    if (activeEventRun) {
+      void updateEventProgress({ coinsSpentDelta: boosterCost });
+    }
   };
 
   const buyExtraTime = async () => {
     if (levelConfig.mode !== 'time' || isLevelUp) return;
-    if (!await spendCoins(BOOSTER_COST)) return;
-    const applied = addExtraTime(TIME_BOOST_SECONDS);
+    if (!await spendCoins(boosterCost)) return;
+    const applied = addExtraTime(timeBoostSeconds);
     if (!applied) {
       setShopNotice(walletUnavailableMessage);
       await syncWalletBalance();
       return;
     }
-    const notice = t.boughtExtraTime(TIME_BOOST_SECONDS);
+    const notice = t.boughtExtraTime(timeBoostSeconds);
     setShopNotice(notice);
-    trackEvent('shop_spend_coins', { item: 'extra_time', cost: BOOSTER_COST, value: TIME_BOOST_SECONDS, level, mode: levelConfig.mode });
-    trackEvent('economy_sink', { sink: 'extra_time', amount: BOOSTER_COST, value: TIME_BOOST_SECONDS, level });
+    trackEvent('shop_spend_coins', { item: 'extra_time', cost: boosterCost, value: timeBoostSeconds, level, mode: levelConfig.mode });
+    trackEvent('economy_sink', { sink: 'extra_time', amount: boosterCost, value: timeBoostSeconds, level });
+    if (activeEventRun) {
+      void updateEventProgress({ coinsSpentDelta: boosterCost });
+    }
   };
 
   const applyMissionStatus = useCallback((payload: {
@@ -767,6 +870,7 @@ function App() {
     levelStars?: Record<number, number>;
     bestScore?: number;
     weeklyLoop?: Partial<WeeklyLoopState>;
+    eventProgress?: Partial<EventProgressState>;
     tutorialCompleted?: boolean;
     modifierTokens?: number;
     continueReserve?: number;
@@ -780,13 +884,14 @@ function App() {
     setLevelStars((profile.levelStars ?? {}) as LevelStarsMap);
     setBestScore(nextBestScore);
     setWeeklyLoop(normalizeWeeklyLoopState(profile.weeklyLoop ?? null, nextBestScore));
+    setEventProgress(normalizeEventProgressState(profile.eventProgress ?? null, liveConfig.event.id));
     setHasSeenTutorial(Boolean(profile.tutorialCompleted));
     setModifierTokens(Math.max(0, Math.floor(Number(profile.modifierTokens ?? 0))));
     setContinueReserve(Math.max(0, Math.floor(Number(profile.continueReserve ?? 0))));
     if (profile.starterOffer) {
       setStarterOffer(profile.starterOffer);
     }
-  }, []);
+  }, [liveConfig.event.id]);
 
   const starterBundlePack = useMemo(() => ({
     id: starterOffer.packId,
@@ -818,8 +923,8 @@ function App() {
   }, [openShopWithSource]);
 
   const quickBoostLabel = levelConfig.mode === 'moves'
-    ? (language === 'ru' ? `+${MOVE_BOOST_AMOUNT} ходов` : `+${MOVE_BOOST_AMOUNT} moves`)
-    : (language === 'ru' ? `+${TIME_BOOST_SECONDS} сек` : `+${TIME_BOOST_SECONDS}s`);
+    ? (language === 'ru' ? `+${moveBoostAmount} ходов` : `+${moveBoostAmount} moves`)
+    : (language === 'ru' ? `+${timeBoostSeconds} сек` : `+${timeBoostSeconds}s`);
 
   const quickBoostHint = levelConfig.mode === 'moves'
     ? (language === 'ru' ? 'Экстренный буст ходов' : 'Emergency move boost')
@@ -858,11 +963,12 @@ function App() {
     const targetConfig = selectedLevelConfig ?? levelConfig;
     const targetLevel = levelToLaunch ?? level;
     const earlyGameDiscount = targetLevel <= 10 ? 2 : 0;
+    const baseModifierCost = runModifierCosts[modifierId] ?? DEFAULT_LIVE_CONFIG.economy.runModifierCosts[modifierId];
     const cost = modifierId === 'bossShield'
-      ? RUN_MODIFIER_COSTS[modifierId] + (targetLevel >= 20 ? 4 : 2)
+      ? baseModifierCost + (targetLevel >= 20 ? 4 : 2)
       : modifierId === 'trashCleaner' && (targetConfig.trashCount ?? 0) > 0
-        ? Math.max(8, RUN_MODIFIER_COSTS[modifierId] - 2)
-        : Math.max(8, RUN_MODIFIER_COSTS[modifierId] - earlyGameDiscount);
+        ? Math.max(8, baseModifierCost - 2)
+        : Math.max(8, baseModifierCost - earlyGameDiscount);
     if (modifierId === 'startBomb') {
       return {
         cost,
@@ -889,7 +995,7 @@ function App() {
       title: language === 'ru' ? 'Очистка мусора' : 'Trash cleaner',
       description: language === 'ru' ? 'Убирает часть мусора до первого хода и делает старт чище.' : 'Scrub part of the trash before your first move for a cleaner start.',
     };
-  }, [language, level, levelConfig, levelToLaunch, selectedLevelConfig]);
+  }, [language, level, levelConfig, levelToLaunch, runModifierCosts, selectedLevelConfig]);
 
   const getAvailableRunModifiers = useCallback((config: LevelConfig | null): RunModifierId[] => {
     if (!config) return [];
@@ -962,6 +1068,21 @@ function App() {
     });
   }, [getAvailableRunModifiers, getRunModifierMeta, pendingRunModifiers, selectedLevelConfig]);
 
+  const handleEventShopOffer = useCallback(async (offerId: string) => {
+    const offer = eventConfig.shopOffers.find((item) => item.id === offerId);
+    if (!offer) return;
+    if (offer.packId) {
+      await buyCoinsPack(offer.packId);
+      return;
+    }
+    if (offer.modifierId) {
+      await purchaseRunModifier(offer.modifierId);
+      if (typeof offer.priceCoins === 'number' && offer.priceCoins > 0 && activeEventRun) {
+        void updateEventProgress({ coinsSpentDelta: offer.priceCoins });
+      }
+    }
+  }, [activeEventRun, buyCoinsPack, eventConfig.shopOffers, purchaseRunModifier, updateEventProgress]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(BEST_SCORE_STORAGE_KEY, String(bestScore));
@@ -971,6 +1092,19 @@ function App() {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(WEEKLY_LOOP_STORAGE_KEY, JSON.stringify(weeklyLoop));
   }, [weeklyLoop]);
+
+  useEffect(() => {
+    void (async () => {
+      const config = await getLiveConfig();
+      if (config) {
+        setLiveConfig(config);
+      }
+    })();
+  }, [getLiveConfig, walletReady]);
+
+  useEffect(() => {
+    setEventProgress((prev) => normalizeEventProgressState(prev, liveConfig.event.id));
+  }, [liveConfig.event.id]);
 
   useEffect(() => {
     if (!walletReady || profileHydratedRef.current) return;
@@ -1203,7 +1337,7 @@ function App() {
 
   const reportRunMissionProgress = useCallback(async (reason: 'level_complete' | 'game_over') => {
     if (!walletReady) return;
-    const summaryKey = `${reason}:${level}:${score}:${levelBombActivations}:${usedContinueThisLevel ? 1 : 0}`;
+    const summaryKey = `${reason}:${level}:${score}:${levelBombActivations}:${iceCleared}:${usedContinueThisLevel ? 1 : 0}:${activeEventRun ? 1 : 0}`;
     if (runSummaryReportedRef.current === summaryKey) return;
     runSummaryReportedRef.current = summaryKey;
 
@@ -1216,11 +1350,98 @@ function App() {
     });
     if (!payload) return;
     applyMissionStatus(payload);
-  }, [applyMissionStatus, level, levelBombActivations, levelLightningActivations, reportDailyMissionProgress, score, usedContinueThisLevel, walletReady]);
+
+    if (activeEventRun) {
+      const profile = await updateEventProgress({
+        iceClearedDelta: iceCleared,
+        levelsCompletedDelta: reason === 'level_complete' ? 1 : 0,
+        bossDamageDelta: Math.max(0, bossMaxHp - bossHp),
+      });
+      if (profile) {
+        applyProfileState(profile);
+      }
+    }
+  }, [activeEventRun, applyMissionStatus, applyProfileState, bossHp, bossMaxHp, iceCleared, level, levelBombActivations, levelLightningActivations, reportDailyMissionProgress, score, updateEventProgress, usedContinueThisLevel, walletReady]);
 
   const openDailyRewards = () => {
     setIsDailyRewardsOpen(true);
   };
+
+  const handleClaimEventMission = async (missionId: string) => {
+    const payload = await claimEventMission(missionId);
+    if (!payload?.profile) return;
+    applyProfileState(payload.profile);
+    if (typeof payload.reward === 'number') {
+      trackEvent('economy_source', { source: 'weekly_event_mission', mission_id: missionId, amount: payload.reward });
+      setShopNotice(
+        language === 'ru'
+          ? `Ивент-награда получена: +${payload.reward} монет`
+          : `Event reward claimed: +${payload.reward} coins`,
+      );
+    }
+  };
+
+  const renderEventModal = () => (
+    <div className="fixed inset-0 z-[135] flex items-center justify-center bg-slate-950/88 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(6,18,32,0.98),rgba(5,12,24,0.99))] p-5 shadow-[0_24px_90px_rgba(34,211,238,0.18)] max-h-[88vh] overflow-y-auto">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100/82">{language === 'ru' ? 'Недельный ивент' : 'Weekly Event'}</div>
+            <div className="mt-2 text-2xl font-black text-white">{eventConfig.title}</div>
+            <div className="mt-1 text-sm text-cyan-50/72">{eventConfig.description}</div>
+          </div>
+          <button type="button" onClick={() => setIsEventOpen(false)} className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/70 transition hover:bg-white/12">
+            {language === 'ru' ? 'Закрыть' : 'Close'}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-center text-white">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{language === 'ru' ? 'Миссии' : 'Missions'}</div>
+            <div className="mt-1 text-2xl font-black">{eventMissionsCompleted}/{eventMissions.length}</div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{language === 'ru' ? 'Крио' : 'Cryo'}</div>
+            <div className="mt-1 text-2xl font-black">{eventProgress.iceCleared}</div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{language === 'ru' ? 'Завершено' : 'Runs'}</div>
+            <div className="mt-1 text-2xl font-black">{eventProgress.levelsCompleted}</div>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {eventMissions.map((mission) => (
+            <div key={mission.id} className="rounded-2xl border border-cyan-200/14 bg-cyan-300/8 p-4 text-white">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-black">{mission.title}</div>
+                  <div className="mt-1 text-xs text-white/72">{mission.description}</div>
+                </div>
+                <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-50">
+                  +{mission.reward}
+                </div>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-sky-400" style={{ width: `${Math.min(100, (mission.progress / mission.target) * 100)}%` }} />
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-white/72">
+                <span>{mission.progress}/{mission.target}</span>
+                <button
+                  type="button"
+                  onClick={() => void handleClaimEventMission(mission.id)}
+                  disabled={!mission.completed || mission.claimed}
+                  className={`rounded-full px-3 py-1.5 font-black uppercase tracking-[0.14em] ${mission.claimed ? 'bg-emerald-300/18 text-emerald-100' : mission.completed ? 'bg-gradient-to-r from-cyan-300 to-sky-400 text-slate-950' : 'bg-white/10 text-white/45'}`}
+                >
+                  {mission.claimed ? (language === 'ru' ? 'Получено' : 'Claimed') : mission.completed ? (language === 'ru' ? 'Забрать' : 'Claim') : (language === 'ru' ? 'В процессе' : 'In progress')}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   const renderDailyRewardsModal = () => (
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/86 px-4 backdrop-blur-sm">
@@ -1626,16 +1847,16 @@ function App() {
   };
 
   const adminAddMoves = () => {
-    const applied = addExtraMoves(MOVE_BOOST_AMOUNT);
+    const applied = addExtraMoves(moveBoostAmount);
     setShopNotice(applied
-      ? (language === 'ru' ? `Админ: +${MOVE_BOOST_AMOUNT} ходов` : `Admin: +${MOVE_BOOST_AMOUNT} moves`)
+      ? (language === 'ru' ? `Админ: +${moveBoostAmount} ходов` : `Admin: +${moveBoostAmount} moves`)
       : (language === 'ru' ? 'Админ: режим без ходов' : 'Admin: not in moves mode'));
   };
 
   const adminAddTime = () => {
-    const applied = addExtraTime(TIME_BOOST_SECONDS);
+    const applied = addExtraTime(timeBoostSeconds);
     setShopNotice(applied
-      ? (language === 'ru' ? `Админ: +${TIME_BOOST_SECONDS} секунд` : `Admin: +${TIME_BOOST_SECONDS} seconds`)
+      ? (language === 'ru' ? `Админ: +${timeBoostSeconds} секунд` : `Admin: +${timeBoostSeconds} seconds`)
       : (language === 'ru' ? 'Админ: режим без таймера' : 'Admin: not in timer mode'));
   };
 
@@ -1720,6 +1941,7 @@ function App() {
   const onStartFromMap = (targetLevel: number) => {
     if (targetLevel > unlockedLevel) return;
     clearPendingRunModifiers();
+    setEventRunEnabled(false);
     setLevelToLaunch(targetLevel);
     trackEvent('map_level_selected', { level: targetLevel });
   };
@@ -1736,13 +1958,18 @@ function App() {
     if (levelToLaunch == null) return;
     setIsLaunchingLevel(true);
     setUsedContinueThisLevel(false);
-    setNextRunModifiers(pendingRunModifiers);
+    setNextRunModifiers({
+      ...pendingRunModifiers,
+      eventRun: eventRunEnabled && eventConfig.active,
+      extraIceTiles: eventRunEnabled && eventConfig.active ? eventConfig.eventRunIceTiles : 0,
+    });
 
     window.setTimeout(() => {
       startAtLevel(levelToLaunch);
-      trackEvent('map_level_start', { level: levelToLaunch });
+      trackEvent('map_level_start', { level: levelToLaunch, event_run: eventRunEnabled && eventConfig.active });
       setLevelToLaunch(null);
       clearPendingRunModifiers();
+      setEventRunEnabled(false);
       setIsMapOpen(false);
       setIsLaunchingLevel(false);
     }, 180);
@@ -1751,6 +1978,7 @@ function App() {
   const onCloseLevelStart = () => {
     if (isLaunchingLevel) return;
     clearPendingRunModifiers();
+    setEventRunEnabled(false);
     setLevelToLaunch(null);
     setIsMapOpen(true);
   };
@@ -2403,6 +2631,7 @@ function App() {
           {isDailyRewardsOpen && renderDailyRewardsModal()}
           {isLeaderboardOpen && renderLeaderboardModal()}
           {isWeeklyLoopOpen && renderWeeklyLoopModal()}
+          {isEventOpen && renderEventModal()}
         </AnimatePresence>
         <MarketingLanding
           language={language}
@@ -2482,9 +2711,13 @@ function App() {
           weeklyChallengeScore={weeklyLoop.challengeTargetScore}
           weeklyChallengeCompleted={weeklyLoop.challengeCompleted}
           weeklyTasksCompleted={weeklyTasksCompleted}
+          eventActive={eventConfig.active}
+          eventTitle={eventConfig.title}
+          eventMissionProgress={`${eventMissionsCompleted}/${eventMissions.length}`}
           onOpenDailyRewards={openDailyRewards}
           onOpenLeaderboard={openLeaderboard}
           onOpenWeeklyLoop={() => setIsWeeklyLoopOpen(true)}
+          onOpenEvent={() => setIsEventOpen(true)}
           onShareGame={shareGame}
           onVolumeChange={(v) => {
             setVolume(v);
@@ -2494,6 +2727,7 @@ function App() {
         {isDailyRewardsOpen && renderDailyRewardsModal()}
         {isLeaderboardOpen && renderLeaderboardModal()}
         {isWeeklyLoopOpen && renderWeeklyLoopModal()}
+        {isEventOpen && renderEventModal()}
         <AudioPlayer isMuted={isMuted} volume={volume} mode="lobby" />
         <AnimatePresence>
           {levelToLaunch !== null && (
@@ -2506,6 +2740,12 @@ function App() {
               coinsBalance={spaceCoins}
               onBuyRunModifier={(modifierId) => void purchaseRunModifier(modifierId as RunModifierId)}
               bossShieldCharges={bossShieldCharges}
+              eventActive={eventConfig.active}
+              eventTitle={eventConfig.title}
+              eventDescription={eventConfig.description}
+              eventRunEnabled={eventRunEnabled}
+              eventIceTiles={eventConfig.eventRunIceTiles}
+              onToggleEventRun={() => setEventRunEnabled((prev) => !prev)}
               onPlay={onPlaySelectedLevel}
               onClose={onCloseLevelStart}
             />
@@ -2587,9 +2827,9 @@ function App() {
             isTimeMode={levelConfig.mode === 'time'}
             offerContext={shopOfferContext}
             coinsBalance={spaceCoins}
-            boosterCost={BOOSTER_COST}
-            moveBoostAmount={MOVE_BOOST_AMOUNT}
-            timeBoostSeconds={TIME_BOOST_SECONDS}
+            boosterCost={boosterCost}
+            moveBoostAmount={moveBoostAmount}
+            timeBoostSeconds={timeBoostSeconds}
             packs={coinPacks}
             starterBundle={{
               active: starterOffer.active,
@@ -2601,15 +2841,23 @@ function App() {
             modifierTokens={modifierTokens}
             continueReserve={continueReserve}
             missionAssistOffer={missionAssistOffer}
+            eventShop={{
+              active: eventConfig.active,
+              title: eventConfig.title,
+              description: eventConfig.description,
+              offers: eventConfig.shopOffers,
+            }}
             onClose={() => setIsShopOpen(false)}
             onBuyMoves={buyExtraMoves}
             onBuyTime={buyExtraTime}
             onBuyPack={buyCoinsPack}
+            onBuyEventOffer={(offerId) => void handleEventShopOffer(offerId)}
           />
         )}
         {isDailyRewardsOpen && renderDailyRewardsModal()}
         {isLeaderboardOpen && renderLeaderboardModal()}
         {isWeeklyLoopOpen && renderWeeklyLoopModal()}
+        {isEventOpen && renderEventModal()}
         {isPaused && !isGameOver && (
           <PauseMenu
             onResume={() => setIsPaused(false)}
@@ -2633,9 +2881,9 @@ function App() {
           <GameOverMenu
             score={score}
             mode={levelConfig.mode}
-            boostCost={continueReserve > 0 ? 0 : BOOSTER_COST}
-            boostAmountLabel={levelConfig.mode === 'moves' ? `+${MOVE_BOOST_AMOUNT} ${language === 'ru' ? 'ходов' : 'moves'}` : `+${TIME_BOOST_SECONDS}${language === 'ru' ? ' сек' : 's'}`}
-            canAffordContinue={continueReserve > 0 || spaceCoins >= BOOSTER_COST}
+            boostCost={continueReserve > 0 ? 0 : boosterCost}
+            boostAmountLabel={levelConfig.mode === 'moves' ? `+${moveBoostAmount} ${language === 'ru' ? 'ходов' : 'moves'}` : `+${timeBoostSeconds}${language === 'ru' ? ' сек' : 's'}`}
+            canAffordContinue={continueReserve > 0 || spaceCoins >= boosterCost}
             onRestart={onRestart}
             onBuyContinue={buyContinueFromGameOver}
             onOpenShop={openShop}
@@ -2893,7 +3141,7 @@ function App() {
             >
               {levelConfig.mode === 'moves' ? <BoosterGlyph className="h-3.5 w-3.5 sm:h-5 sm:w-5" /> : <TimeGlyph className="h-3.5 w-3.5 sm:h-5 sm:w-5" />}
               <span>{quickBoostLabel}</span>
-              <span className="rounded-full bg-black/20 px-1 py-[1px] text-[8px] font-bold sm:px-1.5 sm:text-[10px]">-{BOOSTER_COST}</span>
+              <span className="rounded-full bg-black/20 px-1 py-[1px] text-[8px] font-bold sm:px-1.5 sm:text-[10px]">-{boosterCost}</span>
             </button>
             <button
               type="button"

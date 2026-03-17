@@ -1,5 +1,5 @@
 import { createHmac, createHash, randomUUID, timingSafeEqual } from 'node:crypto';
-import { mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,7 @@ const rootDir = resolve(__dirname, '..');
 const dataDir = join(rootDir, 'data');
 const legacyStatePath = join(dataDir, 'wallet-state.json');
 const dbPath = join(dataDir, 'wallet-state.sqlite');
+const liveConfigPath = join(dataDir, 'live-config.json');
 const port = Number(process.env.PORT || 8787);
 const authSecret = String(process.env.API_AUTH_SECRET || '');
 const adminLogin = String(process.env.ADMIN_LOGIN || '').trim();
@@ -32,7 +33,7 @@ const DEFAULT_PACKS = [
   { id: 'pack-800', coins: 420, amountRub: 499 },
 ];
 
-const STARTER_BUNDLE = {
+const STARTER_BUNDLE_DEFAULT = {
   id: 'starter-bundle',
   coins: 120,
   amountRub: 149,
@@ -91,7 +92,170 @@ const FALLBACK_LEADERBOARD_PROFILES = [
   { displayName: 'SolarMint', bestLevel: 5, bestScore: 1490, totalStars: 11 },
 ];
 
+const DEFAULT_LIVE_CONFIG = {
+  economy: {
+    boosterCost: 15,
+    moveBoostAmount: 5,
+    timeBoostSeconds: 30,
+    runModifierCosts: {
+      startBomb: 12,
+      startLightning: 12,
+      bossShield: 18,
+      trashCleaner: 14,
+    },
+    missionRerollCost: DAILY_MISSION_REROLL_COST,
+  },
+  monetization: {
+    coinPacks: DEFAULT_PACKS,
+    starterOffer: {
+      ...STARTER_BUNDLE_DEFAULT,
+    },
+  },
+  experiments: {
+    shopTimingVariantWeights: {
+      a: 0.34,
+      b: 0.33,
+      c: 0.33,
+    },
+    forcedVariant: null,
+  },
+  event: {
+    active: true,
+    id: 'cryo_storm_weekly',
+    title: 'Cryo Storm Sector',
+    description: 'Launch special runs with cryo shields, close event missions, and convert the storm into extra rewards.',
+    endsAt: null,
+    accentColor: '#67e8f9',
+    eventRunIceTiles: 10,
+    scoreMultiplier: 1.15,
+    rewardMultiplier: 1.25,
+    missions: [
+      {
+        id: 'cryo_clear_24',
+        title: 'Break Cryo Shields',
+        description: 'Clear 24 cryo cells during event runs.',
+        target: 24,
+        reward: 110,
+        metric: 'ice_cleared',
+      },
+      {
+        id: 'storm_runs_3',
+        title: 'Close 3 Storm Runs',
+        description: 'Finish 3 levels while the event flag is active.',
+        target: 3,
+        reward: 140,
+        metric: 'levels_completed',
+      },
+      {
+        id: 'boss_pressure_80',
+        title: 'Pressure the Sector Boss',
+        description: 'Deal 80 total boss damage across event runs.',
+        target: 80,
+        reward: 160,
+        metric: 'boss_damage',
+      },
+    ],
+    shopOffers: [
+      {
+        id: 'event_pack_mid',
+        title: 'Storm Reserve',
+        description: 'Mid pack tuned for event progression.',
+        packId: 'pack-300',
+        badge: 'Event pack',
+      },
+      {
+        id: 'event_modifier_boss',
+        title: 'Cryo Shield Crack',
+        description: 'Open the next event run with a boss-safe start.',
+        modifierId: 'bossShield',
+        priceCoins: 14,
+        badge: 'Event boost',
+      },
+    ],
+  },
+};
+
+function mergePlainObjects(base, override) {
+  if (!override || typeof override !== 'object' || Array.isArray(override)) {
+    return base;
+  }
+
+  const result = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    if (Array.isArray(value)) {
+      result[key] = value;
+      continue;
+    }
+
+    if (value && typeof value === 'object' && !Array.isArray(value) && result[key] && typeof result[key] === 'object' && !Array.isArray(result[key])) {
+      result[key] = mergePlainObjects(result[key], value);
+      continue;
+    }
+
+    result[key] = value;
+  }
+  return result;
+}
+
+function readLiveConfig() {
+  if (!existsSync(liveConfigPath)) {
+    return DEFAULT_LIVE_CONFIG;
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(liveConfigPath, 'utf8'));
+    return mergePlainObjects(DEFAULT_LIVE_CONFIG, parsed);
+  } catch {
+    return DEFAULT_LIVE_CONFIG;
+  }
+}
+
+function persistLiveConfig(config) {
+  mkdirSync(dataDir, { recursive: true });
+  writeFileSync(liveConfigPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+}
+
+let liveConfigCache = readLiveConfig();
+
+function getLiveConfig() {
+  liveConfigCache = readLiveConfig();
+  return liveConfigCache;
+}
+
+function getStarterBundleConfig() {
+  return getLiveConfig().monetization?.starterOffer || STARTER_BUNDLE_DEFAULT;
+}
+
+function getEventConfig() {
+  return getLiveConfig().event || DEFAULT_LIVE_CONFIG.event;
+}
+
+function getEventEndsAt() {
+  const configured = String(getEventConfig().endsAt || '').trim();
+  if (configured) return configured;
+  const now = new Date();
+  const day = now.getUTCDay() || 7;
+  const daysUntilNextMonday = 8 - day;
+  now.setUTCDate(now.getUTCDate() + daysUntilNextMonday);
+  now.setUTCHours(0, 0, 0, 0);
+  return now.toISOString();
+}
+
 function readPacks() {
+  const liveConfigPacks = getLiveConfig().monetization?.coinPacks;
+  if (Array.isArray(liveConfigPacks) && liveConfigPacks.length > 0) {
+    const normalizedLive = liveConfigPacks
+      .map((item) => ({
+        id: String(item.id || ''),
+        coins: Number(item.coins || 0),
+        amountRub: Number(item.amountRub || item.amount || 0),
+      }))
+      .filter((item) => item.id && item.coins > 0 && item.amountRub > 0);
+    if (normalizedLive.length > 0) {
+      return normalizedLive;
+    }
+  }
+
   const raw = process.env.SHOP_PACKS_JSON;
   if (!raw) return DEFAULT_PACKS;
 
@@ -204,6 +368,7 @@ function initDatabase() {
       level_stars_json TEXT NOT NULL DEFAULT '{}',
       best_score INTEGER NOT NULL DEFAULT 0,
       weekly_loop_json TEXT NOT NULL DEFAULT '{}',
+      event_progress_json TEXT NOT NULL DEFAULT '{}',
       tutorial_completed INTEGER NOT NULL DEFAULT 0,
       modifier_tokens INTEGER NOT NULL DEFAULT 0,
       continue_reserve INTEGER NOT NULL DEFAULT 0,
@@ -218,6 +383,7 @@ function initDatabase() {
   ensureColumn('daily_mission_progress', 'level_completions', 'INTEGER NOT NULL DEFAULT 0');
   ensureColumn('daily_mission_progress', 'mission_ids_json', "TEXT NOT NULL DEFAULT '[]'");
   ensureColumn('daily_mission_progress', 'free_rerolls_used', 'INTEGER NOT NULL DEFAULT 0');
+  ensureColumn('player_profiles', 'event_progress_json', "TEXT NOT NULL DEFAULT '{}'");
 
   const hasOrders = db.prepare('SELECT 1 AS ok FROM orders LIMIT 1').get();
   if (!hasOrders) {
@@ -685,7 +851,8 @@ function ensurePlayerProfileRow(playerId) {
   }
 
   const updatedAt = nowIso();
-  const expiresAt = new Date(Date.now() + STARTER_BUNDLE.expiresInHours * 60 * 60 * 1000).toISOString();
+  const starterBundle = getStarterBundleConfig();
+  const expiresAt = new Date(Date.now() + starterBundle.expiresInHours * 60 * 60 * 1000).toISOString();
   db.prepare(`
     INSERT INTO player_profiles (
       player_id,
@@ -694,13 +861,14 @@ function ensurePlayerProfileRow(playerId) {
       level_stars_json,
       best_score,
       weekly_loop_json,
+      event_progress_json,
       tutorial_completed,
       modifier_tokens,
       continue_reserve,
       starter_offer_expires_at,
       starter_bundle_claimed,
       updated_at
-    ) VALUES (?, ?, 1, '{}', 0, '{}', 0, 0, 0, ?, 0, ?)
+    ) VALUES (?, ?, 1, '{}', 0, '{}', '{}', 0, 0, 0, ?, 0, ?)
   `).run(normalizedPlayerId, '', expiresAt, updatedAt);
 
   return db.prepare(`
@@ -712,7 +880,9 @@ function ensurePlayerProfileRow(playerId) {
 
 function getPlayerProfile(playerId) {
   const row = ensurePlayerProfileRow(playerId);
+  const starterBundle = getStarterBundleConfig();
   const displayName = String(row?.display_name || '').trim();
+  const normalizedEventProgress = normalizeEventProgress(parseJsonObject(row?.event_progress_json, {}));
   const starterOfferExpiresAt = row?.starter_offer_expires_at ? String(row.starter_offer_expires_at) : null;
   const starterOfferClaimed = Boolean(Number(row?.starter_bundle_claimed || 0));
   const starterOfferActive = !starterOfferClaimed
@@ -726,6 +896,7 @@ function getPlayerProfile(playerId) {
     levelStars: parseJsonObject(row?.level_stars_json, {}),
     bestScore: Math.max(0, Math.floor(Number(row?.best_score || 0))),
     weeklyLoop: parseJsonObject(row?.weekly_loop_json, {}),
+    eventProgress: normalizedEventProgress,
     tutorialCompleted: Boolean(Number(row?.tutorial_completed || 0)),
     modifierTokens: Math.max(0, Math.floor(Number(row?.modifier_tokens || 0))),
     continueReserve: Math.max(0, Math.floor(Number(row?.continue_reserve || 0))),
@@ -733,11 +904,11 @@ function getPlayerProfile(playerId) {
       active: starterOfferActive,
       claimed: starterOfferClaimed,
       expiresAt: starterOfferExpiresAt,
-      packId: STARTER_BUNDLE.id,
-      coins: STARTER_BUNDLE.coins,
-      amountRub: STARTER_BUNDLE.amountRub,
-      modifierTokens: STARTER_BUNDLE.modifierTokens,
-      continueReserve: STARTER_BUNDLE.continueReserve,
+      packId: starterBundle.id,
+      coins: starterBundle.coins,
+      amountRub: starterBundle.amountRub,
+      modifierTokens: starterBundle.modifierTokens,
+      continueReserve: starterBundle.continueReserve,
     },
   };
 }
@@ -760,6 +931,9 @@ function updatePlayerProfileState(playerId, payload = {}) {
     const nextWeeklyLoop = payload.weeklyLoop && typeof payload.weeklyLoop === 'object'
       ? payload.weeklyLoop
       : current.weeklyLoop;
+    const nextEventProgress = payload.eventProgress && typeof payload.eventProgress === 'object'
+      ? normalizeEventProgress(payload.eventProgress)
+      : normalizeEventProgress(current.eventProgress);
     const nextTutorialCompleted = payload.tutorialCompleted == null
       ? current.tutorialCompleted
       : Boolean(payload.tutorialCompleted);
@@ -771,6 +945,7 @@ function updatePlayerProfileState(playerId, payload = {}) {
           level_stars_json = ?,
           best_score = ?,
           weekly_loop_json = ?,
+          event_progress_json = ?,
           tutorial_completed = ?,
           updated_at = ?
       WHERE player_id = ?
@@ -780,6 +955,7 @@ function updatePlayerProfileState(playerId, payload = {}) {
       JSON.stringify(nextLevelStars),
       nextBestScore,
       JSON.stringify(nextWeeklyLoop),
+      JSON.stringify(nextEventProgress),
       nextTutorialCompleted ? 1 : 0,
       nowIso(),
       playerId,
@@ -801,6 +977,99 @@ function getUtcWeekKey(now = new Date()) {
   d.setUTCDate(d.getUTCDate() - (day - 1));
   d.setUTCHours(0, 0, 0, 0);
   return d.toISOString().slice(0, 10);
+}
+
+function hashStringToUnitInterval(value) {
+  const hash = createHash('sha256').update(String(value || '')).digest();
+  const segment = hash.readUInt32BE(0);
+  return segment / 0xffffffff;
+}
+
+function getAssignedShopTimingVariant(playerId) {
+  const config = getLiveConfig().experiments || DEFAULT_LIVE_CONFIG.experiments;
+  if (config.forcedVariant === 'a' || config.forcedVariant === 'b' || config.forcedVariant === 'c') {
+    return config.forcedVariant;
+  }
+
+  const weights = {
+    a: Math.max(0, Number(config.shopTimingVariantWeights?.a ?? 0.34)),
+    b: Math.max(0, Number(config.shopTimingVariantWeights?.b ?? 0.33)),
+    c: Math.max(0, Number(config.shopTimingVariantWeights?.c ?? 0.33)),
+  };
+  const total = weights.a + weights.b + weights.c || 1;
+  const roll = hashStringToUnitInterval(playerId || 'anonymous');
+  const aThreshold = weights.a / total;
+  const bThreshold = aThreshold + (weights.b / total);
+  if (roll < aThreshold) return 'a';
+  if (roll < bThreshold) return 'b';
+  return 'c';
+}
+
+function buildPublicLiveConfig(playerId = '') {
+  const config = getLiveConfig();
+  const event = getEventConfig();
+  return {
+    economy: config.economy,
+    monetization: {
+      coinPacks: readPacks().map((pack) => ({
+        id: pack.id,
+        coins: pack.coins,
+        amountRub: pack.amountRub,
+        priceLabel: `${pack.amountRub} ₽`,
+      })),
+      starterOffer: getStarterBundleConfig(),
+    },
+    experiments: {
+      shopTimingVariantWeights: config.experiments?.shopTimingVariantWeights || DEFAULT_LIVE_CONFIG.experiments.shopTimingVariantWeights,
+      forcedVariant: config.experiments?.forcedVariant ?? null,
+      assignedVariant: playerId ? getAssignedShopTimingVariant(playerId) : null,
+    },
+    event: {
+      ...event,
+      endsAt: getEventEndsAt(),
+    },
+  };
+}
+
+function getDefaultEventProgress() {
+  return {
+    eventId: getEventConfig().id,
+    iceCleared: 0,
+    levelsCompleted: 0,
+    bossDamage: 0,
+    coinsSpent: 0,
+    claimedMissionIds: [],
+    updatedAt: nowIso(),
+  };
+}
+
+function normalizeEventProgress(rawProgress) {
+  const event = getEventConfig();
+  const eventId = String(rawProgress?.eventId || '');
+  if (!rawProgress || eventId !== event.id) {
+    return getDefaultEventProgress();
+  }
+
+  const claimedMissionIds = Array.isArray(rawProgress.claimedMissionIds)
+    ? rawProgress.claimedMissionIds.map((value) => String(value || '').trim()).filter(Boolean)
+    : [];
+
+  return {
+    eventId: event.id,
+    iceCleared: Math.max(0, Math.floor(Number(rawProgress.iceCleared || 0))),
+    levelsCompleted: Math.max(0, Math.floor(Number(rawProgress.levelsCompleted || 0))),
+    bossDamage: Math.max(0, Math.floor(Number(rawProgress.bossDamage || 0))),
+    coinsSpent: Math.max(0, Math.floor(Number(rawProgress.coinsSpent || 0))),
+    claimedMissionIds,
+    updatedAt: typeof rawProgress.updatedAt === 'string' ? rawProgress.updatedAt : nowIso(),
+  };
+}
+
+function getEventMetricValue(progress, metric) {
+  if (metric === 'ice_cleared') return progress.iceCleared;
+  if (metric === 'levels_completed') return progress.levelsCompleted;
+  if (metric === 'boss_damage') return progress.bossDamage;
+  return progress.coinsSpent;
 }
 
 function getDailyMissionProgressRow(playerId, missionDate = getUtcDateKey(0)) {
@@ -1244,9 +1513,10 @@ async function createInvoice(req, res, payload, playerId) {
   }
 
   const profile = getPlayerProfile(playerId);
-  const pack = packId === STARTER_BUNDLE.id
+  const starterBundle = getStarterBundleConfig();
+  const pack = packId === starterBundle.id
     ? (profile.starterOffer.active && !profile.starterOffer.claimed
-        ? { id: STARTER_BUNDLE.id, coins: STARTER_BUNDLE.coins, amountRub: STARTER_BUNDLE.amountRub }
+        ? { id: starterBundle.id, coins: starterBundle.coins, amountRub: starterBundle.amountRub }
         : null)
     : readPacks().find((item) => item.id === packId);
   if (!pack) {
@@ -1689,6 +1959,131 @@ function consumeProfileBonus(res, payload, playerId) {
   json(res, 200, { ok: true, profile });
 }
 
+function getLiveConfigState(res, playerId = '') {
+  json(res, 200, {
+    ok: true,
+    config: buildPublicLiveConfig(playerId),
+  });
+}
+
+function updateLiveConfigState(res, payload) {
+  const nextConfig = mergePlainObjects(getLiveConfig(), payload && typeof payload === 'object' ? payload : {});
+  persistLiveConfig(nextConfig);
+  liveConfigCache = nextConfig;
+  json(res, 200, {
+    ok: true,
+    config: buildPublicLiveConfig(''),
+  });
+}
+
+function updateEventProgress(res, payload, playerId) {
+  const event = getEventConfig();
+  if (!event.active) {
+    json(res, 409, { error: 'Event is not active' });
+    return;
+  }
+
+  const profile = withTransaction(() => {
+    const current = getPlayerProfile(playerId);
+    const nextProgress = normalizeEventProgress(current.eventProgress);
+
+    nextProgress.iceCleared += Math.max(0, Math.floor(Number(payload.iceClearedDelta || 0)));
+    nextProgress.levelsCompleted += Math.max(0, Math.floor(Number(payload.levelsCompletedDelta || 0)));
+    nextProgress.bossDamage += Math.max(0, Math.floor(Number(payload.bossDamageDelta || 0)));
+    nextProgress.coinsSpent += Math.max(0, Math.floor(Number(payload.coinsSpentDelta || 0)));
+    nextProgress.updatedAt = nowIso();
+
+    db.prepare(`
+      UPDATE player_profiles
+      SET event_progress_json = ?, updated_at = ?
+      WHERE player_id = ?
+    `).run(JSON.stringify(nextProgress), nextProgress.updatedAt, playerId);
+
+    return getPlayerProfile(playerId);
+  });
+
+  json(res, 200, {
+    ok: true,
+    profile,
+    config: buildPublicLiveConfig(playerId),
+  });
+}
+
+function claimEventMission(res, payload, playerId) {
+  const missionId = String(payload?.missionId || '').trim();
+  const event = getEventConfig();
+  if (!event.active) {
+    json(res, 409, { error: 'Event is not active' });
+    return;
+  }
+
+  const mission = Array.isArray(event.missions) ? event.missions.find((item) => String(item.id || '') === missionId) : null;
+  if (!mission) {
+    json(res, 404, { error: 'Mission not found' });
+    return;
+  }
+
+  const rewardKey = `weekly_event_${event.id}_${mission.id}`;
+  const result = withTransaction(() => {
+    const claimed = db.prepare(`
+      SELECT 1 AS ok
+      FROM reward_claims
+      WHERE player_id = ? AND reward_key = ?
+    `).get(playerId, rewardKey);
+    if (claimed) {
+      return { status: 'claimed' };
+    }
+
+    const profile = getPlayerProfile(playerId);
+    const progress = normalizeEventProgress(profile.eventProgress);
+    if (getEventMetricValue(progress, mission.metric) < Math.max(1, Math.floor(Number(mission.target || 0)))) {
+      return { status: 'locked' };
+    }
+
+    const nextBalance = ensureWalletRow(playerId) + Math.max(0, Math.floor(Number(mission.reward || 0)));
+    const claimedAt = nowIso();
+    const nextProgress = {
+      ...progress,
+      claimedMissionIds: Array.from(new Set([...progress.claimedMissionIds, mission.id])),
+      updatedAt: claimedAt,
+    };
+
+    db.prepare('UPDATE wallets SET balance = ?, updated_at = ? WHERE player_id = ?')
+      .run(nextBalance, claimedAt, playerId);
+    db.prepare(`
+      INSERT INTO reward_claims (player_id, reward_key, amount, claimed_at)
+      VALUES (?, ?, ?, ?)
+    `).run(playerId, rewardKey, mission.reward, claimedAt);
+    db.prepare(`
+      UPDATE player_profiles
+      SET event_progress_json = ?, updated_at = ?
+      WHERE player_id = ?
+    `).run(JSON.stringify(nextProgress), claimedAt, playerId);
+
+    return {
+      status: 'claimed',
+      balance: nextBalance,
+      reward: mission.reward,
+      profile: getPlayerProfile(playerId),
+    };
+  });
+
+  if (result.status === 'claimed') {
+    json(res, 200, {
+      ok: true,
+      reward: result.reward,
+      balance: result.balance,
+      profile: result.profile,
+      config: buildPublicLiveConfig(playerId),
+    });
+    return;
+  }
+
+  json(res, result.status === 'locked' ? 409 : 409, {
+    error: result.status === 'locked' ? 'Mission target not reached' : 'Mission already claimed',
+  });
+}
+
 function submitLeaderboard(res, payload, playerId) {
   const bestLevel = Math.max(1, Math.floor(Number(payload.bestLevel || 1)));
   const bestScore = Math.max(0, Math.floor(Number(payload.bestScore || 0)));
@@ -1964,7 +2359,8 @@ function creditFromRobokassaResult(res, payload) {
       WHERE order_id = ?
     `).run(creditedAt, webhookPayload, order.order_id);
 
-    if (String(order.pack_id || '').trim() === STARTER_BUNDLE.id) {
+    const starterBundle = getStarterBundleConfig();
+    if (String(order.pack_id || '').trim() === starterBundle.id) {
       const profile = getPlayerProfile(playerId);
       db.prepare(`
         UPDATE player_profiles
@@ -1974,8 +2370,8 @@ function creditFromRobokassaResult(res, payload) {
             updated_at = ?
         WHERE player_id = ?
       `).run(
-        profile.modifierTokens + STARTER_BUNDLE.modifierTokens,
-        profile.continueReserve + STARTER_BUNDLE.continueReserve,
+        profile.modifierTokens + starterBundle.modifierTokens,
+        profile.continueReserve + starterBundle.continueReserve,
         creditedAt,
         playerId,
       );
@@ -2016,6 +2412,12 @@ const server = createServer(async (req, res) => {
 
   if (req.method === 'GET' && urlObj.pathname === '/api/health') {
     json(res, 200, { ok: true });
+    return;
+  }
+
+  if (req.method === 'GET' && urlObj.pathname === '/api/live-config') {
+    const session = verifySessionToken(extractBearerToken(req));
+    getLiveConfigState(res, session?.playerId || '');
     return;
   }
 
@@ -2087,6 +2489,36 @@ const server = createServer(async (req, res) => {
       return;
     }
     consumeProfileBonus(res, payload, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/event/progress') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'event-progress', 60)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    updateEventProgress(res, payload, playerId);
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/event/claim-mission') {
+    const playerId = requireAuth(req, res);
+    if (!playerId) return;
+    if (!enforceRateLimit(req, res, 'event-claim-mission', 30)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+    claimEventMission(res, payload, playerId);
     return;
   }
 
@@ -2287,6 +2719,26 @@ const server = createServer(async (req, res) => {
     }
 
     json(res, 401, { error: 'Unauthorized' });
+    return;
+  }
+
+  if (req.method === 'POST' && urlObj.pathname === '/api/admin/live-config') {
+    if (!enforceRateLimit(req, res, 'admin-live-config', 20)) return;
+    if (!requireJsonRequest(req, res)) return;
+    const rawBody = await readRawBody(req).catch(() => '');
+    const payload = parseJsonBody(rawBody);
+    if (payload == null) {
+      json(res, 400, { error: 'Invalid JSON payload' });
+      return;
+    }
+
+    const token = extractBearerToken(req);
+    if (!verifyAdminToken(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+
+    updateLiveConfigState(res, payload);
     return;
   }
 

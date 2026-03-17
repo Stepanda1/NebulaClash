@@ -10,6 +10,7 @@ export type Goal =
   | { type: 'special'; value: number; special: SpecialGoalType }
   | { type: 'combo_x5'; value: number }
   | { type: 'trash'; value: number }
+  | { type: 'ice'; value: number }
   | { type: 'boss'; value: number };
 
 export type LevelConfig = {
@@ -17,6 +18,7 @@ export type LevelConfig = {
   limit: number;
   goal: Goal;
   trashCount?: number;
+  iceCount?: number;
 };
 
 type GoalProgress = {
@@ -30,6 +32,7 @@ type GoalProgress = {
   levelPulseActivations: number;
   levelSmashEvents: number;
   trashDestroyed: number;
+  iceCleared: number;
 };
 
 const GEM_ROTATION: GemType[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
@@ -98,6 +101,12 @@ export function buildLevelConfigs(): LevelConfig[] {
       continue;
     }
 
+    if (phase === 5 && inSecondSector) {
+      const iceCount = 12 + Math.floor((level - 30) / 5);
+      levels.push({ mode: 'moves', limit: 24, goal: { type: 'ice', value: iceCount }, iceCount });
+      continue;
+    }
+
     if (phase === 5) {
       levels.push({ mode: 'time', limit: inSecondSector ? 56 : 62, goal: { type: 'collect', value: inSecondSector ? 20 : 18, color: paletteB } });
       continue;
@@ -139,6 +148,7 @@ export function buildLevelConfigs(): LevelConfig[] {
     { mode: 'moves', limit: 24, goal: { type: 'bombs', value: 4 } },
     { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'purple' } },
     { mode: 'moves', limit: 24, goal: { type: 'trash', value: 10 }, trashCount: 10 },
+    { mode: 'moves', limit: 23, goal: { type: 'ice', value: 8 }, iceCount: 8 },
     { mode: 'moves', limit: 24, goal: { type: 'collect_multi', targets: { green: 11, yellow: 11 } } },
     { mode: 'moves', limit: 23, goal: { type: 'lightning', value: 4 } },
     { mode: 'moves', limit: 23, goal: { type: 'bombs', value: 5 } },
@@ -184,6 +194,9 @@ export function isGoalReached(goal: Goal, progress: GoalProgress): boolean {
   }
   if (goal.type === 'trash') {
     return progress.trashDestroyed >= goal.value;
+  }
+  if (goal.type === 'ice') {
+    return progress.iceCleared >= goal.value;
   }
   return progress.bossHp <= 0;
 }
