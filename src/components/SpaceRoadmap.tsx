@@ -85,8 +85,6 @@ export function SpaceRoadmap({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showJumpToCurrent, setShowJumpToCurrent] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const dailyButtonRef = useRef<HTMLButtonElement | null>(null);
-  const topButtonRef = useRef<HTMLButtonElement | null>(null);
   const didInitialPositionRef = useRef(false);
   const t = COPY[language];
 
@@ -132,35 +130,6 @@ export function SpaceRoadmap({
       scroller.scrollTop = maxTop;
     }
   }, [getMaxScrollTop]);
-
-  useEffect(() => {
-    const dailyButton = dailyButtonRef.current;
-    const topButton = topButtonRef.current;
-    if (!dailyButton && !topButton) return;
-
-    const onDailyTap = (event: Event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      onOpenDailyRewards();
-    };
-    const onTopTap = (event: Event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      onOpenLeaderboard();
-    };
-
-    dailyButton?.addEventListener('pointerup', onDailyTap);
-    dailyButton?.addEventListener('touchend', onDailyTap, { passive: false });
-    topButton?.addEventListener('pointerup', onTopTap);
-    topButton?.addEventListener('touchend', onTopTap, { passive: false });
-
-    return () => {
-      dailyButton?.removeEventListener('pointerup', onDailyTap);
-      dailyButton?.removeEventListener('touchend', onDailyTap);
-      topButton?.removeEventListener('pointerup', onTopTap);
-      topButton?.removeEventListener('touchend', onTopTap);
-    };
-  }, [onOpenDailyRewards, onOpenLeaderboard]);
 
   const scrollToLevel = (level: number, behavior: ScrollBehavior = 'smooth') => {
     const scroller = scrollerRef.current;
@@ -288,7 +257,6 @@ export function SpaceRoadmap({
         <div className="relative flex-1 min-h-0 isolate">
           <div className="absolute left-2 top-2 z-[70] flex flex-col gap-2 pointer-events-auto">
             <button
-              ref={dailyButtonRef}
               type="button"
               onClick={onOpenDailyRewards}
               className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${
@@ -324,7 +292,6 @@ export function SpaceRoadmap({
               <Sparkles className="h-6 w-6" />
             </button>
             <button
-              ref={topButtonRef}
               type="button"
               onClick={onOpenLeaderboard}
               className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${

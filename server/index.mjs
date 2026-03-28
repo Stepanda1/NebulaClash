@@ -44,40 +44,40 @@ const STARTER_BUNDLE_DEFAULT = {
 };
 
 const DAILY_REWARD_CALENDAR = [
-  40, 50, 60, 70, 80, 95, 120, 85, 95, 110,
-  125, 145, 165, 190, 140, 155, 170, 185, 205, 230,
-  175, 190, 205, 220, 245, 270, 300, 230, 260, 420,
+  18, 20, 22, 24, 26, 30, 36, 22, 24, 26,
+  28, 32, 36, 40, 26, 28, 30, 32, 36, 40,
+  30, 32, 34, 36, 40, 44, 48, 38, 44, 72,
 ];
 
 const DAILY_COLLECTION_MILESTONES = {
-  7: 60,
-  14: 90,
-  21: 140,
-  30: 260,
+  7: 25,
+  14: 35,
+  21: 45,
+  30: 60,
 };
 
 const LEVEL_COMPLETION_MILESTONES = {
-  3: 40,
-  5: 60,
-  10: 120,
-  15: 180,
-  20: 260,
-  30: 420,
+  3: 20,
+  5: 25,
+  10: 45,
+  15: 60,
+  20: 80,
+  30: 120,
 };
 
 const DAILY_MISSION_DEFINITIONS = [
-  { id: 'bomb_activations', target: 3, reward: 40 },
-  { id: 'score_1800', target: 1800, reward: 55 },
-  { id: 'clean_clears', target: 2, reward: 75 },
-  { id: 'lightning_activations', target: 2, reward: 45 },
-  { id: 'level_completions', target: 2, reward: 35 },
-  { id: 'score_2600', target: 2600, reward: 85 },
+  { id: 'bomb_activations', target: 4, reward: 18 },
+  { id: 'score_1800', target: 2200, reward: 20 },
+  { id: 'clean_clears', target: 3, reward: 28 },
+  { id: 'lightning_activations', target: 1, reward: 24 },
+  { id: 'level_completions', target: 4, reward: 16 },
+  { id: 'score_2600', target: 3400, reward: 32 },
 ];
 
-const DAILY_MISSION_REROLL_COST = 20;
-const DAILY_MISSION_COMPLETION_CHEST_REWARD = 90;
-const WEEKLY_MISSION_TARGET = 10;
-const WEEKLY_MISSION_CHEST_REWARD = 180;
+const DAILY_MISSION_REROLL_COST = 30;
+const DAILY_MISSION_COMPLETION_CHEST_REWARD = 35;
+const WEEKLY_MISSION_TARGET = 18;
+const WEEKLY_MISSION_CHEST_REWARD = 60;
 
 const LEADERBOARD_CHEST_TIERS = [
   { id: 'top10', maxRank: 10, reward: 80 },
@@ -95,14 +95,14 @@ const FALLBACK_LEADERBOARD_PROFILES = [
 
 const DEFAULT_LIVE_CONFIG = {
   economy: {
-    boosterCost: 15,
+    boosterCost: 18,
     moveBoostAmount: 5,
     timeBoostSeconds: 30,
     runModifierCosts: {
-      startBomb: 12,
-      startLightning: 12,
-      bossShield: 18,
-      trashCleaner: 14,
+      startBomb: 18,
+      startLightning: 18,
+      bossShield: 24,
+      trashCleaner: 22,
     },
     missionRerollCost: DAILY_MISSION_REROLL_COST,
   },

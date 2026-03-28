@@ -55,6 +55,16 @@ function clampLightningGoal(goal: Goal): Goal {
   return goal;
 }
 
+function getSpecialGoalValue(special: SpecialGoalType, inSecondSector: boolean, baseValue: number): number {
+  if (special === 'lightning') {
+    return inSecondSector ? 2 : 1;
+  }
+  if (special === 'pulse' || special === 'nova') {
+    return inSecondSector ? Math.max(2, baseValue - 1) : 1;
+  }
+  return baseValue;
+}
+
 export function buildLevelConfigs(): LevelConfig[] {
   const levels: LevelConfig[] = [];
 
@@ -76,22 +86,23 @@ export function buildLevelConfigs(): LevelConfig[] {
     }
 
     if (phase === 0) {
-      levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 28, goal: { type: 'collect', value: inSecondSector ? 22 : 18, color: paletteA } });
+      levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 28, goal: { type: 'collect', value: inSecondSector ? 28 : 24, color: paletteA } });
       continue;
     }
 
     if (phase === 1) {
-      levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 26, goal: { type: 'special', special: SPECIAL_GOAL_ROTATION[idx % SPECIAL_GOAL_ROTATION.length], value: inSecondSector ? 3 : 2 } });
+      const special = SPECIAL_GOAL_ROTATION[idx % SPECIAL_GOAL_ROTATION.length];
+      levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 26, goal: { type: 'special', special, value: getSpecialGoalValue(special, inSecondSector, inSecondSector ? 3 : 2) } });
       continue;
     }
 
     if (phase === 2) {
-      levels.push({ mode: 'time', limit: inSecondSector ? 52 : 58, goal: { type: 'collect_multi', targets: { [paletteA]: inSecondSector ? 12 : 10, [paletteB]: inSecondSector ? 12 : 10 } } });
+      levels.push({ mode: 'time', limit: inSecondSector ? 52 : 58, goal: { type: 'collect_multi', targets: { [paletteA]: inSecondSector ? 16 : 13, [paletteB]: inSecondSector ? 16 : 13 } } });
       continue;
     }
 
     if (phase === 3) {
-      levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'combo_x5', value: inSecondSector ? 3 : 2 } });
+      levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'combo_x5', value: inSecondSector ? 2 : 1 } });
       continue;
     }
 
@@ -108,23 +119,24 @@ export function buildLevelConfigs(): LevelConfig[] {
     }
 
     if (phase === 5) {
-      levels.push({ mode: 'time', limit: inSecondSector ? 56 : 62, goal: { type: 'collect', value: inSecondSector ? 20 : 18, color: paletteB } });
+      levels.push({ mode: 'time', limit: inSecondSector ? 56 : 62, goal: { type: 'collect', value: inSecondSector ? 26 : 22, color: paletteB } });
       continue;
     }
 
     if (phase === 6) {
       const value = inSecondSector ? 4 : 3;
       const special = normalizeSpecialGoal(SPECIAL_GOAL_ROTATION[(idx + 2) % SPECIAL_GOAL_ROTATION.length], value);
-      levels.push({ mode: 'moves', limit: inSecondSector ? 23 : 24, goal: { type: 'special', special, value } });
+      levels.push({ mode: 'moves', limit: inSecondSector ? 23 : 24, goal: { type: 'special', special, value: getSpecialGoalValue(special, inSecondSector, value) } });
       continue;
     }
 
     if (phase === 7) {
-      levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'collect_multi', targets: { [paletteA]: inSecondSector ? 14 : 12, [paletteB]: inSecondSector ? 14 : 12 } } });
+      levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'collect_multi', targets: { [paletteA]: inSecondSector ? 18 : 15, [paletteB]: inSecondSector ? 18 : 15 } } });
       continue;
     }
 
-    levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'special', special: phase % 2 === 0 ? 'bomb' : 'lightning', value: inSecondSector ? 5 : 3 } });
+    const special = phase % 2 === 0 ? 'bomb' : 'lightning';
+    levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'special', special, value: getSpecialGoalValue(special, inSecondSector, inSecondSector ? 5 : 3) } });
   }
 
   levels[1] = { mode: 'moves', limit: 26, goal: { type: 'bombs', value: 4 } };
@@ -132,26 +144,26 @@ export function buildLevelConfigs(): LevelConfig[] {
 
   // Smooth the first levels so each new pattern is introduced in isolation.
   const onboardingLevels: LevelConfig[] = [
-    { mode: 'moves', limit: 18, goal: { type: 'collect', value: 10, color: 'red' } },
-    { mode: 'moves', limit: 18, goal: { type: 'collect', value: 12, color: 'blue' } },
+    { mode: 'moves', limit: 18, goal: { type: 'collect', value: 14, color: 'red' } },
+    { mode: 'moves', limit: 18, goal: { type: 'collect', value: 16, color: 'blue' } },
     { mode: 'moves', limit: 18, goal: { type: 'bombs', value: 2 } },
-    { mode: 'moves', limit: 20, goal: { type: 'collect_multi', targets: { red: 6, green: 6 } } },
+    { mode: 'moves', limit: 20, goal: { type: 'collect_multi', targets: { red: 8, green: 8 } } },
     { mode: 'moves', limit: 18, goal: { type: 'lightning', value: 1 } },
-    { mode: 'moves', limit: 20, goal: { type: 'collect', value: 14, color: 'yellow' } },
+    { mode: 'moves', limit: 20, goal: { type: 'collect', value: 18, color: 'yellow' } },
     { mode: 'moves', limit: 20, goal: { type: 'trash', value: 6 }, trashCount: 6 },
-    { mode: 'moves', limit: 20, goal: { type: 'bombs', value: 3 } },
-    { mode: 'moves', limit: 20, goal: { type: 'collect_multi', targets: { blue: 8, purple: 8 } } },
+    { mode: 'moves', limit: 20, goal: { type: 'bombs', value: 2 } },
+    { mode: 'moves', limit: 20, goal: { type: 'collect_multi', targets: { blue: 10, purple: 10 } } },
     { mode: 'moves', limit: 26, goal: { type: 'boss', value: Math.floor(120 * 1.2) } },
-    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'green' } },
-    { mode: 'moves', limit: 24, goal: { type: 'lightning', value: 3 } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 24, color: 'green' } },
+    { mode: 'moves', limit: 24, goal: { type: 'lightning', value: 2 } },
     { mode: 'time', limit: 62, goal: { type: 'collect_multi', targets: { yellow: 10, orange: 10 } } },
-    { mode: 'moves', limit: 24, goal: { type: 'bombs', value: 4 } },
-    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 20, color: 'purple' } },
+    { mode: 'moves', limit: 24, goal: { type: 'bombs', value: 3 } },
+    { mode: 'moves', limit: 24, goal: { type: 'collect', value: 24, color: 'purple' } },
     { mode: 'moves', limit: 24, goal: { type: 'trash', value: 10 }, trashCount: 10 },
-    { mode: 'moves', limit: 23, goal: { type: 'ice', value: 8 }, iceCount: 8 },
-    { mode: 'moves', limit: 24, goal: { type: 'collect_multi', targets: { green: 11, yellow: 11 } } },
-    { mode: 'moves', limit: 23, goal: { type: 'lightning', value: 4 } },
-    { mode: 'moves', limit: 23, goal: { type: 'bombs', value: 5 } },
+    { mode: 'moves', limit: 23, goal: { type: 'ice', value: 10 }, iceCount: 10 },
+    { mode: 'moves', limit: 24, goal: { type: 'collect_multi', targets: { green: 13, yellow: 13 } } },
+    { mode: 'moves', limit: 23, goal: { type: 'lightning', value: 2 } },
+    { mode: 'moves', limit: 23, goal: { type: 'bombs', value: 4 } },
     { mode: 'moves', limit: 25, goal: { type: 'boss', value: Math.floor(130 * 1.2) } },
   ];
 

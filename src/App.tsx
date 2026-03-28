@@ -94,7 +94,7 @@ const ADMIN_LAST_ACTIVE_KEY = 'match3_admin_last_active_at';
 const ADMIN_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 const BEST_SCORE_STORAGE_KEY = `match3_best_score_v${PROGRESS_RESET_VERSION}`;
 const WEEKLY_LOOP_STORAGE_KEY = `match3_weekly_loop_v${PROGRESS_RESET_VERSION}`;
-const WEEKLY_LEVEL_TARGET = 3;
+const WEEKLY_LEVEL_TARGET = 7;
 const SHOP_TIMING_EXPERIMENT_ID = 'shop_timing_v2';
 const SHOP_TIMING_VARIANT_KEY = 'match3_exp_shop_timing_v2_variant';
 const SHOP_TIMING_AUTO_SHOWN_KEY = 'match3_exp_shop_timing_v2_auto_shown';
@@ -254,8 +254,8 @@ function getCurrentWeekKey(now = new Date()): string {
 }
 
 function getDefaultWeeklyChallengeScore(bestScore: number): number {
-  const baseline = bestScore > 0 ? bestScore + 350 : 1800;
-  return Math.max(1800, Math.ceil(baseline / 100) * 100);
+  const baseline = bestScore > 0 ? bestScore + 700 : 2600;
+  return Math.max(2600, Math.ceil(baseline / 100) * 100);
 }
 
 function normalizeWeeklyLoopState(raw: Partial<WeeklyLoopState> | null | undefined, bestScore: number): WeeklyLoopState {
@@ -1214,6 +1214,19 @@ function App() {
     applyMissionStatus(payload);
   }, [applyMissionStatus, getDailyMissionsStatus]);
 
+  const refreshDailyRewardSnapshot = useCallback(async () => {
+    const status = await getDailyRewardStatus();
+    if (!status) return;
+    setDailyCanClaim(Boolean(status.canClaim));
+    setDailyStreak(Math.max(1, Number(status.streak || 1)));
+    setDailyNextReward(Math.max(1, Number(status.nextReward || 1)));
+    setDailyClaimDay(Math.max(1, Number(status.claimDay || 1)));
+    setDailyTotalClaims(Math.max(0, Number(status.totalClaims || 0)));
+    setDailyMilestoneBonus(Math.max(0, Number(status.milestoneBonus || 0)));
+    setDailyCalendarRewards(Array.isArray(status.calendarRewards) ? status.calendarRewards : []);
+    await refreshDailyMissions();
+  }, [getDailyRewardStatus, refreshDailyMissions]);
+
   const claimDailyMissionReward = useCallback(async (missionId: string) => {
     setDailyMissionClaimLoadingId(missionId);
     try {
@@ -1320,10 +1333,13 @@ function App() {
       }
       applyProfileState(profile);
       setShopNotice(tx('Имя сохранено', 'Name saved', '名字已保存'));
+      if (isLeaderboardOpen) {
+        await refreshLeaderboardSnapshot(20, false);
+      }
     } finally {
       setIsSavingDisplayName(false);
     }
-  }, [applyProfileState, displayNameDraft, language, setShopNotice, updateProfile]);
+  }, [applyProfileState, displayNameDraft, isLeaderboardOpen, language, refreshLeaderboardSnapshot, setShopNotice, updateProfile]);
 
   const handleClaimDailyReward = async () => {
     const result = await claimDailyReward();
@@ -1390,7 +1406,8 @@ function App() {
     }
   }, [activeEventRun, applyMissionStatus, applyProfileState, bossHp, bossMaxHp, iceCleared, level, levelBombActivations, levelLightningActivations, reportDailyMissionProgress, score, updateEventProgress, usedContinueThisLevel, walletReady]);
 
-  const openDailyRewards = () => {
+  const openDailyRewards = async () => {
+    await refreshDailyRewardSnapshot();
     setIsDailyRewardsOpen(true);
   };
 
@@ -1509,8 +1526,15 @@ function App() {
             <div className="mt-3 grid grid-cols-5 gap-2">
               {dailyCalendarRewards.slice(0, 30).map((reward, index) => {
                 const day = index + 1;
-                const claimed = day < dailyClaimDay || (day === dailyClaimDay && !dailyCanClaim);
-                const current = day === dailyClaimDay;
+                const cycleClaimedCount = (() => {
+                  const rawCount = dailyTotalClaims % 30;
+                  if (!dailyCanClaim && rawCount === 0 && dailyTotalClaims > 0) {
+                    return 30;
+                  }
+                  return rawCount;
+                })();
+                const claimed = day <= cycleClaimedCount;
+                const current = cycleClaimedCount < 30 && day === dailyClaimDay;
                 const milestone = day === 7 || day === 14 || day === 21 || day === 30;
                 return (
                   <div key={day} className={`rounded-xl border px-2 py-2 text-center text-[10px] font-black ${current ? 'border-emerald-200/55 bg-emerald-300/18 text-emerald-50' : claimed ? 'border-cyan-200/20 bg-cyan-300/8 text-cyan-50/85' : 'border-white/10 bg-white/[0.03] text-white/72'}`}>
@@ -1557,16 +1581,16 @@ function App() {
             <div className="mt-3 space-y-2">
               {dailyMissions.map((mission) => {
                 const missionTitle = mission.id === 'bomb_activations'
-                  ? tx('Активируй 3 бомбы', 'Activate 3 bombs', '触发 3 次炸弹')
+                  ? tx(`Активируй ${mission.target} бомб`, `Activate ${mission.target} bombs`, `触发 ${mission.target} 次炸弹`)
                   : mission.id === 'score_1800'
-                    ? tx('Набери 1800 очков', 'Beat 1800 score', '达到 1800 分')
+                    ? tx(`Набери ${mission.target} очков`, `Beat ${mission.target} score`, `达到 ${mission.target} 分`)
                     : mission.id === 'clean_clears'
-                      ? tx('Пройди 2 уровня без продолжения', 'Clear 2 levels without continue', '无续关通关 2 关')
+                      ? tx(`Пройди ${mission.target} уровня без продолжения`, `Clear ${mission.target} levels without continue`, `无续关通关 ${mission.target} 关`)
                       : mission.id === 'lightning_activations'
-                        ? tx('Активируй 2 молнии', 'Activate 2 lightnings', '触发 2 次闪电')
+                        ? tx(`Активируй ${mission.target} молнии`, `Activate ${mission.target} lightnings`, `触发 ${mission.target} 次闪电`)
                         : mission.id === 'level_completions'
-                          ? tx('Пройди 2 уровня', 'Complete 2 levels', '完成 2 关')
-                          : tx('Набери 2600 очков', 'Beat 2600 score', '达到 2600 分');
+                          ? tx(`Пройди ${mission.target} уровня`, `Complete ${mission.target} levels`, `完成 ${mission.target} 关`)
+                          : tx(`Набери ${mission.target} очков`, `Beat ${mission.target} score`, `达到 ${mission.target} 分`);
                 const progressValue = Math.min(mission.target, mission.progress);
                 return (
                   <div key={mission.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
@@ -2382,24 +2406,14 @@ function App() {
 
   useEffect(() => {
     if (!walletReady) return;
-    void (async () => {
-      const status = await getDailyRewardStatus();
-      if (!status) return;
-      setDailyCanClaim(Boolean(status.canClaim));
-      setDailyStreak(Math.max(1, Number(status.streak || 1)));
-      setDailyNextReward(Math.max(1, Number(status.nextReward || 40)));
-      setDailyClaimDay(Math.max(1, Number(status.claimDay || 1)));
-      setDailyTotalClaims(Math.max(0, Number(status.totalClaims || 0)));
-      setDailyMilestoneBonus(Math.max(0, Number(status.milestoneBonus || 0)));
-      setDailyCalendarRewards(Array.isArray(status.calendarRewards) ? status.calendarRewards : []);
-      await refreshDailyMissions();
-    })();
-  }, [getDailyRewardStatus, refreshDailyMissions, walletReady]);
+    void refreshDailyRewardSnapshot();
+  }, [refreshDailyRewardSnapshot, walletReady]);
 
   useEffect(() => {
     if (!walletReady || !isMapOpen) return;
+    void refreshDailyRewardSnapshot();
     void refreshLeaderboardSnapshot(10, false);
-  }, [isMapOpen, refreshLeaderboardSnapshot, walletReady]);
+  }, [isMapOpen, refreshDailyRewardSnapshot, refreshLeaderboardSnapshot, walletReady]);
 
   useEffect(() => {
     if (!isLevelUp || !walletReady || !playerId) return;
@@ -2438,8 +2452,9 @@ function App() {
         bestScore: score,
         totalStars: totalCollectedStars + Math.max(0, stars),
       });
+      await refreshLeaderboardSnapshot(isLeaderboardOpen ? 20 : 10, false);
     })();
-  }, [bestScore, claimLevelCompletionReward, isLevelUp, language, level, playerDisplayName, playerId, score, setShopNotice, submitLeaderboardEntry, totalCollectedStars, walletReady]);
+  }, [bestScore, claimLevelCompletionReward, isLeaderboardOpen, isLevelUp, language, level, playerDisplayName, playerId, refreshLeaderboardSnapshot, score, setShopNotice, submitLeaderboardEntry, totalCollectedStars, walletReady]);
 
   const getAudioCtx = () => {
     if (!audioCtxRef.current) {

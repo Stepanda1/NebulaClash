@@ -582,7 +582,7 @@ export const useGame = () => {
         return hits;
     }, []);
 
-    const clearTrashByImpact = useCallback((g: Grid, directHitIds: Set<string>, adjacentMatchIds?: Set<string>) => {
+    const clearTrashByImpact = useCallback((g: Grid, directHitIds: Set<string>, adjacentMatchIds?: Set<string>): Set<string> => {
         const trashToClear = new Set<string>();
 
         for (let y = 0; y < ROWS; y++) {
@@ -600,17 +600,23 @@ export const useGame = () => {
             adjacentHits.forEach((id) => trashToClear.add(id));
         }
 
-        if (trashToClear.size === 0) return;
+        if (trashToClear.size === 0) return trashToClear;
 
         for (let y = 0; y < ROWS; y++) {
             for (let x = 0; x < COLS; x++) {
                 const tile = g[y][x];
                 if (!trashToClear.has(tile.id)) continue;
-                g[y][x] = { ...tile, hasTrash: false };
+                g[y][x] = {
+                    ...tile,
+                    hasTrash: false,
+                    type: null as Tile['type'],
+                    gemType: undefined,
+                };
             }
         }
 
         setTrashDestroyed(prev => prev + trashToClear.size);
+        return trashToClear;
     }, [collectAdjacentTrash]);
 
     const clearIceByImpact = useCallback((g: Grid, impactIds: Set<string>) => {
@@ -853,8 +859,9 @@ export const useGame = () => {
 
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
             clearIceByImpact(activeGrid, removeSet);
-            clearTrashByImpact(activeGrid, removeSet, allMatched);
-            activeGrid = await runRemovalAndGravity(activeGrid, removeSet);
+            const clearedTrash = clearTrashByImpact(activeGrid, removeSet, allMatched);
+            const removalSet = new Set<string>([...removeSet, ...clearedTrash]);
+            activeGrid = await runRemovalAndGravity(activeGrid, removalSet);
 
             matchMap = findMatches(activeGrid);
             iteration++;
@@ -926,7 +933,8 @@ export const useGame = () => {
             countCollected(activeGrid, affected);
             countSpecialGoalActivations(activeGrid, affected);
             clearIceByImpact(activeGrid, affected);
-            clearTrashByImpact(activeGrid, affected);
+            const clearedTrash = clearTrashByImpact(activeGrid, affected);
+            const removalSet = new Set<string>([...affected, ...clearedTrash]);
             setScore(prev => prev + affected.size * 14 + 40);
             if (levelConfig.mode === 'moves') {
                 remainingCounter = Math.max(0, remainingCounter - 1);
@@ -938,7 +946,7 @@ export const useGame = () => {
                 setTimeLeft(remainingCounter);
             }
 
-            activeGrid = await runRemovalAndGravity(activeGrid, affected, {
+            activeGrid = await runRemovalAndGravity(activeGrid, removalSet, {
                 remove: VICTORY_BONUS_REMOVE_MS,
                 gravity: VICTORY_BONUS_GRAVITY_MS,
             });
@@ -1010,8 +1018,9 @@ export const useGame = () => {
 
             const removeSet = new Set<string>([...regularMatches, ...triggeredByMatch]);
             clearIceByImpact(activeGrid, removeSet);
-            clearTrashByImpact(activeGrid, removeSet, allMatched);
-            activeGrid = await runRemovalAndGravity(activeGrid, removeSet);
+            const clearedTrash = clearTrashByImpact(activeGrid, removeSet, allMatched);
+            const removalSet = new Set<string>([...removeSet, ...clearedTrash]);
+            activeGrid = await runRemovalAndGravity(activeGrid, removalSet);
 
             matchMap = findMatches(activeGrid);
             iteration++;
