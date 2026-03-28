@@ -36,37 +36,37 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
     if (language === 'zh') return zh;
     return en;
   };
-  const title = tx('Подготовка к запуску', 'Prepare for Launch', '开始前准备');
+  const title = tx('Перед уровнем', 'Before the level', '开始前准备');
   const subtitle = tx('Проверь цель и начни уровень', 'Check your goal and start the level', '确认目标后开始关卡');
   const playLabel = tx('Играть', 'Play', '开始');
-  const runModifiersTitle = tx('Усилители забега', 'Run modifiers', '本局增益');
-  const runModifiersSubtitle = tx('Одноразовые покупки перед стартом уровня', 'One-time boosts before the level starts', '开局前的一次性增益购买');
+  const runModifiersTitle = tx('Бонусы на уровень', 'Level boosts', '本局增益');
+  const runModifiersSubtitle = tx('Разовые усиления, которые помогут пройти именно этот уровень', 'One-time boosts for this level', '本关使用的一次性增益');
 
   const getModifierVisuals = (modifierId: string) => {
     if (modifierId === 'startBomb') {
       return {
         icon: <Sparkles className="h-4 w-4" />,
-        badge: tx('Сильный старт', 'Fast opener', '强势开局'),
+        badge: tx('Стартовая бомба', 'Starting bomb', '开局炸弹'),
         tone: 'from-amber-300/35 to-orange-500/20 border-amber-200/25 text-amber-50',
       };
     }
     if (modifierId === 'startLightning') {
       return {
         icon: <Zap className="h-4 w-4" />,
-        badge: tx('Линия сразу', 'Line clear', '立即清线'),
+        badge: tx('Стартовая молния', 'Starting lightning', '开局闪电'),
         tone: 'from-cyan-300/35 to-sky-500/20 border-cyan-200/25 text-cyan-50',
       };
     }
     if (modifierId === 'bossShield') {
       return {
         icon: <Shield className="h-4 w-4" />,
-        badge: tx('Против босса', 'Boss safe', '克制首领'),
+        badge: tx('Защита от босса', 'Boss protection', '克制首领'),
         tone: 'from-emerald-300/35 to-teal-500/20 border-emerald-200/25 text-emerald-50',
       };
     }
     return {
       icon: <Trash2 className="h-4 w-4" />,
-      badge: tx('Чистое поле', 'Board cleanup', '清理棋盘'),
+      badge: tx('Очистка поля', 'Board cleanup', '清理棋盘'),
       tone: 'from-violet-300/35 to-fuchsia-500/20 border-violet-200/25 text-violet-50',
     };
   };
@@ -112,13 +112,13 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
           <div className={`mt-4 rounded-2xl border p-4 ${eventRunEnabled ? 'border-cyan-200/38 bg-cyan-300/16 shadow-[0_0_18px_rgba(34,211,238,0.16)]' : 'border-cyan-200/18 bg-cyan-300/10'}`}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/78">{tx('Ивент-забег', 'Event run', '活动局')}</div>
+                <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/78">{tx('Режим события', 'Event mode', '活动局')}</div>
                 <div className="mt-1 text-sm font-black text-white">{eventTitle}</div>
                 <div className="mt-1 text-xs text-white/70">{eventDescription}</div>
                 {eventRunEnabled && (
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-cyan-200/25 bg-slate-950/35 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">
                     <Sparkles className="h-3.5 w-3.5" />
-                    {tx('Этот запуск пойдёт в ивент', 'This run counts for the event', '这一局会计入活动')}
+                    {tx('Этот уровень засчитается в событие', 'This level counts for the event', '这一局会计入活动')}
                   </div>
                 )}
               </div>
@@ -132,8 +132,8 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
             </div>
             <div className="mt-3 text-xs text-cyan-50/84">
               {tx(
-                `Добавит ${eventIceTiles} крио-щитов в забег и зачтёт крио/босс/уровни в недельный сектор.`,
-                `Adds ${eventIceTiles} cryo shields and routes cryo, boss, and level progress into the weekly sector.`,
+                `На поле появится ещё ${eventIceTiles} ледяных плиток, а прогресс этого уровня засчитается в задания события.`,
+                `Adds ${eventIceTiles} extra ice tiles and counts this level toward the event missions.`,
                 `本局会额外加入 ${eventIceTiles} 个冰盾，并将破冰、首领和通关进度记入每周活动。`,
               )}
             </div>

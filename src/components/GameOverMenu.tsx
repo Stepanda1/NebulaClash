@@ -65,7 +65,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
                     </div>
                     <div className="mt-3 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
                     <div className="mt-3 text-[11px] uppercase tracking-[0.22em] text-slate-400/80">
-                        {tx('Перезапустить сектор', 'Reboot Sector', '重启区域')}
+                        {tx('Начать уровень заново', 'Restart the level', '重新开始关卡')}
                     </div>
                 </div>
 

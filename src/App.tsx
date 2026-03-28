@@ -596,7 +596,7 @@ function App() {
     }
 
     if (selectedLevelConfig.goal.type === 'ice') {
-      return <span>{tx('Крио-щиты', 'Cryo shields', '冰盾')}: 0/{selectedLevelConfig.goal.value}</span>;
+      return <span>{tx('Ледяные плитки', 'Ice tiles', '冰块')}: 0/{selectedLevelConfig.goal.value}</span>;
     }
 
     return <span>{tx('Космический мусор', 'Space debris', '太空杂物')}: 0/{selectedLevelConfig.goal.value}</span>;
@@ -672,7 +672,7 @@ function App() {
     }
 
     if (levelConfig.goal.type === 'ice') {
-      return <span>{tx('Крио-щиты', 'Cryo shields', '冰盾')}: {iceCleared}/{levelConfig.goal.value}</span>;
+      return <span>{tx('Ледяные плитки', 'Ice tiles', '冰块')}: {iceCleared}/{levelConfig.goal.value}</span>;
     }
 
     return <span>{tx('Космический мусор', 'Space debris', '太空杂物')}: {trashDestroyed}/{Math.max(levelConfig.goal.value, trashTotal)}</span>;
@@ -1432,7 +1432,7 @@ function App() {
       <div className="w-full max-w-md rounded-[2rem] border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(6,18,32,0.98),rgba(5,12,24,0.99))] p-5 shadow-[0_24px_90px_rgba(34,211,238,0.18)] max-h-[88vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <div className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100/82">{tx('Недельный ивент', 'Weekly Event', '每周活动')}</div>
+            <div className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100/82">{tx('Событие недели', 'Weekly Event', '每周活动')}</div>
             <div className="mt-2 text-2xl font-black text-white">{eventConfig.title}</div>
             <div className="mt-1 text-sm text-cyan-50/72">{eventConfig.description}</div>
           </div>
@@ -1447,19 +1447,19 @@ function App() {
             <div className="mt-1 text-2xl font-black">{eventMissionsCompleted}/{eventMissions.length}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{tx('Крио', 'Cryo', '冰盾')}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{tx('Лёд', 'Ice', '冰块')}</div>
             <div className="mt-1 text-2xl font-black">{eventProgress.iceCleared}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{tx('Завершено', 'Runs', '完成局数')}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/72">{tx('Пройдено', 'Runs', '完成局数')}</div>
             <div className="mt-1 text-2xl font-black">{eventProgress.levelsCompleted}</div>
           </div>
         </div>
 
         <div className="mt-4 rounded-2xl border border-cyan-200/14 bg-white/[0.04] p-3 text-xs leading-relaxed text-cyan-50/84">
           {tx(
-            `Чтобы ивент реально работал, включай "Ивент-забег" перед стартом уровня. Такой запуск добавляет ${eventConfig.eventRunIceTiles} крио-щитов и пишет прогресс в сектор.`,
-            `Turn on "Event run" before starting a level. That run adds ${eventConfig.eventRunIceTiles} cryo shields and writes progress into the sector event.`,
+            `Перед стартом уровня включи режим события. Тогда на поле появятся дополнительные ледяные плитки, а прогресс пойдёт в задания недели.`,
+            `Turn on event mode before starting a level. It adds extra ice tiles and counts that run toward the weekly event missions.`,
             `想让活动真正生效，请在开局前开启“活动局”。该模式会增加 ${eventConfig.eventRunIceTiles} 个冰盾，并把进度记入活动扇区。`,
           )}
         </div>
@@ -1669,7 +1669,7 @@ function App() {
               <div className="mt-3 rounded-xl border border-cyan-200/18 bg-cyan-300/10 p-3 text-white">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-black">{tx('Недельный трек миссий', 'Weekly mission track', '每周任务轨道')}</div>
+                    <div className="text-xs font-black">{tx('Недельный сундук за задания', 'Weekly mission chest', '每周任务奖励')}</div>
                     <div className="mt-1 text-xs text-white/72">
                       {weeklyMissionTrack.progress}/{weeklyMissionTrack.target} • +{weeklyMissionTrack.reward}
                     </div>
@@ -1705,7 +1705,7 @@ function App() {
           </button>
         </div>
         <div className="mb-3 rounded-2xl border border-amber-200/18 bg-amber-300/10 px-4 py-3 text-sm text-white">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">{tx('Цель рейтинга', 'Beat this rival', '超越这个对手')}</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-amber-100/80">{tx('Лучшая цель недели', 'Weekly target score', '每周目标分数')}</div>
           <div className="mt-1 text-xl font-black">
             {leaderboardOverview.nextRival?.bestScore ?? weeklyLoop.challengeTargetScore}
           </div>
@@ -1717,8 +1717,8 @@ function App() {
                 `超过 ${leaderboardOverview.nextRival.displayName}。距离下一名还差 ${leaderboardOverview.nextRival.gapScore} 分。`,
               )
               : tx(
-                `Твой лучший: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Челлендж недели уже закрыт.' : 'Обгони эту планку, чтобы закрыть недельный челлендж.'}`,
-                `Your best: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Weekly challenge already cleared.' : 'Beat this line to close the weekly challenge.'}`,
+                `Твой лучший результат: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'Недельная цель уже выполнена.' : 'Побей эту планку, чтобы закрыть недельную цель.'}`,
+                `Your best score: ${bestScore}. ${weeklyLoop.challengeCompleted ? 'The weekly target is already complete.' : 'Beat this score to finish the weekly target.'}`,
                 `你的最佳成绩：${bestScore}。${weeklyLoop.challengeCompleted ? '每周挑战已完成。' : '超过这条线来完成每周挑战。'}`,
               )}
           </div>
@@ -3021,8 +3021,8 @@ function App() {
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>
                   {tx(
-                    `Ивент-забег активен: +${eventConfig.eventRunIceTiles} крио-щитов и прогресс в сектор`,
-                    `Event run active: +${eventConfig.eventRunIceTiles} cryo shields and sector progress`,
+                    `Режим события активен: на поле будет больше льда, и прогресс засчитается в задания`,
+                    `Event mode is active: this run adds extra ice and counts toward event missions`,
                     `活动对局已激活：+${eventConfig.eventRunIceTiles} 个低温护盾，并计入活动进度`,
                   )}
                 </span>
