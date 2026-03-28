@@ -609,7 +609,7 @@ export const useGame = () => {
                 g[y][x] = {
                     ...tile,
                     hasTrash: false,
-                    type: null as Tile['type'],
+                    type: null as unknown as Tile['type'],
                     gemType: undefined,
                 };
             }
