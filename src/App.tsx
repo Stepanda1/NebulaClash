@@ -1739,18 +1739,18 @@ function App() {
         </div>
         <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white">
           <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">{tx('Имя в рейтинге', 'Leaderboard name', '排行榜昵称')}</div>
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
             <input
               value={displayNameDraft}
               onChange={(event) => setDisplayNameDraft(event.target.value)}
               placeholder={tx('Например, StarPilot', 'For example, StarPilot', '例如：StarPilot')}
-              className="flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none"
+              className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none"
             />
             <button
               type="button"
               onClick={() => void saveDisplayName()}
               disabled={isSavingDisplayName}
-              className="rounded-xl bg-gradient-to-r from-cyan-300 to-sky-400 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-900"
+              className="w-full rounded-xl bg-gradient-to-r from-cyan-300 to-sky-400 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-900 sm:w-auto"
             >
               {tx('Сохранить', 'Save', '保存')}
             </button>
