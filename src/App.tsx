@@ -175,6 +175,7 @@ type GoalReadabilitySummary = {
   objectiveTitle: string;
   focusLabel: string;
   focusHint: string;
+  compactHint: string;
   remainingLabel: string;
   progressRatio: number;
   nearWin: boolean;
@@ -658,6 +659,7 @@ function App() {
         objectiveTitle: '',
         focusLabel: '',
         focusHint: '',
+        compactHint: '',
       };
     }
 
@@ -667,6 +669,7 @@ function App() {
         objectiveTitle: tx('Собери нужный цвет', 'Collect the target color', '收集目标颜色'),
         focusLabel: tx(`Главная цель: ${getGemLabel(goal.color, language)}`, `Primary target: ${getGemLabel(goal.color, language)}`, `当前主目标：${getGemLabel(goal.color, language)}`),
         focusHint: tx('Сначала добивай именно этот цвет, остальные ходы вторичны.', 'Prioritize this color first. Everything else is secondary.', '先完成这个颜色目标，其他操作都要为它服务。'),
+        compactHint: tx(`Сначала добивай ${getGemLabel(goal.color, language)}.`, `Prioritize ${getGemLabel(goal.color, language)} first.`, `先完成${getGemLabel(goal.color, language)}。`),
       };
     }
 
@@ -678,6 +681,7 @@ function App() {
         objectiveTitle: tx('Добей оба цвета', 'Finish both colors', '补齐两个颜色'),
         focusLabel: tx(`Главные цвета: ${joinLabels(colors, language)}`, `Primary colors: ${joinLabels(colors, language)}`, `当前主色：${joinLabels(colors, language)}`),
         focusHint: tx('Смотри на тот цвет, которого осталось больше всего.', 'Always chase the color with the biggest remaining gap.', '优先补最大的颜色缺口。'),
+        compactHint: tx('Закрывай цвет с самым большим остатком.', 'Close the color with the biggest gap first.', '先补差距最大的颜色。'),
       };
     }
 
@@ -686,6 +690,7 @@ function App() {
         objectiveTitle: tx('Сломай щит босса', 'Break the boss shield', '击碎首领护盾'),
         focusLabel: tx('Главная цель: щит босса', 'Primary target: boss shield', '当前主目标：首领护盾'),
         focusHint: tx('Бомбы, молнии и большие цепочки наносят самый заметный урон.', 'Bombs, lightnings, and large chains deal the clearest shield damage.', '炸弹、闪电和大型连锁会造成最明显的护盾伤害。'),
+        compactHint: tx('Лучше всего бьют бомбы, молнии и большие цепочки.', 'Bombs, lightning, and large chains hit hardest.', '炸弹、闪电和大连锁伤害最高。'),
       };
     }
 
@@ -694,6 +699,7 @@ function App() {
         objectiveTitle: tx('Очисти поле от мусора', 'Clear the debris', '清理杂物'),
         focusLabel: tx('Главная цель: мусорные клетки', 'Primary target: debris tiles', '当前主目标：杂物格'),
         focusHint: tx('Бей по клеткам с мусором, а не по случайным матчам.', 'Target debris tiles instead of random matches.', '优先打到有杂物的格子，不要随便消。'),
+        compactHint: tx('Бей туда, где матч касается мусора.', 'Target matches that touch debris.', '优先打到有杂物的格子。'),
       };
     }
 
@@ -702,6 +708,7 @@ function App() {
         objectiveTitle: tx('Разбей лёд', 'Break the ice', '击碎冰块'),
         focusLabel: tx('Главная цель: ледяные клетки', 'Primary target: ice tiles', '当前主目标：冰块格'),
         focusHint: tx('Ищи матчи и взрывы, которые касаются льда.', 'Look for matches and blasts that touch ice.', '优先寻找能碰到冰块的消除与爆炸。'),
+        compactHint: tx('Каждый ход должен задевать лёд.', 'Every move should touch ice.', '尽量让每一步都碰到冰块。'),
       };
     }
 
@@ -710,6 +717,7 @@ function App() {
         objectiveTitle: tx('Активируй бомбы', 'Trigger bombs', '触发炸弹'),
         focusLabel: tx('Главная цель: активировать бомбы', 'Primary target: trigger bombs', '当前主目标：触发炸弹'),
         focusHint: tx('Собирай и подрывай бомбы, обычные ходы нужны только чтобы их зарядить.', 'Build and trigger bombs. Normal matches matter only if they create them.', '优先做出并引爆炸弹，普通消除只是辅助。'),
+        compactHint: tx('Обычные ходы нужны только чтобы собрать бомбу.', 'Normal matches matter only if they build a bomb.', '普通消除只是为了做出炸弹。'),
       };
     }
 
@@ -718,6 +726,7 @@ function App() {
         objectiveTitle: tx('Проведи молнию', 'Trigger lightning', '触发闪电'),
         focusLabel: tx('Главная цель: провести молнию', 'Primary target: trigger lightning', '当前主目标：触发闪电'),
         focusHint: tx('Думай не о счёте, а о том, как быстрее собрать молнию.', 'Ignore score and focus on creating lightning quickly.', '先别管分数，优先尽快做出闪电。'),
+        compactHint: tx('Собирай молнию, а не просто очки.', 'Build lightning, not just score.', '优先做出闪电，不要只看分数。'),
       };
     }
 
@@ -726,6 +735,7 @@ function App() {
         objectiveTitle: tx('Построй длинные цепи', 'Build long chains', '打出长连锁'),
         focusLabel: tx('Главная цель: длинные цепи', 'Primary target: long chains', '当前主目标：长连锁'),
         focusHint: tx('Не спеши. Ищи ходы, которые раскроют больше каскадов.', 'Slow down and look for moves that open bigger cascades.', '别急，优先找能引发更大连锁的走法。'),
+        compactHint: tx('Ищи ходы, которые открывают каскады.', 'Look for moves that open cascades.', '优先找能引发级联的走法。'),
       };
     }
 
@@ -733,6 +743,7 @@ function App() {
       objectiveTitle: tx('Собери нужный спец-эффект', 'Create the required special', '做出目标特效'),
       focusLabel: tx('Главная цель: спец-эффекты', 'Primary target: special effects', '当前主目标：特殊效果'),
       focusHint: tx('Собирай нужный спец-объект и трать ходы только на это.', 'Create the required special piece and spend moves only toward that.', '做出目标特效，并只为它花步数。'),
+      compactHint: tx('Каждый ход должен вести к нужному спец-эффекту.', 'Every move should build the required special.', '每一步都应该为目标特效铺路。'),
     };
   }, [language, selectedLevelConfig, tx]);
   const goalReadabilitySummary = useMemo<GoalReadabilitySummary>(() => {
@@ -740,6 +751,7 @@ function App() {
       objectiveTitle: '',
       focusLabel: '',
       focusHint: '',
+      compactHint: '',
       remainingLabel: '',
       progressRatio: 0,
       nearWin: false,
@@ -760,6 +772,7 @@ function App() {
         objectiveTitle: tx('Собери нужный цвет', 'Collect the target color', '收集目标颜色'),
         focusLabel: tx(`Фокус сейчас: ${getGemLabel(levelConfig.goal.color, language)}`, `Focus now: ${getGemLabel(levelConfig.goal.color, language)}`, `当前重点：${getGemLabel(levelConfig.goal.color, language)}`),
         focusHint: tx('Каждый ход должен либо собирать этот цвет, либо открывать к нему путь.', 'Every move should collect this color or open access to it.', '每一步都要么收这个颜色，要么为它开路。'),
+        compactHint: tx(`Собирай ${getGemLabel(levelConfig.goal.color, language)} и открывай к ним путь.`, `Collect ${getGemLabel(levelConfig.goal.color, language)} and open access to them.`, `优先收集${getGemLabel(levelConfig.goal.color, language)}并为它开路。`),
         remainingLabel,
         progressRatio: total > 0 ? current / total : 0,
         nearWin: thresholdNearWin(remaining, total, total > 0 ? current / total : 0),
@@ -791,6 +804,7 @@ function App() {
           ? tx(`Фокус сейчас: ${getGemLabel(primary.color, language)}`, `Focus now: ${getGemLabel(primary.color, language)}`, `当前重点：${getGemLabel(primary.color, language)}`)
           : defaultSummary.focusLabel,
         focusHint: tx('Сначала закрывай самый большой оставшийся цветовой долг.', 'Prioritize the color with the biggest gap first.', '先补差距最大的颜色。'),
+        compactHint: tx('Сначала закрывай цвет с самым большим остатком.', 'Prioritize the color with the biggest gap first.', '先补差距最大的颜色。'),
         remainingLabel,
         progressRatio: ratio,
         nearWin: thresholdNearWin(remaining, Math.max(1, total), ratio),
@@ -808,6 +822,7 @@ function App() {
         objectiveTitle: tx('Сломай щит босса', 'Break the boss shield', '击碎首领护盾'),
         focusLabel: tx('Фокус сейчас: бомбы, молнии и большие каскады', 'Focus now: bombs, lightnings, and large cascades', '当前重点：炸弹、闪电和大连锁'),
         focusHint: tx('Обычные матчи помогают, но главный урон дают спец-удары и крупные цепочки.', 'Regular matches help, but specials and large chains deal the real damage.', '普通消除有用，但真正的伤害来自特效与大连锁。'),
+        compactHint: tx('Бомбы, молнии и большие цепочки бьют по щиту сильнее.', 'Bombs, lightning, and large chains hit the shield harder.', '炸弹、闪电和大连锁对护盾伤害更高。'),
         remainingLabel,
         progressRatio: ratio,
         nearWin: ratio >= 0.82 || remaining <= Math.max(14, Math.ceil(total * 0.18)),
@@ -921,6 +936,7 @@ function App() {
       objectiveTitle: objectiveMap.title,
       focusLabel: objectiveMap.focus,
       focusHint: objectiveMap.hint,
+      compactHint: objectiveMap.hint,
       remainingLabel,
       progressRatio: ratio,
       nearWin: thresholdNearWin(remaining, Math.max(1, objectiveMap.total), ratio),
@@ -3042,6 +3058,28 @@ function App() {
     return () => clearTimeout(t1);
   }, [goalClearId]);
 
+  const renderSystemNotice = () => (
+    <AnimatePresence>
+      {shopNotice && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: -6 }}
+          className="pointer-events-none fixed inset-0 z-[160] flex items-center justify-center px-4"
+        >
+          <div className="max-w-sm rounded-3xl border border-cyan-100/28 bg-[linear-gradient(160deg,rgba(2,6,23,0.94)_0%,rgba(8,20,43,0.96)_100%)] px-5 py-4 text-center shadow-[0_20px_60px_rgba(2,6,23,0.58),0_0_28px_rgba(34,211,238,0.16)] backdrop-blur-xl">
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200/74">
+              {tx('Системное уведомление', 'System notice', '系统提示')}
+            </div>
+            <div className="mt-2 text-sm font-black leading-relaxed text-cyan-50 sm:text-base">
+              {shopNotice}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   if (isMarketingLandingOpen) {
     return (
       <div className="relative h-full w-full">
@@ -3065,6 +3103,7 @@ function App() {
           onPlayNow={onEnterFromMarketingLanding}
           onOpenFeedback={() => setIsFeedbackOpen(true)}
         />
+        {renderSystemNotice()}
         {renderConsentBanner()}
         <AudioPlayer isMuted={isMuted} volume={volume} mode="lobby" />
       </div>
@@ -3144,11 +3183,13 @@ function App() {
           onOpenWeeklyLoop={() => setIsWeeklyLoopOpen(true)}
           onOpenEvent={() => setIsEventOpen(true)}
           onShareGame={shareGame}
+          onShowSystemNotice={setShopNotice}
           onVolumeChange={(v) => {
             setVolume(v);
             if (v > 0 && isMuted) setIsMuted(false);
           }}
         />
+        {renderSystemNotice()}
         {isDailyRewardsOpen && renderDailyRewardsModal()}
         {isLeaderboardOpen && renderLeaderboardModal()}
         {isWeeklyLoopOpen && renderWeeklyLoopModal()}
@@ -3161,8 +3202,7 @@ function App() {
               goalPreview={selectedLevelGoalPreview}
               pacePreview={selectedLevelPacePreview}
               objectiveTitle={selectedLevelFocus.objectiveTitle}
-              focusLabel={selectedLevelFocus.focusLabel}
-              focusHint={selectedLevelFocus.focusHint}
+              compactHint={selectedLevelFocus.compactHint}
               language={language}
               runModifiers={selectedLevelRunModifiers}
               coinsBalance={spaceCoins}
@@ -3378,25 +3418,21 @@ function App() {
               lowPerfMode={lowPerfMode}
             />
             <div className="mt-2 w-full max-w-xs sm:max-w-sm rounded-2xl border border-cyan-100/45 bg-[linear-gradient(150deg,rgba(186,230,253,0.96)_0%,rgba(125,211,252,0.9)_48%,rgba(147,197,253,0.88)_100%)] px-4 py-2 text-center text-slate-900 shadow-[0_14px_28px_rgba(14,116,144,0.34)]">
-              <div className="text-[10px] sm:text-xs font-black tracking-[0.22em] uppercase text-slate-800/82">{t.goal}</div>
-              <div className="text-xl sm:text-2xl font-extrabold leading-tight text-slate-950">{renderGoalContent()}</div>
-            </div>
-            {showBattleReadabilityAssist && (
-              <div className="mt-2 w-full max-w-xs sm:max-w-sm rounded-2xl border border-amber-200/35 bg-[linear-gradient(160deg,rgba(120,53,15,0.9)_0%,rgba(30,41,59,0.92)_100%)] px-4 py-3 text-left text-amber-50 shadow-[0_12px_24px_rgba(120,53,15,0.3)]">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-100/72">
-                      {tx('Главный фокус', 'Primary focus', '核心焦点')}
-                    </div>
-                    <div className="mt-1 text-sm font-black text-white">{goalReadabilitySummary.focusLabel}</div>
-                    <div className="mt-2 text-xs leading-relaxed text-white/72">{goalReadabilitySummary.focusHint}</div>
-                  </div>
-                  <div className="shrink-0 rounded-full border border-white/12 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-100">
+              <div className="flex items-start justify-between gap-2 text-[10px] sm:text-xs font-black tracking-[0.22em] uppercase text-slate-800/82">
+                <span>{t.goal}</span>
+                {showBattleReadabilityAssist && (
+                  <span className="shrink-0 rounded-full border border-slate-900/8 bg-slate-950/8 px-2 py-1 text-[9px] tracking-[0.14em] text-slate-800/72">
                     {goalReadabilitySummary.remainingLabel}
-                  </div>
-                </div>
+                  </span>
+                )}
               </div>
-            )}
+              <div className="text-xl sm:text-2xl font-extrabold leading-tight text-slate-950">{renderGoalContent()}</div>
+              {showBattleReadabilityAssist && (
+                <div className="mt-2 text-xs font-bold leading-relaxed text-slate-800/84">
+                  {goalReadabilitySummary.compactHint}
+                </div>
+              )}
+            </div>
             {activeEventRun && (
               reduceEarlyVisualNoise ? (
                 <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-fuchsia-200/24 bg-fuchsia-300/12 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-50 shadow-[0_0_14px_rgba(217,70,239,0.12)]">
@@ -3641,11 +3677,7 @@ function App() {
             </button>
           </div>
         </div>
-        {shopNotice && (
-          <div className="mt-2 text-center text-xs sm:text-sm font-bold text-cyan-200">
-            {shopNotice}
-          </div>
-        )}
+        {renderSystemNotice()}
         {isAdminPath() && !adminAccessToken && (
           <AdminAccessModal
             language={language}

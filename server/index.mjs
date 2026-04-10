@@ -2446,7 +2446,28 @@ function creditFromRobokassaResult(res, payload) {
 }
 
 const server = createServer(async (req, res) => {
-  const urlObj = new URL(req.url || '/', `http://${req.headers.host || `localhost:${port}`}`);
+  const rawRequestUrl = typeof req.url === 'string' ? req.url.trim() : '/';
+  const normalizedRequestUrl = !rawRequestUrl
+    ? '/'
+    : rawRequestUrl.startsWith('//')
+      ? `/${rawRequestUrl.replace(/^\/+/, '')}`
+      : rawRequestUrl.startsWith('/')
+        ? rawRequestUrl
+        : `/${rawRequestUrl}`;
+
+  let urlObj;
+  try {
+    urlObj = new URL(normalizedRequestUrl, `http://${req.headers.host || `localhost:${port}`}`);
+  } catch (error) {
+    console.error('[request] invalid url', {
+      rawRequestUrl,
+      normalizedRequestUrl,
+      host: req.headers.host || `localhost:${port}`,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    json(res, 400, { error: 'Invalid request URL' });
+    return;
+  }
   const origin = String(req.headers.origin || '').trim();
   applyCors(req, res);
   applySecurityHeaders(res);

@@ -9,8 +9,7 @@ type LevelStartModalProps = {
   goalPreview: React.ReactNode;
   pacePreview: string;
   objectiveTitle: string;
-  focusLabel: string;
-  focusHint: string;
+  compactHint: string;
   language: Language;
   runModifiers: Array<{
     id: string;
@@ -32,7 +31,7 @@ type LevelStartModalProps = {
   onClose: () => void;
 };
 
-export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPreview, pacePreview, objectiveTitle, focusLabel, focusHint, language, runModifiers, coinsBalance, onBuyRunModifier, bossShieldCharges = 0, eventActive = false, eventTitle = '', eventDescription = '', eventRunEnabled = false, eventIceTiles = 0, onToggleEventRun, onPlay, onClose }) => {
+export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPreview, pacePreview, objectiveTitle, compactHint, language, runModifiers, coinsBalance, onBuyRunModifier, bossShieldCharges = 0, eventActive = false, eventTitle = '', eventDescription = '', eventRunEnabled = false, eventIceTiles = 0, onToggleEventRun, onPlay, onClose }) => {
   const t = COPY[language];
   const tx = (ru: string, en: string, zh: string) => {
     if (language === 'ru') return ru;
@@ -107,15 +106,11 @@ export const LevelStartModal: React.FC<LevelStartModalProps> = ({ level, goalPre
           <div className="mt-3 text-lg font-black leading-tight text-white">
             {goalPreview}
           </div>
+          <div className="mt-3 text-xs font-bold leading-relaxed text-cyan-50/82">
+            {compactHint}
+          </div>
           <div className="mt-3 rounded-2xl border border-cyan-200/20 bg-cyan-300/8 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-100/80">
             {pacePreview}
-          </div>
-          <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-300/10 px-3 py-3 text-left">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-100/72">
-              {tx('Главный фокус', 'Primary focus', '核心焦点')}
-            </div>
-            <div className="mt-1 text-sm font-black text-white">{focusLabel}</div>
-            <div className="mt-2 text-xs leading-relaxed text-white/72">{focusHint}</div>
           </div>
         </div>
 

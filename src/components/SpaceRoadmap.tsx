@@ -33,6 +33,7 @@ type SpaceRoadmapProps = {
   onOpenWeeklyLoop: () => void;
   onOpenEvent: () => void;
   onShareGame: () => void;
+  onShowSystemNotice: (message: string) => void;
 };
 
 type Point = {
@@ -75,6 +76,7 @@ export function SpaceRoadmap({
   onOpenWeeklyLoop,
   onOpenEvent,
   onShareGame,
+  onShowSystemNotice,
 }: SpaceRoadmapProps) {
   const tx = (ru: string, en: string, zh: string) => {
     if (language === 'ru') return ru;
@@ -280,14 +282,21 @@ export function SpaceRoadmap({
             </button>
             <button
               type="button"
-              onClick={onOpenEvent}
+              onClick={() => {
+                if (eventActive) {
+                  onOpenEvent();
+                  return;
+                }
+                onShowSystemNotice(tx('Ивент скоро откроется', 'Event opens soon', '活动即将开启'));
+              }}
               className={`inline-flex h-12 w-12 touch-manipulation items-center justify-center rounded-2xl border transition-all ${
                 eventActive
                   ? 'border-fuchsia-200/45 bg-fuchsia-300/22 text-fuchsia-50 shadow-[0_0_14px_rgba(217,70,239,0.24)] hover:bg-fuchsia-300/30'
-                  : 'border-white/12 bg-slate-900/50 text-white/45'
+                  : 'cursor-not-allowed border-white/12 bg-slate-900/50 text-white/45 opacity-70'
               }`}
               title={eventActive ? `${eventTitle}: ${eventMissionProgress}` : tx('Ивент скоро', 'Event soon', '活动即将开启')}
               aria-label={eventActive ? `${eventTitle}: ${eventMissionProgress}` : tx('Ивент скоро', 'Event soon', '活动即将开启')}
+              aria-disabled={!eventActive}
             >
               <Sparkles className="h-6 w-6" />
             </button>
@@ -360,8 +369,18 @@ export function SpaceRoadmap({
                   <button
                     type="button"
                     onClick={() => {
+                      if (isLocked) {
+                        onShowSystemNotice(
+                          tx(
+                            `Сначала открой ${t.level(unlockedLevel)}`,
+                            `Unlock ${t.level(unlockedLevel)} first`,
+                            `请先解锁 ${t.level(unlockedLevel)}`,
+                          ),
+                        );
+                        return;
+                      }
                       setSelectedLevel(point.level);
-                      if (!isLocked) onStartLevel(point.level);
+                      onStartLevel(point.level);
                     }}
                     className={`flex items-center justify-center rounded-full border-2 text-sm font-black transition-all ${
                       isLocked
@@ -373,9 +392,10 @@ export function SpaceRoadmap({
                           : (isSecondSector
                               ? 'border-emerald-100/80 bg-gradient-to-br from-emerald-300 to-cyan-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.35)]'
                               : 'border-cyan-100/90 bg-gradient-to-br from-sky-300 to-blue-600 text-white shadow-[0_0_20px_rgba(56,189,248,0.45)]')
-                    } ${isSelected ? 'scale-110 ring-2 ring-white/80 ring-offset-2 ring-offset-transparent' : 'scale-100'} ${isLocked ? '' : 'hover:scale-110 active:scale-95'}`}
+                    } ${isSelected ? 'scale-110 ring-2 ring-white/80 ring-offset-2 ring-offset-transparent' : 'scale-100'} ${isLocked ? 'cursor-not-allowed opacity-85' : 'hover:scale-110 active:scale-95'}`}
                     style={{ width: NODE_SIZE, height: NODE_SIZE }}
                     aria-label={t.level(point.level)}
+                    aria-disabled={isLocked}
                   >
                     {isLocked ? <Lock className="h-4 w-4" /> : point.level}
                   </button>
