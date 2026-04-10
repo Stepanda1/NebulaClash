@@ -37,6 +37,7 @@ type GoalProgress = {
 
 const GEM_ROTATION: GemType[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
 const SPECIAL_GOAL_ROTATION: SpecialGoalType[] = ['bomb', 'lightning'];
+const TOTAL_LEVEL_CONFIGS = 120;
 
 function normalizeSpecialGoal(special: SpecialGoalType, value: number): SpecialGoalType {
   if (special === 'pulse' && value === 3) return 'nova';
@@ -68,75 +69,83 @@ function getSpecialGoalValue(special: SpecialGoalType, inSecondSector: boolean, 
 export function buildLevelConfigs(): LevelConfig[] {
   const levels: LevelConfig[] = [];
 
-  for (let idx = 0; idx < 60; idx++) {
+  for (let idx = 0; idx < TOTAL_LEVEL_CONFIGS; idx++) {
     const level = idx + 1;
     const phase = idx % 10;
     const paletteA = GEM_ROTATION[idx % GEM_ROTATION.length];
     const paletteB = GEM_ROTATION[(idx + 2) % GEM_ROTATION.length];
-    const inSecondSector = level > 30;
+    const sectorIndex = Math.min(3, Math.floor((level - 1) / 30));
+    const isMidGame = sectorIndex >= 1;
+    const isLateGame = sectorIndex >= 2;
+    const isFinalSector = sectorIndex >= 3;
+    const movesPenalty = sectorIndex;
+    const collectBonus = sectorIndex * 2;
+    const multiCollectBonus = sectorIndex * 2;
+    const timePenalty = sectorIndex * 2;
+    const bossScalingBonus = sectorIndex * 24;
 
     if (phase === 9) {
-      const baseBossHp = inSecondSector ? 170 + Math.floor((level - 30) * 2) : 120 + idx * 2;
+      const baseBossHp = 120 + idx * 2 + bossScalingBonus + Math.max(0, level - 20);
       levels.push({
         mode: 'moves',
-        limit: inSecondSector ? 28 : 26,
+        limit: Math.max(22, 26 - Math.min(2, movesPenalty) + (isFinalSector ? -1 : 0)),
         goal: { type: 'boss', value: Math.floor(baseBossHp * 1.2) },
       });
       continue;
     }
 
     if (phase === 0) {
-      levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 28, goal: { type: 'collect', value: inSecondSector ? 28 : 24, color: paletteA } });
+      levels.push({ mode: 'moves', limit: Math.max(20, 28 - movesPenalty), goal: { type: 'collect', value: 24 + collectBonus, color: paletteA } });
       continue;
     }
 
     if (phase === 1) {
       const special = SPECIAL_GOAL_ROTATION[idx % SPECIAL_GOAL_ROTATION.length];
-      levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 26, goal: { type: 'special', special, value: getSpecialGoalValue(special, inSecondSector, inSecondSector ? 3 : 2) } });
+      levels.push({ mode: 'moves', limit: Math.max(20, 26 - movesPenalty), goal: { type: 'special', special, value: getSpecialGoalValue(special, isMidGame, isLateGame ? 3 : 2) } });
       continue;
     }
 
     if (phase === 2) {
-      levels.push({ mode: 'time', limit: inSecondSector ? 52 : 58, goal: { type: 'collect_multi', targets: { [paletteA]: inSecondSector ? 16 : 13, [paletteB]: inSecondSector ? 16 : 13 } } });
+      levels.push({ mode: 'time', limit: Math.max(48, 58 - timePenalty), goal: { type: 'collect_multi', targets: { [paletteA]: 13 + multiCollectBonus, [paletteB]: 13 + multiCollectBonus } } });
       continue;
     }
 
     if (phase === 3) {
-      levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'combo_x5', value: inSecondSector ? 2 : 1 } });
+      levels.push({ mode: 'moves', limit: Math.max(20, 24 - movesPenalty), goal: { type: 'combo_x5', value: isMidGame ? 2 : 1 } });
       continue;
     }
 
     if (phase === 4) {
-      const trashCount = inSecondSector ? 14 : 10;
-      levels.push({ mode: 'moves', limit: inSecondSector ? 24 : 26, goal: { type: 'trash', value: trashCount }, trashCount });
+      const trashCount = 10 + sectorIndex * 3 + (isFinalSector ? 1 : 0);
+      levels.push({ mode: 'moves', limit: Math.max(21, 26 - movesPenalty), goal: { type: 'trash', value: trashCount }, trashCount });
       continue;
     }
 
-    if (phase === 5 && inSecondSector) {
-      const iceCount = 12 + Math.floor((level - 30) / 5);
-      levels.push({ mode: 'moves', limit: 24, goal: { type: 'ice', value: iceCount }, iceCount });
+    if (phase === 5 && isLateGame) {
+      const iceCount = 12 + Math.floor((level - 40) / 5) + sectorIndex;
+      levels.push({ mode: 'moves', limit: Math.max(20, 24 - movesPenalty), goal: { type: 'ice', value: iceCount }, iceCount });
       continue;
     }
 
     if (phase === 5) {
-      levels.push({ mode: 'time', limit: inSecondSector ? 56 : 62, goal: { type: 'collect', value: inSecondSector ? 26 : 22, color: paletteB } });
+      levels.push({ mode: 'time', limit: Math.max(50, 62 - timePenalty), goal: { type: 'collect', value: 22 + collectBonus, color: paletteB } });
       continue;
     }
 
     if (phase === 6) {
-      const value = inSecondSector ? 4 : 3;
+      const value = isLateGame ? 4 : 3;
       const special = normalizeSpecialGoal(SPECIAL_GOAL_ROTATION[(idx + 2) % SPECIAL_GOAL_ROTATION.length], value);
-      levels.push({ mode: 'moves', limit: inSecondSector ? 23 : 24, goal: { type: 'special', special, value: getSpecialGoalValue(special, inSecondSector, value) } });
+      levels.push({ mode: 'moves', limit: Math.max(20, 24 - movesPenalty), goal: { type: 'special', special, value: getSpecialGoalValue(special, isMidGame, value) } });
       continue;
     }
 
     if (phase === 7) {
-      levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'collect_multi', targets: { [paletteA]: inSecondSector ? 18 : 15, [paletteB]: inSecondSector ? 18 : 15 } } });
+      levels.push({ mode: 'moves', limit: Math.max(20, 24 - movesPenalty), goal: { type: 'collect_multi', targets: { [paletteA]: 15 + multiCollectBonus, [paletteB]: 15 + multiCollectBonus } } });
       continue;
     }
 
     const special = phase % 2 === 0 ? 'bomb' : 'lightning';
-    levels.push({ mode: 'moves', limit: inSecondSector ? 22 : 24, goal: { type: 'special', special, value: getSpecialGoalValue(special, inSecondSector, inSecondSector ? 5 : 3) } });
+    levels.push({ mode: 'moves', limit: Math.max(20, 24 - movesPenalty), goal: { type: 'special', special, value: getSpecialGoalValue(special, isMidGame, isLateGame ? 5 : 3) } });
   }
 
   levels[1] = { mode: 'moves', limit: 26, goal: { type: 'bombs', value: 4 } };

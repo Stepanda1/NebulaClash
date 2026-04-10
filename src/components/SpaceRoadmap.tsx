@@ -42,7 +42,26 @@ type Point = {
   y: number;
 };
 
-const TOTAL_LEVELS = 60;
+type SectorConfig = {
+  id: number;
+  startLevel: number;
+  endLevel: number;
+  label: string;
+  glowClassName: string;
+  labelClassName: string;
+  nodeClassName: string;
+  currentNodeClassName: string;
+  detailAccentClassName: string;
+  details: Array<{
+    x: number;
+    yOffset: number;
+    size: number;
+    shape: 'planet' | 'signal' | 'rift' | 'crystal';
+    icon: 'sparkles' | 'star' | 'nebula';
+  }>;
+};
+
+const TOTAL_LEVELS = 120;
 const MAP_WIDTH = 340;
 const NODE_SIZE = 42;
 const TOP_PADDING = 110;
@@ -222,8 +241,82 @@ export function SpaceRoadmap({
   const settingsLabel = tx('Настройки карты', 'Map Settings', '地图设置');
   const comingSoonLabel = tx('Скоро', 'Coming Soon', '即将推出');
   const endPoint = points[points.length - 1];
-  const secondSectorStart = points.find((p) => p.level === 31);
-  const secondSectorLabel = tx('Локация 2: Квантовый Пояс', 'Location 2: Quantum Belt', '区域 2：量子带');
+  const sectors = useMemo<SectorConfig[]>(() => {
+    return [
+      {
+        id: 1,
+        startLevel: 1,
+        endLevel: 30,
+        label: tx('Локация 1: Орбитальный Порт', 'Location 1: Orbital Port', '区域 1：轨道港'),
+        glowClassName: 'bg-[linear-gradient(180deg,rgba(56,189,248,0.16),rgba(37,99,235,0.08),transparent)]',
+        labelClassName: 'border-cyan-200/35 bg-slate-950/72 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)]',
+        nodeClassName: 'border-cyan-100/90 bg-gradient-to-br from-sky-300 to-blue-600 text-white shadow-[0_0_20px_rgba(56,189,248,0.45)]',
+        currentNodeClassName: 'border-cyan-50 bg-gradient-to-br from-cyan-200 to-sky-500 text-slate-900 shadow-[0_0_28px_rgba(34,211,238,0.5)]',
+        detailAccentClassName: 'border-cyan-200/30 bg-cyan-300/10 text-cyan-100/90',
+        details: [
+          { x: 260, yOffset: 18, size: 40, shape: 'planet', icon: 'nebula' },
+          { x: 80, yOffset: 540, size: 28, shape: 'signal', icon: 'sparkles' },
+        ],
+      },
+      {
+        id: 2,
+        startLevel: 31,
+        endLevel: 60,
+        label: tx('Локация 2: Квантовый Пояс', 'Location 2: Quantum Belt', '区域 2：量子带'),
+        glowClassName: 'bg-[linear-gradient(180deg,rgba(20,184,166,0.14),rgba(16,185,129,0.08),transparent)]',
+        labelClassName: 'border-emerald-200/35 bg-slate-950/72 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.18)]',
+        nodeClassName: 'border-emerald-100/80 bg-gradient-to-br from-emerald-300 to-teal-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.35)]',
+        currentNodeClassName: 'border-emerald-50 bg-gradient-to-br from-emerald-200 to-teal-500 text-slate-900 shadow-[0_0_28px_rgba(16,185,129,0.45)]',
+        detailAccentClassName: 'border-emerald-200/30 bg-emerald-300/10 text-emerald-100/90',
+        details: [
+          { x: 265, yOffset: 70, size: 34, shape: 'crystal', icon: 'star' },
+          { x: 60, yOffset: 620, size: 46, shape: 'rift', icon: 'sparkles' },
+        ],
+      },
+      {
+        id: 3,
+        startLevel: 61,
+        endLevel: 90,
+        label: tx('Локация 3: Астральный Разлом', 'Location 3: Astral Rift', '区域 3：星界裂隙'),
+        glowClassName: 'bg-[linear-gradient(180deg,rgba(168,85,247,0.14),rgba(217,70,239,0.08),transparent)]',
+        labelClassName: 'border-fuchsia-200/35 bg-slate-950/72 text-fuchsia-100 shadow-[0_0_18px_rgba(217,70,239,0.18)]',
+        nodeClassName: 'border-fuchsia-100/85 bg-gradient-to-br from-fuchsia-300 to-violet-600 text-white shadow-[0_0_20px_rgba(192,38,211,0.34)]',
+        currentNodeClassName: 'border-fuchsia-50 bg-gradient-to-br from-fuchsia-200 to-violet-500 text-slate-900 shadow-[0_0_28px_rgba(217,70,239,0.46)]',
+        detailAccentClassName: 'border-fuchsia-200/30 bg-fuchsia-300/10 text-fuchsia-100/90',
+        details: [
+          { x: 74, yOffset: 80, size: 32, shape: 'planet', icon: 'star' },
+          { x: 265, yOffset: 610, size: 42, shape: 'rift', icon: 'sparkles' },
+        ],
+      },
+      {
+        id: 4,
+        startLevel: 91,
+        endLevel: 120,
+        label: tx('Локация 4: Солнечная Корона', 'Location 4: Solar Crown', '区域 4：日冕核心'),
+        glowClassName: 'bg-[linear-gradient(180deg,rgba(251,191,36,0.14),rgba(249,115,22,0.08),transparent)]',
+        labelClassName: 'border-amber-200/40 bg-slate-950/72 text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.22)]',
+        nodeClassName: 'border-amber-100/85 bg-gradient-to-br from-amber-300 to-orange-600 text-white shadow-[0_0_20px_rgba(251,146,60,0.36)]',
+        currentNodeClassName: 'border-yellow-100 bg-gradient-to-br from-amber-200 to-orange-500 text-slate-900 shadow-[0_0_28px_rgba(251,191,36,0.55)]',
+        detailAccentClassName: 'border-amber-200/30 bg-amber-300/10 text-amber-100/90',
+        details: [
+          { x: 258, yOffset: 60, size: 50, shape: 'planet', icon: 'sparkles' },
+          { x: 80, yOffset: 630, size: 30, shape: 'crystal', icon: 'nebula' },
+        ],
+      },
+    ];
+  }, [language]);
+  const sectorAnchors = useMemo(
+    () =>
+      sectors
+        .map((sector) => {
+          const startPoint = points.find((point) => point.level === sector.startLevel);
+          const endPointForSector = points.find((point) => point.level === sector.endLevel);
+          if (!startPoint || !endPointForSector) return null;
+          return { sector, startPoint, endPoint: endPointForSector };
+        })
+        .filter((value): value is { sector: SectorConfig; startPoint: Point; endPoint: Point } => Boolean(value)),
+    [points, sectors],
+  );
   const openLegalFromSettings = (section: LegalSection) => {
     setIsSettingsOpen(false);
     onOpenLegal(section);
@@ -322,20 +415,52 @@ export function SpaceRoadmap({
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-90"
             />
-            {secondSectorStart && (
-              <>
+            {sectorAnchors.map(({ sector, startPoint, endPoint: sectorEndPoint }) => (
+              <div key={sector.id} className="pointer-events-none absolute inset-x-0" style={{ top: Math.max(30, sectorEndPoint.y - 72), height: Math.max(180, startPoint.y - sectorEndPoint.y + 120) }}>
+                <div className={`absolute inset-x-2 inset-y-0 rounded-[34px] ${sector.glowClassName}`} />
                 <div
-                  className="pointer-events-none absolute left-2 right-2 rounded-3xl via-teal-400/6 to-transparent"
-                  style={{ top: Math.max(90, secondSectorStart.y - 120), bottom: 60 }}
-                />
-                <div
-                  className="pointer-events-none absolute left-1/2 z-[6] -translate-x-1/2 rounded-full border border-emerald-200/30 bg-slate-950/70 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
-                  style={{ top: secondSectorStart.y - 88 }}
+                  className={`absolute left-1/2 z-[6] -translate-x-1/2 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] ${sector.labelClassName}`}
+                  style={{ top: 12, maxWidth: 196 }}
                 >
-                  {secondSectorLabel}
+                  <span className="block whitespace-normal text-center leading-tight">{sector.label}</span>
                 </div>
-              </>
-            )}
+                {sector.details.map((detail, index) => {
+                  const iconMarkup =
+                    detail.icon === 'star' ? (
+                      <Star className="h-4 w-4" />
+                    ) : detail.icon === 'nebula' ? (
+                      <NebulaCoreIcon className="h-4 w-4" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    );
+
+                  const detailClassName =
+                    detail.shape === 'planet'
+                      ? 'rounded-full'
+                      : detail.shape === 'rift'
+                        ? 'rounded-[40%] rotate-12'
+                        : detail.shape === 'crystal'
+                          ? 'rounded-[32%] rotate-45'
+                          : 'rounded-2xl';
+
+                  return (
+                    <div
+                      key={`${sector.id}-${index}`}
+                      className={`absolute flex items-center justify-center border backdrop-blur-sm ${detailClassName} ${sector.detailAccentClassName}`}
+                      style={{
+                        left: detail.x - detail.size / 2,
+                        top: detail.yOffset,
+                        width: detail.size,
+                        height: detail.size,
+                        boxShadow: '0 0 18px rgba(15, 23, 42, 0.28)',
+                      }}
+                    >
+                      <div className={detail.shape === 'crystal' ? '-rotate-45' : detail.shape === 'rift' ? '-rotate-12' : ''}>{iconMarkup}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
             <svg className="pointer-events-none absolute inset-0" width={MAP_WIDTH} height={mapHeight} viewBox={`0 0 ${MAP_WIDTH} ${mapHeight}`} fill="none" aria-hidden="true">
               <path d={pathD} stroke="rgba(148,163,184,0.34)" strokeWidth="14" strokeLinecap="round" />
               <path d={pathD} stroke="url(#roadGlow)" strokeWidth="8" strokeLinecap="round" />
@@ -361,7 +486,7 @@ export function SpaceRoadmap({
               const isCurrent = point.level === unlockedLevel;
               const isLocked = point.level > unlockedLevel;
               const isSelected = point.level === selectedLevel;
-              const isSecondSector = point.level > 30;
+              const sector = sectors.find((entry) => point.level >= entry.startLevel && point.level <= entry.endLevel) ?? sectors[0];
               const stars = Math.max(0, Math.min(3, levelStars[point.level] ?? 0));
 
               return (
@@ -386,12 +511,8 @@ export function SpaceRoadmap({
                       isLocked
                         ? 'border-slate-500/50 bg-slate-700/60 text-slate-300'
                         : isCurrent
-                          ? (isSecondSector
-                              ? 'border-emerald-100 bg-gradient-to-br from-emerald-300 to-teal-500 text-slate-900 shadow-[0_0_28px_rgba(16,185,129,0.45)]'
-                              : 'border-yellow-200 bg-gradient-to-br from-amber-300 to-orange-500 text-slate-900 shadow-[0_0_28px_rgba(251,191,36,0.65)]')
-                          : (isSecondSector
-                              ? 'border-emerald-100/80 bg-gradient-to-br from-emerald-300 to-cyan-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.35)]'
-                              : 'border-cyan-100/90 bg-gradient-to-br from-sky-300 to-blue-600 text-white shadow-[0_0_20px_rgba(56,189,248,0.45)]')
+                          ? sector.currentNodeClassName
+                          : sector.nodeClassName
                     } ${isSelected ? 'scale-110 ring-2 ring-white/80 ring-offset-2 ring-offset-transparent' : 'scale-100'} ${isLocked ? 'cursor-not-allowed opacity-85' : 'hover:scale-110 active:scale-95'}`}
                     style={{ width: NODE_SIZE, height: NODE_SIZE }}
                     aria-label={t.level(point.level)}

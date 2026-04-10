@@ -1,5 +1,9 @@
 Original prompt: ускорь дополнительные ходы, при этом не создавай новых багов
 
+- 2026-04-11: Roadmap и реальный пул уровней расширены до 120 (`src/components/SpaceRoadmap.tsx`, `src/logic/levelProgress.ts`, `src/App.tsx`). Карта теперь делится на 4 локации по 30 уровней (`1-30`, `31-60`, `61-90`, `91-120`) с разным секторным декором и цветовыми акцентами узлов; админ-разблокировка синхронизирована с новым потолком.
+- 2026-04-11: Генератор уровней переведён с 60/80 на 120 конфигов с 4-секторным масштабированием сложности: поздние сектора получают более жёсткие лимиты, больше collect/trash/ice pressure и усиленный boss scaling без ломки onboarding-переопределений для ранних уровней.
+- 2026-04-11: Проверка после расширения: `npm run build` успешен, `npm run test:smoke:mobile` успешен (3/3). Базовая мобильная геометрия roadmap и модалок не сломалась после удлинения карты.
+
 - 2026-03-17: По регрессиям после live-config/event релиза внесены точечные фиксы в `server/index.mjs`, `src/App.tsx`, `src/components/LegalModal.tsx`, `src/components/LevelStartModal.tsx`, `src/components/SpaceRoadmap.tsx`, `deploy-per.ps1`: daily/weekly календарь переведён на business timezone `GAME_TIMEZONE` с дефолтом `Asia/Yekaterinburg`, event run получил явный in-game/onboarding UI, иконка weekly event разведена с weekly loop, TikTok-иконка в contacts уменьшена и нормализована, deploy-скрипт теперь перезапускает backend через `start-backend.sh`, чтобы не терять runtime env и `API_AUTH_SECRET`.
 - 2026-03-17: Проверка после фиксов: `npx tsc -b` успешен, `node --check server/index.mjs` успешен, `npm run build` успешен вне sandbox. Локальный one-shot smoke backend в текущем окружении нестабилен из-за локального сетевого/процессного шума, поэтому финальная функциональная валидация должна быть подтверждена на prod после выката (`/api/session/init`, `/api/rewards/daily-status`, UI daily/leaderboard/event, contacts icon, payment create-invoice`).
 
