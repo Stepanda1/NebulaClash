@@ -56,8 +56,7 @@ type SectorConfig = {
     x: number;
     yOffset: number;
     size: number;
-    shape: 'planet' | 'signal' | 'rift' | 'crystal';
-    icon: 'sparkles' | 'star' | 'nebula';
+    shape: 'planet' | 'asteroid' | 'rift' | 'crystal' | 'beacon' | 'comet';
   }>;
 };
 
@@ -254,8 +253,8 @@ export function SpaceRoadmap({
         currentNodeClassName: 'border-cyan-50 bg-gradient-to-br from-cyan-200 to-sky-500 text-slate-900 shadow-[0_0_28px_rgba(34,211,238,0.5)]',
         detailAccentClassName: 'border-cyan-200/30 bg-cyan-300/10 text-cyan-100/90',
         details: [
-          { x: 260, yOffset: 18, size: 40, shape: 'planet', icon: 'nebula' },
-          { x: 80, yOffset: 540, size: 28, shape: 'signal', icon: 'sparkles' },
+          { x: 272, yOffset: 22, size: 54, shape: 'planet' },
+          { x: 72, yOffset: 540, size: 30, shape: 'beacon' },
         ],
       },
       {
@@ -269,8 +268,8 @@ export function SpaceRoadmap({
         currentNodeClassName: 'border-emerald-50 bg-gradient-to-br from-emerald-200 to-teal-500 text-slate-900 shadow-[0_0_28px_rgba(16,185,129,0.45)]',
         detailAccentClassName: 'border-emerald-200/30 bg-emerald-300/10 text-emerald-100/90',
         details: [
-          { x: 265, yOffset: 70, size: 34, shape: 'crystal', icon: 'star' },
-          { x: 60, yOffset: 620, size: 46, shape: 'rift', icon: 'sparkles' },
+          { x: 264, yOffset: 72, size: 34, shape: 'crystal' },
+          { x: 62, yOffset: 622, size: 46, shape: 'rift' },
         ],
       },
       {
@@ -284,8 +283,8 @@ export function SpaceRoadmap({
         currentNodeClassName: 'border-fuchsia-50 bg-gradient-to-br from-fuchsia-200 to-violet-500 text-slate-900 shadow-[0_0_28px_rgba(217,70,239,0.46)]',
         detailAccentClassName: 'border-fuchsia-200/30 bg-fuchsia-300/10 text-fuchsia-100/90',
         details: [
-          { x: 74, yOffset: 80, size: 32, shape: 'planet', icon: 'star' },
-          { x: 265, yOffset: 610, size: 42, shape: 'rift', icon: 'sparkles' },
+          { x: 78, yOffset: 86, size: 36, shape: 'asteroid' },
+          { x: 268, yOffset: 608, size: 44, shape: 'rift' },
         ],
       },
       {
@@ -299,8 +298,8 @@ export function SpaceRoadmap({
         currentNodeClassName: 'border-yellow-100 bg-gradient-to-br from-amber-200 to-orange-500 text-slate-900 shadow-[0_0_28px_rgba(251,191,36,0.55)]',
         detailAccentClassName: 'border-amber-200/30 bg-amber-300/10 text-amber-100/90',
         details: [
-          { x: 258, yOffset: 60, size: 50, shape: 'planet', icon: 'sparkles' },
-          { x: 80, yOffset: 630, size: 30, shape: 'crystal', icon: 'nebula' },
+          { x: 258, yOffset: 62, size: 52, shape: 'planet' },
+          { x: 84, yOffset: 628, size: 32, shape: 'comet' },
         ],
       },
     ];
@@ -322,10 +321,69 @@ export function SpaceRoadmap({
     onOpenLegal(section);
   };
 
+  const renderRoadmapDetail = (detail: SectorConfig['details'][number], accentClassName: string) => {
+    if (detail.shape === 'planet') {
+      return (
+        <div className="absolute inset-0">
+          <div className={`absolute inset-0 rounded-full border ${accentClassName} bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.26),rgba(255,255,255,0.06)_24%,transparent_26%),radial-gradient(circle_at_50%_55%,rgba(125,211,252,0.34),rgba(14,165,233,0.12)_58%,rgba(2,6,23,0.28)_100%)] shadow-[0_0_24px_rgba(56,189,248,0.14)]`} />
+          <div className="absolute left-1/2 top-1/2 h-[28%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/16 bg-white/6" />
+          <div className="absolute left-[24%] top-[22%] h-[16%] w-[16%] rounded-full bg-white/18" />
+        </div>
+      );
+    }
+
+    if (detail.shape === 'asteroid') {
+      return (
+        <div className={`absolute inset-[8%] rounded-[38%] border ${accentClassName} bg-[radial-gradient(circle_at_30%_28%,rgba(255,255,255,0.2),rgba(255,255,255,0.04)_28%,transparent_30%),linear-gradient(145deg,rgba(192,132,252,0.22),rgba(30,41,59,0.75))] rotate-12 shadow-[0_0_18px_rgba(192,132,252,0.1)]`}>
+          <div className="absolute left-[26%] top-[24%] h-[16%] w-[16%] rounded-full bg-black/20" />
+          <div className="absolute right-[22%] top-[48%] h-[12%] w-[12%] rounded-full bg-black/15" />
+          <div className="absolute left-[46%] bottom-[18%] h-[10%] w-[10%] rounded-full bg-white/10" />
+        </div>
+      );
+    }
+
+    if (detail.shape === 'crystal') {
+      return (
+        <div className="absolute inset-[12%] rotate-45">
+          <div className={`absolute inset-0 rounded-[28%] border ${accentClassName} bg-[linear-gradient(135deg,rgba(255,255,255,0.28),rgba(255,255,255,0.08)_32%,rgba(15,23,42,0.84)_100%)] shadow-[0_0_20px_rgba(255,255,255,0.08)]`} />
+          <div className="absolute left-[18%] top-[12%] h-[46%] w-[18%] rounded-full bg-white/20" />
+        </div>
+      );
+    }
+
+    if (detail.shape === 'rift') {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className={`relative h-[42%] w-[92%] rotate-12 rounded-full border ${accentClassName} bg-[linear-gradient(90deg,rgba(15,23,42,0.15),rgba(15,23,42,0.85)_20%,rgba(255,255,255,0.12)_50%,rgba(15,23,42,0.85)_80%,rgba(15,23,42,0.15))] shadow-[0_0_22px_rgba(168,85,247,0.12)]`}>
+            <div className="absolute inset-y-[20%] left-1/2 w-[10%] -translate-x-1/2 rounded-full bg-white/24 blur-[1px]" />
+          </div>
+        </div>
+      );
+    }
+
+    if (detail.shape === 'beacon') {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className={`relative h-[72%] w-[44%] rounded-[999px] border ${accentClassName} bg-[linear-gradient(180deg,rgba(255,255,255,0.22),rgba(15,23,42,0.72))]`}>
+            <div className="absolute left-1/2 top-[18%] h-[18%] w-[18%] -translate-x-1/2 rounded-full bg-white/40" />
+            <div className="absolute left-1/2 top-[38%] h-[34%] w-[10%] -translate-x-1/2 rounded-full bg-white/16" />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="absolute inset-0">
+        <div className="absolute left-[18%] top-[42%] h-[22%] w-[52%] -translate-y-1/2 rounded-full bg-white/16 blur-[1px]" />
+        <div className={`absolute right-[18%] top-[34%] h-[24%] w-[24%] rounded-full border ${accentClassName} bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.32),rgba(255,255,255,0.1)_40%,rgba(15,23,42,0.4)_100%)]`} />
+      </div>
+    );
+  };
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#050a17] text-white">
-      <div className="relative z-10 flex h-full w-full flex-col pb-4 pt-5">
-        <div className="mx-4 mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-[linear-gradient(145deg,rgba(2,6,23,0.52),rgba(15,23,42,0.36))] px-4 py-3 backdrop-blur-md">
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-5">
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-[linear-gradient(145deg,rgba(2,6,23,0.52),rgba(15,23,42,0.36))] px-4 py-3 backdrop-blur-md">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-cyan-200/80">
               <NebulaCoreIcon className="h-3.5 w-3.5 text-cyan-100" />
@@ -350,6 +408,14 @@ export function SpaceRoadmap({
           </div>
         </div>
         <div className="relative flex-1 min-h-0 isolate">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-1/2 z-0 w-screen -translate-x-1/2"
+            style={{
+              background:
+                'radial-gradient(circle at 80% 18%, rgba(251,191,36,0.16), transparent 22%), radial-gradient(circle at 18% 34%, rgba(103,232,249,0.12), transparent 26%), radial-gradient(circle at 72% 58%, rgba(192,132,252,0.12), transparent 24%), linear-gradient(180deg, rgba(7,11,25,0.98) 0%, rgba(10,22,50,0.96) 28%, rgba(9,22,44,0.95) 56%, rgba(4,8,20,0.98) 100%)',
+            }}
+          />
           <div className="absolute left-2 top-2 z-[70] flex flex-col gap-2 pointer-events-auto">
             <button
               type="button"
@@ -409,17 +475,9 @@ export function SpaceRoadmap({
           </div>
           <div
             ref={scrollerRef}
-            className="relative h-full overflow-y-auto overscroll-y-none border-y border-cyan-100/22 bg-slate-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md sm:mx-4 sm:rounded-3xl sm:border"
+            className="relative z-10 h-full overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-slate-950/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md"
           >
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  'radial-gradient(circle at 80% 18%, rgba(251,191,36,0.16), transparent 22%), radial-gradient(circle at 18% 34%, rgba(103,232,249,0.12), transparent 26%), radial-gradient(circle at 72% 58%, rgba(192,132,252,0.12), transparent 24%), linear-gradient(180deg, rgba(7,11,25,0.98) 0%, rgba(10,22,50,0.96) 28%, rgba(9,22,44,0.95) 56%, rgba(4,8,20,0.98) 100%)',
-              }}
-            />
-            <div className="relative mx-auto w-full max-w-[420px]" style={{ height: mapHeight }}>
+            <div className="relative mx-auto w-full max-w-[340px]" style={{ height: mapHeight }}>
               <img
                 src="/roadmap-space-bg.svg"
                 alt=""
@@ -436,37 +494,18 @@ export function SpaceRoadmap({
                   <span className="block whitespace-normal text-center leading-tight">{sector.label}</span>
                 </div>
                 {sector.details.map((detail, index) => {
-                  const iconMarkup =
-                    detail.icon === 'star' ? (
-                      <Star className="h-4 w-4" />
-                    ) : detail.icon === 'nebula' ? (
-                      <NebulaCoreIcon className="h-4 w-4" />
-                    ) : (
-                      <Sparkles className="h-4 w-4" />
-                    );
-
-                  const detailClassName =
-                    detail.shape === 'planet'
-                      ? 'rounded-full'
-                      : detail.shape === 'rift'
-                        ? 'rounded-[40%] rotate-12'
-                        : detail.shape === 'crystal'
-                          ? 'rounded-[32%] rotate-45'
-                          : 'rounded-2xl';
-
                   return (
                     <div
                       key={`${sector.id}-${index}`}
-                      className={`absolute flex items-center justify-center border backdrop-blur-sm ${detailClassName} ${sector.detailAccentClassName}`}
+                      className="absolute"
                       style={{
                         left: detail.x - detail.size / 2,
                         top: detail.yOffset,
                         width: detail.size,
                         height: detail.size,
-                        boxShadow: '0 0 18px rgba(15, 23, 42, 0.28)',
                       }}
                     >
-                      <div className={detail.shape === 'crystal' ? '-rotate-45' : detail.shape === 'rift' ? '-rotate-12' : ''}>{iconMarkup}</div>
+                      {renderRoadmapDetail(detail, sector.detailAccentClassName)}
                     </div>
                   );
                 })}
