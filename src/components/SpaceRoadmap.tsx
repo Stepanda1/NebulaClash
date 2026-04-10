@@ -324,8 +324,8 @@ export function SpaceRoadmap({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#050a17] text-white">
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col px-4 pb-4 pt-5">
-        <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-[linear-gradient(145deg,rgba(2,6,23,0.52),rgba(15,23,42,0.36))] px-4 py-3 backdrop-blur-md">
+      <div className="relative z-10 flex h-full w-full flex-col pb-4 pt-5">
+        <div className="mx-4 mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-[linear-gradient(145deg,rgba(2,6,23,0.52),rgba(15,23,42,0.36))] px-4 py-3 backdrop-blur-md">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-cyan-200/80">
               <NebulaCoreIcon className="h-3.5 w-3.5 text-cyan-100" />
@@ -407,14 +407,25 @@ export function SpaceRoadmap({
               <Trophy className="h-6 w-6" />
             </button>
           </div>
-          <div ref={scrollerRef} className="relative h-full overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-slate-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md">
-          <div className="relative mx-auto w-[340px]" style={{ height: mapHeight }}>
-            <img
-              src="/roadmap-space-bg.svg"
-              alt=""
+          <div
+            ref={scrollerRef}
+            className="relative h-full overflow-y-auto overscroll-y-none border-y border-cyan-100/22 bg-slate-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md sm:mx-4 sm:rounded-3xl sm:border"
+          >
+            <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-90"
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  'radial-gradient(circle at 80% 18%, rgba(251,191,36,0.16), transparent 22%), radial-gradient(circle at 18% 34%, rgba(103,232,249,0.12), transparent 26%), radial-gradient(circle at 72% 58%, rgba(192,132,252,0.12), transparent 24%), linear-gradient(180deg, rgba(7,11,25,0.98) 0%, rgba(10,22,50,0.96) 28%, rgba(9,22,44,0.95) 56%, rgba(4,8,20,0.98) 100%)',
+              }}
             />
+            <div className="relative mx-auto w-full max-w-[420px]" style={{ height: mapHeight }}>
+              <img
+                src="/roadmap-space-bg.svg"
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-100"
+              />
             {sectorAnchors.map(({ sector, startPoint, endPoint: sectorEndPoint }) => (
               <div key={sector.id} className="pointer-events-none absolute inset-x-0" style={{ top: Math.max(30, sectorEndPoint.y - 72), height: Math.max(180, startPoint.y - sectorEndPoint.y + 120) }}>
                 <div className={`absolute inset-x-2 inset-y-0 rounded-[34px] ${sector.glowClassName}`} />
