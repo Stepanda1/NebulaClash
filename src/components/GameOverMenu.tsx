@@ -9,13 +9,19 @@ interface GameOverMenuProps {
     boostCost: number;
     boostAmountLabel: string;
     canAffordContinue: boolean;
+    showContinueOffer: boolean;
+    objectiveTitle: string;
+    focusLabel: string;
+    remainingLabel: string;
+    failReason: string;
+    nearWin: boolean;
     onRestart: () => void;
     onBuyContinue: () => void;
     onOpenShop: () => void;
     language: Language;
 }
 
-export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCost, boostAmountLabel, canAffordContinue, onRestart, onBuyContinue, onOpenShop, language }) => {
+export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCost, boostAmountLabel, canAffordContinue, showContinueOffer, objectiveTitle, focusLabel, remainingLabel, failReason, nearWin, onRestart, onBuyContinue, onOpenShop, language }) => {
     const t = COPY[language];
     const tx = (ru: string, en: string, zh: string) => language === 'ru' ? ru : language === 'zh' ? zh : en;
     const continueLabel = mode === 'moves'
@@ -24,6 +30,9 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
     const continueHint = canAffordContinue
       ? tx('Продолжить за монеты', 'Continue for coins', '用金币继续')
       : tx('Не хватает монет, открой магазин', 'Not enough coins, open the shop', '金币不足，请打开商店');
+    const primaryCtaLabel = showContinueOffer
+      ? (canAffordContinue ? continueLabel : tx('Купить монеты', 'Get coins', '购买金币'))
+      : tx('Подготовиться в магазине', 'Prepare in the shop', '去商店准备');
 
     return (
         <motion.div
@@ -55,7 +64,11 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
                         {tx('Сигнал тревоги', 'Distress Signal', '警报信号')}
                     </div>
                     <h2 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-lg">{t.outOfMoves}</h2>
-                    <p className="text-slate-300/85 font-medium">{continueHint}</p>
+                    <p className="text-slate-300/85 font-medium">
+                      {showContinueOffer
+                        ? continueHint
+                        : tx('Сначала разберём, что осталось до цели и что важнее в следующем заходе.', 'First, look at what was left and what matters most in the next run.', '先看还差什么，以及下一局最该盯住什么。')}
+                    </p>
                 </div>
 
                 <div className="relative z-10 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 shadow-inner shadow-black/30">
@@ -69,6 +82,34 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
                     </div>
                 </div>
 
+                <div className="relative z-10 w-full rounded-2xl border border-cyan-200/15 bg-cyan-400/10 px-4 py-4 text-left shadow-[0_12px_34px_rgba(6,182,212,0.12)]">
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/75">
+                                {tx('Разбор поражения', 'Defeat breakdown', '失败拆解')}
+                            </div>
+                            <div className="mt-1 text-base font-black text-white">{objectiveTitle}</div>
+                        </div>
+                        {nearWin && (
+                          <div className="rounded-full border border-amber-200/20 bg-amber-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100">
+                            {tx('Почти дожал', 'Near win', '差一点赢')}
+                          </div>
+                        )}
+                    </div>
+                    <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
+                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/54">
+                            {tx('Что осталось', 'What was left', '剩余内容')}
+                        </div>
+                        <div className="mt-1 text-sm font-black text-white">{remainingLabel}</div>
+                        <div className="mt-2 text-xs text-white/72">{failReason}</div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 text-sm text-cyan-50/84">
+                        <TriangleAlert size={16} />
+                        <span>{focusLabel}</span>
+                    </div>
+                </div>
+
+                {showContinueOffer && (
                 <div className="relative z-10 w-full rounded-2xl border border-emerald-200/15 bg-emerald-400/10 px-4 py-4 text-left shadow-[0_12px_34px_rgba(16,185,129,0.12)]">
                     <div className="flex items-center justify-between gap-3">
                         <div>
@@ -86,15 +127,16 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({ score, mode, boostCo
                         <span>{tx('Сразу вернёт тебя в матч', 'Drops you straight back into the run', '立刻回到当前对局')}</span>
                     </div>
                 </div>
+                )}
 
                 <button
-                    onClick={canAffordContinue ? onBuyContinue : onOpenShop}
+                    onClick={showContinueOffer ? (canAffordContinue ? onBuyContinue : onOpenShop) : onOpenShop}
                     className="flex items-center justify-center gap-3 w-full py-4 bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-500 hover:from-emerald-300 hover:via-cyan-300 hover:to-sky-400 active:scale-[0.98] transition-all rounded-2xl shadow-[0_10px_30px_rgba(34,211,238,0.28)] border border-white/15 group relative overflow-hidden"
                 >
                     <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.24)_45%,transparent_65%)] translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-700" />
                     <Coins size={24} className="text-white relative z-10" />
                     <span className="text-lg font-bold text-white uppercase tracking-[0.18em] relative z-10">
-                        {canAffordContinue ? continueLabel : tx('Купить монеты', 'Get coins', '购买金币')}
+                        {primaryCtaLabel}
                     </span>
                 </button>
 

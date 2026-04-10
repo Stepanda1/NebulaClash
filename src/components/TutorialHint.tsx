@@ -47,15 +47,15 @@ function getStepContent(step: number, language: Language): TutorialStepContent {
         badge: tx('Шаг 1', 'Step 1', '步骤 1'),
         title: tx('Собери первый матч', 'Make your first match', '完成第一次匹配'),
         body: tx(
-          'Сейчас окно закроется, и поле подсветит нужный ход. Передвинь фишку и собери обычный матч-3.',
-          'The window will close and the board will highlight the move. Slide the piece to make a standard match-3.',
-          '窗口关闭后，棋盘会高亮正确操作。移动棋子，完成一次标准 3 连。',
+          'Сейчас окно закроется, и поле подсветит нужный ход. Смотри не на весь борд, а только на главную цель сверху: первый уровень просит добрать конкретный цвет.',
+          'The window will close and highlight the move. Do not scan the whole board yet. Watch the main objective at the top: the first level asks for one specific color.',
+          '窗口关闭后会高亮正确操作。先别看整块棋盘，只盯顶部主目标：第一关只要求一个指定颜色。',
         ),
         tips: language === 'ru'
-          ? ['Можно тапнуть соседнюю фишку', 'Или провести свайп в нужную сторону']
+          ? ['Сначала смотри на цель сверху', 'Подсвеченный ход двигает именно нужный цвет']
           : language === 'zh'
-            ? ['可以点击相邻棋子', '也可以按提示方向滑动']
-            : ['Tap an adjacent piece', 'Or swipe in the shown direction'],
+            ? ['先看顶部主目标', '高亮走法会推进正确颜色']
+            : ['Start by reading the objective at the top', 'The highlighted move advances the right color'],
         actionLabel: tx('Далее', 'Next', '下一步'),
         actionKind: 'advance',
       };
@@ -64,15 +64,15 @@ function getStepContent(step: number, language: Language): TutorialStepContent {
         badge: tx('Шаг 2', 'Step 2', '步骤 2'),
         title: tx('Активируй бомбу', 'Trigger the bomb', '触发炸弹'),
         body: tx(
-          'После нажатия окно исчезнет. На поле останется бомба: дважды нажми на неё, чтобы взорвать участок.',
-          'After you continue, the window closes. A bomb will stay on the board: double tap it to blast the area.',
-          '继续后窗口会关闭，棋盘上会保留一个炸弹。双击它即可炸掉周围区域。',
+          'После нажатия окно исчезнет. На поле останется бомба: дважды нажми на неё, чтобы резко расчистить участок и быстро продвинуть цель.',
+          'After you continue, the window closes. A bomb stays on the board: double tap it to clear a large area and push the objective fast.',
+          '继续后窗口会关闭，棋盘上会留下一枚炸弹。双击它能快速清一大片并推进目标。',
         ),
         tips: language === 'ru'
-          ? ['Бомбы хороши против плотных участков', 'Их стоит беречь под сложные цели']
+          ? ['Бомбы особенно сильны в плотных зонах', 'Против босса и сложных целей спец-фигуры важнее обычных матчей']
           : language === 'zh'
-            ? ['炸弹适合清理密集区域', '最好留给更难的目标']
-            : ['Bombs are best against dense areas', 'Save them for harder goals'],
+            ? ['炸弹最适合密集区域', '打首领和硬目标时，特效比普通消除更重要']
+            : ['Bombs are best in dense areas', 'Against bosses and hard goals, specials matter more than basic matches'],
         actionLabel: tx('Далее', 'Next', '下一步'),
         actionKind: 'advance',
       };
@@ -81,15 +81,15 @@ function getStepContent(step: number, language: Language): TutorialStepContent {
         badge: tx('Шаг 3', 'Step 3', '步骤 3'),
         title: tx('Проведи молнию', 'Use the lightning', '使用闪电'),
         body: tx(
-          'После нажатия окно закроется, и тебе останется сдвинуть молнию с соседней фишкой. Это очищает целую линию.',
-          'After you continue, close the window and swap the lightning with a nearby tile. It clears a full line.',
-          '继续后窗口关闭，再把闪电和旁边棋子交换，它会清除整条线。',
+          'После нажатия окно закроется, и тебе останется сдвинуть молнию с соседней фишкой. Это очищает целую линию и хорошо добивает почти закрытую цель.',
+          'After you continue, swap the lightning with a nearby tile. It clears a full line and is perfect for finishing nearly completed goals.',
+          '继续后把闪电和旁边棋子交换。它会清掉整条线，很适合收掉差一点完成的目标。',
         ),
         tips: language === 'ru'
-          ? ['Это лучший быстрый клир', 'Используй на нужной линии к цели']
+          ? ['Это лучший быстрый клир', 'Используй её там, где цель почти закрыта']
           : language === 'zh'
-            ? ['这是最快的清线手段', '用在能推进目标的行或列上']
-            : ['This is your fast lane clear', 'Use it on lines that push your goal'],
+            ? ['这是最快的清线手段', '优先用在快要完成目标的那一行或列']
+            : ['This is your fastest line clear', 'Use it where the objective is nearly done'],
         actionLabel: tx('Далее', 'Next', '下一步'),
         actionKind: 'advance',
       };
@@ -98,15 +98,15 @@ function getStepContent(step: number, language: Language): TutorialStepContent {
         badge: tx('Финал', 'Finish', '完成'),
         title: tx('Теперь ты знаешь весь базовый цикл', 'Now you know the full core loop', '现在你已经了解了核心循环'),
         body: tx(
-          'Следи за целью сверху, за ходами снизу, открывай магазин справа для пополнения монет и бустеров. Всё остальное строится на этих действиях.',
-          'Track the goal at the top, moves at the bottom, and open the shop on the right for coins and boosters. Everything else builds on this loop.',
-          '关注顶部目标、底部步数，并在右侧打开商店补充金币和增益。其余系统都围绕这个循环展开。',
+          'Следи за целью сверху, за главным фокусом под ней и за лимитом ходов или времени. Если проиграл, сначала смотри, чего именно не хватило, и только потом решай, нужен ли буст.',
+          'Watch the objective at the top, the focus hint below it, and your move or time limit. If you lose, first check what was still missing, then decide whether a boost is worth it.',
+          '先看顶部目标和下面的焦点提示，再看步数或时间。失败时先确认差了什么，再决定要不要补增益。',
         ),
         tips: language === 'ru'
-          ? ['Цель уровня важнее лишних ходов', 'Спец-фигуры ускоряют прохождение', 'Монеты тратятся на экстренные бустеры']
+          ? ['Цель уровня важнее случайного счёта', 'Спец-фигуры ускоряют тяжёлые цели и босса', 'Продолжение имеет смысл только если победа была совсем рядом']
           : language === 'zh'
-            ? ['优先完成关卡目标，而不是随便走步', '特殊棋子能显著加快通关', '金币用于紧急增益']
-            : ['The goal matters more than random moves', 'Special pieces speed up levels', 'Coins power emergency boosters'],
+            ? ['目标优先于随便刷分', '特效能明显加速困难目标和首领战', '只有差一点赢时才值得续关']
+            : ['The goal matters more than random score', 'Special pieces accelerate hard goals and bosses', 'Continuing is only worth it when the win was very close'],
         actionLabel: tx('В игру', 'Enter Game', '进入游戏'),
         actionKind: 'finish',
       };

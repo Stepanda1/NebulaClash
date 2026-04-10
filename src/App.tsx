@@ -25,7 +25,7 @@ import type { Language } from './i18n';
 import type { LegalSection } from './types/legal';
 import { DEFAULT_LIVE_CONFIG, type LiveConfig, type ShopTimingVariant } from './types/liveConfig';
 import { COPY } from './i18n';
-import { getConsentState, hasConsentDecision, initAnalytics, setConsentState, trackEvent } from './analytics';
+import { getAttributionPayload, getConsentState, hasConsentDecision, initAnalytics, setConsentState, trackEvent } from './analytics';
 import { useWallet } from './hooks/useWallet';
 import { BoosterGlyph, CoinGlyph, CompassGlyph, GiftGlyph, SignalGlyph, TimeGlyph, VaultGlyph } from './components/CosmicArtwork';
 import { buildLevelConfigs, type LevelConfig } from './logic/levelProgress';
@@ -57,6 +57,32 @@ function GoalGemIcon({ color }: { color: GemType }) {
       aria-hidden="true"
     />
   );
+}
+
+function getGemLabel(color: GemType, language: Language) {
+  const variants: Record<GemType, { ru: string; en: string; zh: string }> = {
+    red: { ru: 'красные кристаллы', en: 'red crystals', zh: '红色晶体' },
+    blue: { ru: 'синие кристаллы', en: 'blue crystals', zh: '蓝色晶体' },
+    green: { ru: 'зелёные кристаллы', en: 'green crystals', zh: '绿色晶体' },
+    yellow: { ru: 'жёлтые кристаллы', en: 'yellow crystals', zh: '黄色晶体' },
+    purple: { ru: 'фиолетовые кристаллы', en: 'purple crystals', zh: '紫色晶体' },
+    orange: { ru: 'оранжевые кристаллы', en: 'orange crystals', zh: '橙色晶体' },
+  };
+
+  if (language === 'ru') return variants[color].ru;
+  if (language === 'zh') return variants[color].zh;
+  return variants[color].en;
+}
+
+function joinLabels(labels: string[], language: Language) {
+  if (labels.length <= 1) return labels[0] ?? '';
+  if (language === 'ru') {
+    return `${labels.slice(0, -1).join(', ')} и ${labels[labels.length - 1]}`;
+  }
+  if (language === 'zh') {
+    return labels.join('、');
+  }
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
 }
 
 function getLevelConfigPreview(targetLevel: number): LevelConfig {
@@ -100,7 +126,7 @@ const SHOP_TIMING_VARIANT_KEY = 'match3_exp_shop_timing_v2_variant';
 const SHOP_TIMING_AUTO_SHOWN_KEY = 'match3_exp_shop_timing_v2_auto_shown';
 const APP_LEVEL_CONFIGS = buildLevelConfigs();
 
-type ShopOpenSource = 'manual_button' | 'level_1_complete_auto' | 'level_1_fail_auto';
+type ShopOpenSource = 'manual_button' | 'strong_payoff_auto' | 'near_win_auto';
 type ShopOfferContext = 'manual' | 'momentum' | 'recovery';
 type RunModifierId = 'startBomb' | 'startLightning' | 'bossShield' | 'trashCleaner';
 type LeaderboardItem = {
@@ -143,6 +169,16 @@ type StarterOffer = {
   amountRub: number;
   modifierTokens: number;
   continueReserve: number;
+};
+
+type GoalReadabilitySummary = {
+  objectiveTitle: string;
+  focusLabel: string;
+  focusHint: string;
+  remainingLabel: string;
+  progressRatio: number;
+  nearWin: boolean;
+  failReason: string;
 };
 type LeaderboardOverview = {
   playerRank: number | null;
@@ -499,6 +535,15 @@ function App() {
     })
   ), [envCoinPacks, liveConfig.monetization.coinPacks]);
   const shopTimingVariant = useMemo(() => getShopTimingVariant(liveConfig), [liveConfig]);
+  const attribution = useMemo(() => getAttributionPayload(), []);
+  const isShortsColdTraffic = useMemo(() => {
+    const normalized = Object.values(attribution)
+      .map((value) => String(value ?? '').toLowerCase())
+      .filter(Boolean)
+      .join(' ');
+
+    return ['short', 'shorts', 'reel', 'reels', 'tiktok', 'youtube', 'social'].some((token) => normalized.includes(token));
+  }, [attribution]);
   const boosterCost = liveConfig.economy.boosterCost || BOOSTER_COST;
   const moveBoostAmount = liveConfig.economy.moveBoostAmount || MOVE_BOOST_AMOUNT;
   const timeBoostSeconds = liveConfig.economy.timeBoostSeconds || TIME_BOOST_SECONDS;
@@ -607,6 +652,301 @@ function App() {
       ? tx(`Доступно ${selectedLevelConfig.limit} ходов`, `${selectedLevelConfig.limit} moves available`, `可用 ${selectedLevelConfig.limit} 步`)
       : tx(`Доступно ${selectedLevelConfig.limit} секунд`, `${selectedLevelConfig.limit} seconds available`, `可用 ${selectedLevelConfig.limit} 秒`);
   }, [language, selectedLevelConfig]);
+  const selectedLevelFocus = useMemo(() => {
+    if (!selectedLevelConfig) {
+      return {
+        objectiveTitle: '',
+        focusLabel: '',
+        focusHint: '',
+      };
+    }
+
+    const goal = selectedLevelConfig.goal;
+    if (goal.type === 'collect') {
+      return {
+        objectiveTitle: tx('Собери нужный цвет', 'Collect the target color', '收集目标颜色'),
+        focusLabel: tx(`Главная цель: ${getGemLabel(goal.color, language)}`, `Primary target: ${getGemLabel(goal.color, language)}`, `当前主目标：${getGemLabel(goal.color, language)}`),
+        focusHint: tx('Сначала добивай именно этот цвет, остальные ходы вторичны.', 'Prioritize this color first. Everything else is secondary.', '先完成这个颜色目标，其他操作都要为它服务。'),
+      };
+    }
+
+    if (goal.type === 'collect_multi') {
+      const colors = (Object.entries(goal.targets) as Array<[GemType, number | undefined]>)
+        .filter(([, value]) => (value ?? 0) > 0)
+        .map(([color]) => getGemLabel(color, language));
+      return {
+        objectiveTitle: tx('Добей оба цвета', 'Finish both colors', '补齐两个颜色'),
+        focusLabel: tx(`Главные цвета: ${joinLabels(colors, language)}`, `Primary colors: ${joinLabels(colors, language)}`, `当前主色：${joinLabels(colors, language)}`),
+        focusHint: tx('Смотри на тот цвет, которого осталось больше всего.', 'Always chase the color with the biggest remaining gap.', '优先补最大的颜色缺口。'),
+      };
+    }
+
+    if (goal.type === 'boss') {
+      return {
+        objectiveTitle: tx('Сломай щит босса', 'Break the boss shield', '击碎首领护盾'),
+        focusLabel: tx('Главная цель: щит босса', 'Primary target: boss shield', '当前主目标：首领护盾'),
+        focusHint: tx('Бомбы, молнии и большие цепочки наносят самый заметный урон.', 'Bombs, lightnings, and large chains deal the clearest shield damage.', '炸弹、闪电和大型连锁会造成最明显的护盾伤害。'),
+      };
+    }
+
+    if (goal.type === 'trash') {
+      return {
+        objectiveTitle: tx('Очисти поле от мусора', 'Clear the debris', '清理杂物'),
+        focusLabel: tx('Главная цель: мусорные клетки', 'Primary target: debris tiles', '当前主目标：杂物格'),
+        focusHint: tx('Бей по клеткам с мусором, а не по случайным матчам.', 'Target debris tiles instead of random matches.', '优先打到有杂物的格子，不要随便消。'),
+      };
+    }
+
+    if (goal.type === 'ice') {
+      return {
+        objectiveTitle: tx('Разбей лёд', 'Break the ice', '击碎冰块'),
+        focusLabel: tx('Главная цель: ледяные клетки', 'Primary target: ice tiles', '当前主目标：冰块格'),
+        focusHint: tx('Ищи матчи и взрывы, которые касаются льда.', 'Look for matches and blasts that touch ice.', '优先寻找能碰到冰块的消除与爆炸。'),
+      };
+    }
+
+    if (goal.type === 'bombs') {
+      return {
+        objectiveTitle: tx('Активируй бомбы', 'Trigger bombs', '触发炸弹'),
+        focusLabel: tx('Главная цель: активировать бомбы', 'Primary target: trigger bombs', '当前主目标：触发炸弹'),
+        focusHint: tx('Собирай и подрывай бомбы, обычные ходы нужны только чтобы их зарядить.', 'Build and trigger bombs. Normal matches matter only if they create them.', '优先做出并引爆炸弹，普通消除只是辅助。'),
+      };
+    }
+
+    if (goal.type === 'lightning') {
+      return {
+        objectiveTitle: tx('Проведи молнию', 'Trigger lightning', '触发闪电'),
+        focusLabel: tx('Главная цель: провести молнию', 'Primary target: trigger lightning', '当前主目标：触发闪电'),
+        focusHint: tx('Думай не о счёте, а о том, как быстрее собрать молнию.', 'Ignore score and focus on creating lightning quickly.', '先别管分数，优先尽快做出闪电。'),
+      };
+    }
+
+    if (goal.type === 'combo_x5') {
+      return {
+        objectiveTitle: tx('Построй длинные цепи', 'Build long chains', '打出长连锁'),
+        focusLabel: tx('Главная цель: длинные цепи', 'Primary target: long chains', '当前主目标：长连锁'),
+        focusHint: tx('Не спеши. Ищи ходы, которые раскроют больше каскадов.', 'Slow down and look for moves that open bigger cascades.', '别急，优先找能引发更大连锁的走法。'),
+      };
+    }
+
+    return {
+      objectiveTitle: tx('Собери нужный спец-эффект', 'Create the required special', '做出目标特效'),
+      focusLabel: tx('Главная цель: спец-эффекты', 'Primary target: special effects', '当前主目标：特殊效果'),
+      focusHint: tx('Собирай нужный спец-объект и трать ходы только на это.', 'Create the required special piece and spend moves only toward that.', '做出目标特效，并只为它花步数。'),
+    };
+  }, [language, selectedLevelConfig, tx]);
+  const goalReadabilitySummary = useMemo<GoalReadabilitySummary>(() => {
+    const defaultSummary: GoalReadabilitySummary = {
+      objectiveTitle: '',
+      focusLabel: '',
+      focusHint: '',
+      remainingLabel: '',
+      progressRatio: 0,
+      nearWin: false,
+      failReason: '',
+    };
+
+    const thresholdNearWin = (remaining: number, total: number, ratio: number) => ratio >= 0.78 || remaining <= Math.max(2, Math.ceil(total * 0.16));
+    const buildFailReason = (remainingLabel: string) => levelConfig.mode === 'moves'
+      ? tx(`Ходы закончились, а ${remainingLabel.toLowerCase()} ещё не были закрыты.`, `You ran out of moves with ${remainingLabel.toLowerCase()} still unresolved.`, `步数耗尽时，${remainingLabel} 还没清完。`)
+      : tx(`Время вышло, а ${remainingLabel.toLowerCase()} ещё оставались.`, `Time ran out with ${remainingLabel.toLowerCase()} still left.`, `时间耗尽时，${remainingLabel} 还没完成。`);
+
+    if (levelConfig.goal.type === 'collect') {
+      const current = Math.min(collected[levelConfig.goal.color], levelConfig.goal.value);
+      const total = levelConfig.goal.value;
+      const remaining = Math.max(0, total - current);
+      const remainingLabel = tx(`осталось ${remaining} ${getGemLabel(levelConfig.goal.color, language)}`, `${remaining} ${getGemLabel(levelConfig.goal.color, language)} left`, `还差 ${remaining} 个${getGemLabel(levelConfig.goal.color, language)}`);
+      return {
+        objectiveTitle: tx('Собери нужный цвет', 'Collect the target color', '收集目标颜色'),
+        focusLabel: tx(`Фокус сейчас: ${getGemLabel(levelConfig.goal.color, language)}`, `Focus now: ${getGemLabel(levelConfig.goal.color, language)}`, `当前重点：${getGemLabel(levelConfig.goal.color, language)}`),
+        focusHint: tx('Каждый ход должен либо собирать этот цвет, либо открывать к нему путь.', 'Every move should collect this color or open access to it.', '每一步都要么收这个颜色，要么为它开路。'),
+        remainingLabel,
+        progressRatio: total > 0 ? current / total : 0,
+        nearWin: thresholdNearWin(remaining, total, total > 0 ? current / total : 0),
+        failReason: buildFailReason(remainingLabel),
+      };
+    }
+
+    if (levelConfig.goal.type === 'collect_multi') {
+      const remainingByColor = (Object.entries(levelConfig.goal.targets) as Array<[GemType, number | undefined]>)
+        .map(([color, target]) => ({
+          color,
+          target: target ?? 0,
+          current: Math.min(collected[color], target ?? 0),
+          remaining: Math.max(0, (target ?? 0) - collected[color]),
+        }))
+        .filter((item) => item.target > 0);
+      const total = remainingByColor.reduce((sum, item) => sum + item.target, 0);
+      const current = remainingByColor.reduce((sum, item) => sum + item.current, 0);
+      const primary = [...remainingByColor].sort((a, b) => b.remaining - a.remaining)[0];
+      const remainingParts = remainingByColor.filter((item) => item.remaining > 0).map((item) => `${getGemLabel(item.color, language)}: ${item.remaining}`);
+      const remaining = remainingByColor.reduce((sum, item) => sum + item.remaining, 0);
+      const ratio = total > 0 ? current / total : 0;
+      const remainingLabel = remainingParts.length > 0
+        ? tx(`осталось ${remainingParts.join(', ')}`, `${remainingParts.join(', ')} left`, `还差 ${remainingParts.join('，')}`)
+        : tx('цель закрыта', 'goal cleared', '目标已完成');
+      return {
+        objectiveTitle: tx('Добей оба цвета', 'Finish both colors', '补齐两个颜色'),
+        focusLabel: primary
+          ? tx(`Фокус сейчас: ${getGemLabel(primary.color, language)}`, `Focus now: ${getGemLabel(primary.color, language)}`, `当前重点：${getGemLabel(primary.color, language)}`)
+          : defaultSummary.focusLabel,
+        focusHint: tx('Сначала закрывай самый большой оставшийся цветовой долг.', 'Prioritize the color with the biggest gap first.', '先补差距最大的颜色。'),
+        remainingLabel,
+        progressRatio: ratio,
+        nearWin: thresholdNearWin(remaining, Math.max(1, total), ratio),
+        failReason: buildFailReason(remainingLabel),
+      };
+    }
+
+    if (levelConfig.goal.type === 'boss') {
+      const total = Math.max(1, bossMaxHp);
+      const remaining = Math.max(0, bossHp);
+      const dealt = Math.max(0, total - remaining);
+      const ratio = dealt / total;
+      const remainingLabel = tx(`осталось ${remaining} щита`, `${remaining} shield left`, `还剩 ${remaining} 护盾`);
+      return {
+        objectiveTitle: tx('Сломай щит босса', 'Break the boss shield', '击碎首领护盾'),
+        focusLabel: tx('Фокус сейчас: бомбы, молнии и большие каскады', 'Focus now: bombs, lightnings, and large cascades', '当前重点：炸弹、闪电和大连锁'),
+        focusHint: tx('Обычные матчи помогают, но главный урон дают спец-удары и крупные цепочки.', 'Regular matches help, but specials and large chains deal the real damage.', '普通消除有用，但真正的伤害来自特效与大连锁。'),
+        remainingLabel,
+        progressRatio: ratio,
+        nearWin: ratio >= 0.82 || remaining <= Math.max(14, Math.ceil(total * 0.18)),
+        failReason: buildFailReason(remainingLabel),
+      };
+    }
+
+    const objectiveMap = (() => {
+      if (levelConfig.goal.type === 'bombs') {
+        return {
+          title: tx('Активируй бомбы', 'Trigger bombs', '触发炸弹'),
+          focus: tx('Фокус сейчас: собирай и взрывай бомбы', 'Focus now: build and trigger bombs', '当前重点：做出并引爆炸弹'),
+          hint: tx('Обычные матчи важны только если они ведут к бомбе.', 'Normal matches only matter if they lead to a bomb.', '普通消除只有在能做出炸弹时才重要。'),
+          current: levelBombActivations,
+          total: levelConfig.goal.value,
+          nounRu: 'бомб',
+          nounEn: 'bombs',
+          nounZh: '炸弹',
+        };
+      }
+      if (levelConfig.goal.type === 'lightning') {
+        return {
+          title: tx('Проведи молнию', 'Trigger lightning', '触发闪电'),
+          focus: tx('Фокус сейчас: собирай молнию', 'Focus now: create lightning', '当前重点：做出闪电'),
+          hint: tx('Ходи так, чтобы быстрее собрать линию под молнию.', 'Make moves that set up lightning faster.', '优先走能更快做出闪电的步。'),
+          current: levelLightningActivations,
+          total: levelConfig.goal.value,
+          nounRu: 'молний',
+          nounEn: 'lightnings',
+          nounZh: '闪电',
+        };
+      }
+      if (levelConfig.goal.type === 'combo_x5') {
+        return {
+          title: tx('Построй длинные цепи', 'Build long chains', '打出长连锁'),
+          focus: tx('Фокус сейчас: каскады и цепочки', 'Focus now: cascades and chains', '当前重点：连锁与级联'),
+          hint: tx('Не играй в лоб. Ищи ходы, которые открывают серию совпадений.', 'Avoid flat moves. Look for setups that unlock a cascade.', '不要平推，优先找能引发连续匹配的走法。'),
+          current: comboX5Count,
+          total: levelConfig.goal.value,
+          nounRu: 'цепочек',
+          nounEn: 'chains',
+          nounZh: '连锁',
+        };
+      }
+      if (levelConfig.goal.type === 'trash') {
+        return {
+          title: tx('Очисти поле от мусора', 'Clear the debris', '清理杂物'),
+          focus: tx('Фокус сейчас: клетки с мусором', 'Focus now: debris tiles', '当前重点：杂物格'),
+          hint: tx('Бей туда, где матч касается мусора. Чистые клетки вторичны.', 'Target matches that touch debris. Clean tiles are secondary.', '优先打到有杂物的格子，空白格不是重点。'),
+          current: trashDestroyed,
+          total: Math.max(levelConfig.goal.value, trashTotal),
+          nounRu: 'клеток мусора',
+          nounEn: 'debris tiles',
+          nounZh: '杂物格',
+        };
+      }
+      if (levelConfig.goal.type === 'ice') {
+        return {
+          title: tx('Разбей лёд', 'Break the ice', '击碎冰块'),
+          focus: tx('Фокус сейчас: ледяные клетки', 'Focus now: ice tiles', '当前重点：冰块格'),
+          hint: tx('Старайся задевать лёд каждым взрывом и каждым матчем.', 'Try to touch ice with every blast and every match.', '尽量让每次爆炸和匹配都碰到冰块。'),
+          current: iceCleared,
+          total: levelConfig.goal.value,
+          nounRu: 'ледяных клеток',
+          nounEn: 'ice tiles',
+          nounZh: '冰块',
+        };
+      }
+      const specialLabel = levelConfig.goal.special === 'bomb'
+        ? tx('бомб', 'bombs', '炸弹')
+        : levelConfig.goal.special === 'lightning'
+          ? tx('молний', 'lightnings', '闪电')
+          : levelConfig.goal.special === 'cross'
+            ? tx('крестов', 'cross specials', '十字特效')
+            : levelConfig.goal.special === 'pulse'
+              ? tx('импульсов', 'pulse specials', '脉冲特效')
+              : levelConfig.goal.special === 'nova'
+                ? tx('нов', 'novas', '新星')
+                : tx('smash-событий', 'smash events', '粉碎事件');
+      const specialProgress = levelConfig.goal.special === 'bomb'
+        ? levelBombActivations
+        : levelConfig.goal.special === 'lightning'
+          ? levelLightningActivations
+          : levelConfig.goal.special === 'cross'
+            ? levelCrossActivations
+            : levelConfig.goal.special === 'pulse'
+              ? levelPulseActivations
+              : levelConfig.goal.special === 'nova'
+                ? levelNovaActivations
+                : levelSmashEvents;
+      return {
+        title: tx('Собери нужный спец-эффект', 'Create the required special', '做出目标特效'),
+        focus: tx(`Фокус сейчас: ${specialLabel}`, `Focus now: ${specialLabel}`, `当前重点：${specialLabel}`),
+        hint: tx('Каждый ход должен либо собирать нужный спец-объект, либо готовить его.', 'Every move should create the required special or set it up.', '每一步都应该直接做出目标特效或为它铺路。'),
+        current: specialProgress,
+        total: levelConfig.goal.value,
+        nounRu: specialLabel,
+        nounEn: specialLabel,
+        nounZh: specialLabel,
+      };
+    })();
+
+    const remaining = Math.max(0, objectiveMap.total - objectiveMap.current);
+    const ratio = objectiveMap.total > 0 ? Math.min(1, objectiveMap.current / objectiveMap.total) : 0;
+    const remainingLabel = tx(
+      `осталось ${remaining} ${objectiveMap.nounRu}`,
+      `${remaining} ${objectiveMap.nounEn} left`,
+      `还差 ${remaining} ${objectiveMap.nounZh}`,
+    );
+    return {
+      objectiveTitle: objectiveMap.title,
+      focusLabel: objectiveMap.focus,
+      focusHint: objectiveMap.hint,
+      remainingLabel,
+      progressRatio: ratio,
+      nearWin: thresholdNearWin(remaining, Math.max(1, objectiveMap.total), ratio),
+      failReason: buildFailReason(remainingLabel),
+    };
+  }, [
+    bossHp,
+    bossMaxHp,
+    collected,
+    comboX5Count,
+    iceCleared,
+    language,
+    levelBombActivations,
+    levelConfig.goal,
+    levelConfig.mode,
+    levelCrossActivations,
+    levelLightningActivations,
+    levelNovaActivations,
+    levelPulseActivations,
+    levelSmashEvents,
+    trashDestroyed,
+    trashTotal,
+    tx,
+  ]);
+  const showBattleReadabilityAssist = level <= 10 || isShortsColdTraffic;
+  const reduceEarlyVisualNoise = (!hasSeenTutorial && level <= 3) || (isShortsColdTraffic && level <= 5);
 
   const renderGoalContent = () => {
     if (levelConfig.goal.type === 'collect') {
@@ -683,6 +1023,7 @@ function App() {
     (levelConfig.mode === 'moves' && moves <= 0) ||
     (levelConfig.mode === 'time' && timeLeft <= 0)
   ) && !isProcessing;
+  const shouldOfferContinue = isGameOver && goalReadabilitySummary.nearWin && !usedContinueThisLevel;
 
   const onRestart = () => {
     trackEvent('restart_click', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
@@ -912,9 +1253,9 @@ function App() {
 
   const openShopWithSource = useCallback((source: ShopOpenSource) => {
     setShopOfferContext(
-      source === 'level_1_fail_auto'
+      source === 'near_win_auto'
         ? 'recovery'
-        : source === 'level_1_complete_auto'
+        : source === 'strong_payoff_auto'
           ? 'momentum'
           : 'manual',
     );
@@ -2246,15 +2587,25 @@ function App() {
       trackEvent('level_complete', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
       void reportRunMissionProgress('level_complete');
 
-      if (level === 1 && shopTimingVariant === 'b' && !autoShopPromptShownRef.current) {
+      const strongPayoff = getStarsFromScore(score) >= 2;
+      const momentumEligibleLevel = isShortsColdTraffic ? level >= 2 : level >= 1;
+      const shouldAutoShowMomentumShop = !tutorialActive
+        && !autoShopPromptShownRef.current
+        && strongPayoff
+        && (
+          (shopTimingVariant === 'a' && momentumEligibleLevel)
+          || (shopTimingVariant === 'b' && level >= 2)
+        );
+
+      if (shouldAutoShowMomentumShop) {
         autoShopPromptShownRef.current = true;
         window.localStorage.setItem(SHOP_TIMING_AUTO_SHOWN_KEY, '1');
-        openShopWithSource('level_1_complete_auto');
+        openShopWithSource('strong_payoff_auto');
       }
     }
 
     prevLevelUpRef.current = isLevelUp;
-  }, [isLevelUp, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, reportRunMissionProgress, shopTimingVariant]);
+  }, [isLevelUp, isShortsColdTraffic, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, reportRunMissionProgress, shopTimingVariant, tutorialActive]);
 
   useEffect(() => {
     if (!analyticsInitRef.current) return;
@@ -2262,23 +2613,28 @@ function App() {
       trackEvent('game_over', { level, score, moves, time_left: timeLeft, mode: levelConfig.mode });
       void reportRunMissionProgress('game_over');
 
-      if (
-        level === 1 &&
-        shopTimingVariant === 'c' &&
-        !tutorialActive &&
-        !autoShopPromptShownRef.current &&
-        !isShopOpen
-      ) {
+      const recoveryEligibleLevel = isShortsColdTraffic ? level >= 2 : level >= 1;
+      const shouldAutoShowRecoveryShop = goalReadabilitySummary.nearWin
+        && !tutorialActive
+        && !usedContinueThisLevel
+        && !autoShopPromptShownRef.current
+        && !isShopOpen
+        && (
+          (shopTimingVariant === 'b' && level >= 2)
+          || (shopTimingVariant === 'c' && recoveryEligibleLevel)
+        );
+
+      if (shouldAutoShowRecoveryShop) {
         autoShopPromptShownRef.current = true;
         window.localStorage.setItem(SHOP_TIMING_AUTO_SHOWN_KEY, '1');
         window.setTimeout(() => {
-          openShopWithSource('level_1_fail_auto');
+          openShopWithSource('near_win_auto');
         }, 320);
       }
     }
 
     prevGameOverRef.current = isGameOver;
-  }, [isGameOver, isShopOpen, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, reportRunMissionProgress, shopTimingVariant, tutorialActive]);
+  }, [goalReadabilitySummary.nearWin, isGameOver, isShopOpen, isShortsColdTraffic, level, score, moves, timeLeft, levelConfig.mode, openShopWithSource, reportRunMissionProgress, shopTimingVariant, tutorialActive, usedContinueThisLevel]);
 
   useEffect(() => {
     if (!analyticsInitRef.current) return;
@@ -2804,6 +3160,9 @@ function App() {
               level={levelToLaunch}
               goalPreview={selectedLevelGoalPreview}
               pacePreview={selectedLevelPacePreview}
+              objectiveTitle={selectedLevelFocus.objectiveTitle}
+              focusLabel={selectedLevelFocus.focusLabel}
+              focusHint={selectedLevelFocus.focusHint}
               language={language}
               runModifiers={selectedLevelRunModifiers}
               coinsBalance={spaceCoins}
@@ -2953,6 +3312,12 @@ function App() {
             boostCost={continueReserve > 0 ? 0 : boosterCost}
             boostAmountLabel={levelConfig.mode === 'moves' ? tx(`+${moveBoostAmount} ходов`, `+${moveBoostAmount} moves`, `+${moveBoostAmount} 步`) : tx(`+${timeBoostSeconds} сек`, `+${timeBoostSeconds}s`, `+${timeBoostSeconds} 秒`)}
             canAffordContinue={continueReserve > 0 || spaceCoins >= boosterCost}
+            showContinueOffer={shouldOfferContinue}
+            objectiveTitle={goalReadabilitySummary.objectiveTitle}
+            focusLabel={goalReadabilitySummary.focusLabel}
+            remainingLabel={goalReadabilitySummary.remainingLabel}
+            failReason={goalReadabilitySummary.failReason}
+            nearWin={goalReadabilitySummary.nearWin}
             onRestart={onRestart}
             onBuyContinue={buyContinueFromGameOver}
             onOpenShop={openShop}
@@ -3016,17 +3381,40 @@ function App() {
               <div className="text-[10px] sm:text-xs font-black tracking-[0.22em] uppercase text-slate-800/82">{t.goal}</div>
               <div className="text-xl sm:text-2xl font-extrabold leading-tight text-slate-950">{renderGoalContent()}</div>
             </div>
-            {activeEventRun && (
-              <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-fuchsia-200/28 bg-fuchsia-300/14 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-50 shadow-[0_0_16px_rgba(217,70,239,0.16)]">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>
-                  {tx(
-                    `Режим события активен: на поле будет больше льда, и прогресс засчитается в задания`,
-                    `Event mode is active: this run adds extra ice and counts toward event missions`,
-                    `活动对局已激活：+${eventConfig.eventRunIceTiles} 个低温护盾，并计入活动进度`,
-                  )}
-                </span>
+            {showBattleReadabilityAssist && (
+              <div className="mt-2 w-full max-w-xs sm:max-w-sm rounded-2xl border border-amber-200/35 bg-[linear-gradient(160deg,rgba(120,53,15,0.9)_0%,rgba(30,41,59,0.92)_100%)] px-4 py-3 text-left text-amber-50 shadow-[0_12px_24px_rgba(120,53,15,0.3)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-100/72">
+                      {tx('Главный фокус', 'Primary focus', '核心焦点')}
+                    </div>
+                    <div className="mt-1 text-sm font-black text-white">{goalReadabilitySummary.focusLabel}</div>
+                    <div className="mt-2 text-xs leading-relaxed text-white/72">{goalReadabilitySummary.focusHint}</div>
+                  </div>
+                  <div className="shrink-0 rounded-full border border-white/12 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-100">
+                    {goalReadabilitySummary.remainingLabel}
+                  </div>
+                </div>
               </div>
+            )}
+            {activeEventRun && (
+              reduceEarlyVisualNoise ? (
+                <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-fuchsia-200/24 bg-fuchsia-300/12 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-50 shadow-[0_0_14px_rgba(217,70,239,0.12)]">
+                  <Sparkles className="h-3 w-3" />
+                  <span>{tx('Событие активно', 'Event active', '活动进行中')}</span>
+                </div>
+              ) : (
+                <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-fuchsia-200/28 bg-fuchsia-300/14 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-50 shadow-[0_0_16px_rgba(217,70,239,0.16)]">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>
+                    {tx(
+                      `Режим события активен: на поле будет больше льда, и прогресс засчитается в задания`,
+                      `Event mode is active: this run adds extra ice and counts toward event missions`,
+                      `活动对局已激活：+${eventConfig.eventRunIceTiles} 个低温护盾，并计入活动进度`,
+                    )}
+                  </span>
+                </div>
+              )
             )}
             {isBossLevel && (
               <div className="relative mt-2 w-full max-w-xs sm:max-w-sm px-2">
@@ -3060,6 +3448,15 @@ function App() {
                         <span>{tx('Секторная угроза', 'Sector Threat', '扇区威胁')}</span>
                         <span>{bossAttackLabel}</span>
                       </div>
+                      {showBattleReadabilityAssist && (
+                        <div className="mt-2 text-[10px] font-bold leading-relaxed text-rose-50/80">
+                          {tx(
+                            'Бомбы, молнии и большие цепочки бьют по щиту сильнее обычных матчей.',
+                            'Bombs, lightning, and large chains hit the shield harder than regular matches.',
+                            '炸弹、闪电和大型连锁比普通消除更伤护盾。',
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   {bossHitText && !lowPerfMode && (
@@ -3069,7 +3466,7 @@ function App() {
                       exit={{ opacity: 0 }}
                       className="pointer-events-none absolute right-3 top-1 text-sm font-black text-rose-300 drop-shadow-[0_0_10px_rgba(251,113,133,0.75)]"
                     >
-                      {bossHitText}
+                      {tx('Щит ', 'Shield ', '护盾 ')}{bossHitText}
                     </motion.div>
                   )}
                 </div>
