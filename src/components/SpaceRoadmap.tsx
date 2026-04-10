@@ -482,7 +482,6 @@ export function SpaceRoadmap({
             <div className="relative mx-auto w-full max-w-[340px]" style={{ height: mapHeight }}>
             {sectorAnchors.map(({ sector, startPoint, endPoint: sectorEndPoint }) => (
               <div key={sector.id} className="pointer-events-none absolute inset-x-0" style={{ top: Math.max(30, sectorEndPoint.y - 72), height: Math.max(180, startPoint.y - sectorEndPoint.y + 120) }}>
-                <div className={`absolute inset-x-0 inset-y-0 rounded-[34px] ${sector.glowClassName}`} />
                 <div
                   className={`absolute left-1/2 z-[6] -translate-x-1/2 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] ${sector.labelClassName}`}
                   style={{ top: 12, maxWidth: 196 }}
