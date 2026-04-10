@@ -408,14 +408,6 @@ export function SpaceRoadmap({
           </div>
         </div>
         <div className="relative flex-1 min-h-0 isolate">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-1/2 z-0 w-screen -translate-x-1/2"
-            style={{
-              background:
-                'radial-gradient(circle at 80% 18%, rgba(251,191,36,0.16), transparent 22%), radial-gradient(circle at 18% 34%, rgba(103,232,249,0.12), transparent 26%), radial-gradient(circle at 72% 58%, rgba(192,132,252,0.12), transparent 24%), linear-gradient(180deg, rgba(7,11,25,0.98) 0%, rgba(10,22,50,0.96) 28%, rgba(9,22,44,0.95) 56%, rgba(4,8,20,0.98) 100%)',
-            }}
-          />
           <div className="absolute left-2 top-2 z-[70] flex flex-col gap-2 pointer-events-auto">
             <button
               type="button"
@@ -481,7 +473,7 @@ export function SpaceRoadmap({
               src="/roadmap-space-bg.svg"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full object-fill opacity-100"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-95"
             />
             <div className="relative mx-auto w-full max-w-[340px]" style={{ height: mapHeight }}>
             {sectorAnchors.map(({ sector, startPoint, endPoint: sectorEndPoint }) => (
