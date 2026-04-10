@@ -247,7 +247,8 @@ export function SpaceRoadmap({
         startLevel: 1,
         endLevel: 30,
         label: tx('Локация 1: Орбитальный Порт', 'Location 1: Orbital Port', '区域 1：轨道港'),
-        glowClassName: 'bg-[linear-gradient(180deg,rgba(56,189,248,0.16),rgba(37,99,235,0.08),transparent)]',
+        glowClassName:
+          'bg-[radial-gradient(circle_at_50%_12%,rgba(103,232,249,0.18),transparent_36%),radial-gradient(circle_at_16%_72%,rgba(59,130,246,0.08),transparent_28%),radial-gradient(circle_at_84%_68%,rgba(34,211,238,0.1),transparent_30%)]',
         labelClassName: 'border-cyan-200/35 bg-slate-950/72 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)]',
         nodeClassName: 'border-cyan-100/90 bg-gradient-to-br from-sky-300 to-blue-600 text-white shadow-[0_0_20px_rgba(56,189,248,0.45)]',
         currentNodeClassName: 'border-cyan-50 bg-gradient-to-br from-cyan-200 to-sky-500 text-slate-900 shadow-[0_0_28px_rgba(34,211,238,0.5)]',
@@ -262,7 +263,8 @@ export function SpaceRoadmap({
         startLevel: 31,
         endLevel: 60,
         label: tx('Локация 2: Квантовый Пояс', 'Location 2: Quantum Belt', '区域 2：量子带'),
-        glowClassName: 'bg-[linear-gradient(180deg,rgba(20,184,166,0.14),rgba(16,185,129,0.08),transparent)]',
+        glowClassName:
+          'bg-[radial-gradient(circle_at_56%_16%,rgba(52,211,153,0.16),transparent_36%),radial-gradient(circle_at_18%_58%,rgba(16,185,129,0.08),transparent_28%),radial-gradient(circle_at_82%_76%,rgba(45,212,191,0.09),transparent_30%)]',
         labelClassName: 'border-emerald-200/35 bg-slate-950/72 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.18)]',
         nodeClassName: 'border-emerald-100/80 bg-gradient-to-br from-emerald-300 to-teal-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.35)]',
         currentNodeClassName: 'border-emerald-50 bg-gradient-to-br from-emerald-200 to-teal-500 text-slate-900 shadow-[0_0_28px_rgba(16,185,129,0.45)]',
@@ -277,7 +279,8 @@ export function SpaceRoadmap({
         startLevel: 61,
         endLevel: 90,
         label: tx('Локация 3: Астральный Разлом', 'Location 3: Astral Rift', '区域 3：星界裂隙'),
-        glowClassName: 'bg-[linear-gradient(180deg,rgba(168,85,247,0.14),rgba(217,70,239,0.08),transparent)]',
+        glowClassName:
+          'bg-[radial-gradient(circle_at_48%_18%,rgba(192,132,252,0.16),transparent_38%),radial-gradient(circle_at_22%_72%,rgba(168,85,247,0.08),transparent_28%),radial-gradient(circle_at_84%_62%,rgba(217,70,239,0.1),transparent_30%)]',
         labelClassName: 'border-fuchsia-200/35 bg-slate-950/72 text-fuchsia-100 shadow-[0_0_18px_rgba(217,70,239,0.18)]',
         nodeClassName: 'border-fuchsia-100/85 bg-gradient-to-br from-fuchsia-300 to-violet-600 text-white shadow-[0_0_20px_rgba(192,38,211,0.34)]',
         currentNodeClassName: 'border-fuchsia-50 bg-gradient-to-br from-fuchsia-200 to-violet-500 text-slate-900 shadow-[0_0_28px_rgba(217,70,239,0.46)]',
@@ -292,7 +295,8 @@ export function SpaceRoadmap({
         startLevel: 91,
         endLevel: 120,
         label: tx('Локация 4: Солнечная Корона', 'Location 4: Solar Crown', '区域 4：日冕核心'),
-        glowClassName: 'bg-[linear-gradient(180deg,rgba(251,191,36,0.14),rgba(249,115,22,0.08),transparent)]',
+        glowClassName:
+          'bg-[radial-gradient(circle_at_54%_18%,rgba(251,191,36,0.18),transparent_38%),radial-gradient(circle_at_20%_70%,rgba(249,115,22,0.08),transparent_28%),radial-gradient(circle_at_84%_62%,rgba(251,191,36,0.09),transparent_30%)]',
         labelClassName: 'border-amber-200/40 bg-slate-950/72 text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.22)]',
         nodeClassName: 'border-amber-100/85 bg-gradient-to-br from-amber-300 to-orange-600 text-white shadow-[0_0_20px_rgba(251,146,60,0.36)]',
         currentNodeClassName: 'border-yellow-100 bg-gradient-to-br from-amber-200 to-orange-500 text-slate-900 shadow-[0_0_28px_rgba(251,191,36,0.55)]',
@@ -478,7 +482,7 @@ export function SpaceRoadmap({
             <div className="relative mx-auto w-full max-w-[340px]" style={{ height: mapHeight }}>
             {sectorAnchors.map(({ sector, startPoint, endPoint: sectorEndPoint }) => (
               <div key={sector.id} className="pointer-events-none absolute inset-x-0" style={{ top: Math.max(30, sectorEndPoint.y - 72), height: Math.max(180, startPoint.y - sectorEndPoint.y + 120) }}>
-                <div className={`absolute inset-x-2 inset-y-0 rounded-[34px] ${sector.glowClassName}`} />
+                <div className={`absolute inset-x-0 inset-y-0 rounded-[34px] ${sector.glowClassName}`} />
                 <div
                   className={`absolute left-1/2 z-[6] -translate-x-1/2 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] ${sector.labelClassName}`}
                   style={{ top: 12, maxWidth: 196 }}
