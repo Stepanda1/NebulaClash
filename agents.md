@@ -17,6 +17,20 @@ Nebula Clash is a web match-3 game (React + TypeScript + Vite) with:
 
 This folder also includes marketing docs for content/traffic operations (`docs/marketing/week1`).
 
+## 1.1 Task execution rule
+
+When handling any non-trivial request in this project, Codex should decompose the task into small concrete steps before making changes.
+
+Preferred decomposition pattern:
+
+1. inspect current state
+2. identify the smallest safe implementation slices
+3. implement one slice at a time
+4. verify each slice
+5. summarize what remains and then continue
+
+Do not treat large multi-part requests as one opaque task when they can be split into smaller executable units.
+
 ## 2. High-level architecture
 
 ### Frontend

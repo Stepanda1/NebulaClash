@@ -15,8 +15,31 @@ async function saveShot(page, name, note, manifest) {
   manifest.push({ file: `${name}.png`, note });
 }
 
+async function clickFirst(page, selectors, options = {}) {
+  for (const selector of selectors) {
+    try {
+      const locator = page.locator(selector).first();
+      const count = await locator.count();
+      if (!count) continue;
+      await locator.click(options);
+      return true;
+    } catch {
+      // try next selector
+    }
+  }
+  return false;
+}
+
 async function preparePage(browser, initScript) {
   const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
+  // Prevent the consent banner from covering key screenshots.
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem('match3_consent_v1', JSON.stringify({ analytics: false, marketing: false }));
+    } catch {
+      // ignore
+    }
+  });
   if (initScript) {
     await context.addInitScript(initScript);
   }
@@ -73,7 +96,14 @@ async function main() {
 
       await page.goto(`${BASE_URL}/play`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2500);
-      await page.click('button[aria-label="Рейтинг"]');
+      const clickedLeaderboard = await clickFirst(page, [
+        'button[aria-label="Рейтинг"]',
+        'button[title^="Рейтинг"]',
+        'button[title^="Ranking"]',
+      ]);
+      if (!clickedLeaderboard) {
+        throw new Error('Failed to locate leaderboard button');
+      }
       await page.waitForTimeout(1000);
       await saveShot(page, '06-leaderboard', 'Leaderboard popup for progression/social proof beat.', manifest);
 

@@ -56,7 +56,7 @@ type SectorConfig = {
     x: number;
     yOffset: number;
     size: number;
-    shape: 'planet' | 'asteroid' | 'rift' | 'crystal' | 'beacon' | 'comet';
+    shape: 'planet' | 'asteroid' | 'rift' | 'crystal' | 'beacon' | 'comet' | 'station' | 'drone';
   }>;
 };
 
@@ -292,7 +292,16 @@ export function SpaceRoadmap({
         detailAccentClassName: 'border-cyan-200/30 bg-cyan-300/10 text-cyan-100/90',
         details: [
           { x: 272, yOffset: 22, size: 54, shape: 'planet' },
-          { x: 72, yOffset: 540, size: 30, shape: 'beacon' },
+          { x: 92, yOffset: 168, size: 24, shape: 'drone' },
+          { x: 72, yOffset: 420, size: 30, shape: 'beacon' },
+          { x: 262, yOffset: 520, size: 36, shape: 'station' },
+          { x: 254, yOffset: 720, size: 26, shape: 'asteroid' },
+          { x: 92, yOffset: 1120, size: 34, shape: 'crystal' },
+          { x: 262, yOffset: 1320, size: 26, shape: 'drone' },
+          { x: 258, yOffset: 1680, size: 30, shape: 'beacon' },
+          { x: 78, yOffset: 2260, size: 28, shape: 'asteroid' },
+          { x: 252, yOffset: 2520, size: 24, shape: 'drone' },
+          { x: 270, yOffset: 2920, size: 34, shape: 'comet' },
         ],
       },
       {
@@ -308,7 +317,15 @@ export function SpaceRoadmap({
         detailAccentClassName: 'border-emerald-200/30 bg-emerald-300/10 text-emerald-100/90',
         details: [
           { x: 264, yOffset: 72, size: 34, shape: 'crystal' },
-          { x: 62, yOffset: 622, size: 46, shape: 'rift' },
+          { x: 82, yOffset: 220, size: 34, shape: 'station' },
+          { x: 76, yOffset: 420, size: 26, shape: 'beacon' },
+          { x: 262, yOffset: 660, size: 44, shape: 'rift' },
+          { x: 78, yOffset: 1040, size: 30, shape: 'crystal' },
+          { x: 270, yOffset: 1240, size: 24, shape: 'drone' },
+          { x: 260, yOffset: 1500, size: 26, shape: 'asteroid' },
+          { x: 62, yOffset: 2060, size: 46, shape: 'rift' },
+          { x: 90, yOffset: 2320, size: 24, shape: 'drone' },
+          { x: 270, yOffset: 2780, size: 32, shape: 'comet' },
         ],
       },
       {
@@ -324,7 +341,15 @@ export function SpaceRoadmap({
         detailAccentClassName: 'border-fuchsia-200/30 bg-fuchsia-300/10 text-fuchsia-100/90',
         details: [
           { x: 78, yOffset: 86, size: 36, shape: 'asteroid' },
+          { x: 262, yOffset: 210, size: 34, shape: 'station' },
+          { x: 262, yOffset: 420, size: 30, shape: 'comet' },
           { x: 268, yOffset: 608, size: 44, shape: 'rift' },
+          { x: 66, yOffset: 1040, size: 42, shape: 'rift' },
+          { x: 86, yOffset: 1320, size: 24, shape: 'drone' },
+          { x: 274, yOffset: 1560, size: 30, shape: 'beacon' },
+          { x: 84, yOffset: 2200, size: 32, shape: 'crystal' },
+          { x: 262, yOffset: 2420, size: 26, shape: 'drone' },
+          { x: 260, yOffset: 2860, size: 34, shape: 'asteroid' },
         ],
       },
       {
@@ -340,7 +365,15 @@ export function SpaceRoadmap({
         detailAccentClassName: 'border-amber-200/30 bg-amber-300/10 text-amber-100/90',
         details: [
           { x: 258, yOffset: 62, size: 52, shape: 'planet' },
-          { x: 84, yOffset: 628, size: 32, shape: 'comet' },
+          { x: 86, yOffset: 210, size: 24, shape: 'drone' },
+          { x: 84, yOffset: 380, size: 30, shape: 'beacon' },
+          { x: 274, yOffset: 720, size: 32, shape: 'comet' },
+          { x: 262, yOffset: 980, size: 34, shape: 'station' },
+          { x: 68, yOffset: 1180, size: 28, shape: 'asteroid' },
+          { x: 268, yOffset: 1620, size: 44, shape: 'rift' },
+          { x: 86, yOffset: 2240, size: 34, shape: 'crystal' },
+          { x: 74, yOffset: 2500, size: 24, shape: 'drone' },
+          { x: 262, yOffset: 2880, size: 30, shape: 'beacon' },
         ],
       },
     ];
@@ -357,6 +390,20 @@ export function SpaceRoadmap({
         .filter((value): value is { sector: SectorConfig; startPoint: Point; endPoint: Point } => Boolean(value)),
     [points, sectors],
   );
+  const ambientOrnaments = useMemo(() => {
+    const anchor = currentPoint ?? points[0];
+    if (!anchor) return [];
+    const y0 = anchor.y;
+
+    const ornaments = [
+      { x: 58, yOffset: y0 - 420, size: 44, shape: 'station' as const, accent: 'border-cyan-200/30 bg-cyan-300/10 text-cyan-100/90' },
+      { x: 286, yOffset: y0 - 180, size: 34, shape: 'drone' as const, accent: 'border-fuchsia-200/30 bg-fuchsia-300/10 text-fuchsia-100/90' },
+      { x: 278, yOffset: y0 + 170, size: 34, shape: 'beacon' as const, accent: 'border-emerald-200/30 bg-emerald-300/10 text-emerald-100/90' },
+      { x: 76, yOffset: y0 + 470, size: 52, shape: 'rift' as const, accent: 'border-amber-200/30 bg-amber-300/10 text-amber-100/90' },
+    ];
+
+    return ornaments.filter((o) => o.yOffset > 36 && o.yOffset < mapHeight - 120);
+  }, [currentPoint, mapHeight, points]);
   const openLegalFromSettings = (section: LegalSection) => {
     setIsSettingsOpen(false);
     onOpenLegal(section);
@@ -379,6 +426,7 @@ export function SpaceRoadmap({
           <div className="absolute left-[26%] top-[24%] h-[16%] w-[16%] rounded-full bg-black/20" />
           <div className="absolute right-[22%] top-[48%] h-[12%] w-[12%] rounded-full bg-black/15" />
           <div className="absolute left-[46%] bottom-[18%] h-[10%] w-[10%] rounded-full bg-white/10" />
+          <div className="absolute left-[18%] top-[62%] h-[6%] w-[40%] rounded-full bg-white/10 blur-[1px]" />
         </div>
       );
     }
@@ -397,6 +445,7 @@ export function SpaceRoadmap({
         <div className="absolute inset-0 flex items-center justify-center">
           <div className={`relative h-[42%] w-[92%] rotate-12 rounded-full border ${accentClassName} bg-[linear-gradient(90deg,rgba(15,23,42,0.15),rgba(15,23,42,0.85)_20%,rgba(255,255,255,0.12)_50%,rgba(15,23,42,0.85)_80%,rgba(15,23,42,0.15))] shadow-[0_0_22px_rgba(168,85,247,0.12)]`}>
             <div className="absolute inset-y-[20%] left-1/2 w-[10%] -translate-x-1/2 rounded-full bg-white/24 blur-[1px]" />
+            <div className="absolute inset-0 rounded-full bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.08),transparent)] opacity-70" />
           </div>
         </div>
       );
@@ -408,6 +457,48 @@ export function SpaceRoadmap({
           <div className={`relative h-[72%] w-[44%] rounded-[999px] border ${accentClassName} bg-[linear-gradient(180deg,rgba(255,255,255,0.22),rgba(15,23,42,0.72))]`}>
             <div className="absolute left-1/2 top-[18%] h-[18%] w-[18%] -translate-x-1/2 rounded-full bg-white/40" />
             <div className="absolute left-1/2 top-[38%] h-[34%] w-[10%] -translate-x-1/2 rounded-full bg-white/16" />
+            <div className="absolute left-1/2 top-[14%] h-[44%] w-[140%] -translate-x-1/2 rounded-full border border-white/18 bg-white/5 blur-[1px] animate-[pulse_3.8s_ease-in-out_infinite]" />
+          </div>
+        </div>
+      );
+    }
+
+    if (detail.shape === 'comet') {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative h-full w-full rotate-[-18deg]">
+            <div className="absolute left-[6%] top-1/2 h-[22%] w-[76%] -translate-y-1/2 rounded-full bg-[linear-gradient(90deg,rgba(255,255,255,0.0),rgba(255,255,255,0.18)_14%,rgba(125,211,252,0.22)_46%,rgba(255,255,255,0.0)_92%)] blur-[1px]" />
+            <div className="absolute left-[14%] top-1/2 h-[10%] w-[64%] -translate-y-1/2 rounded-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.14)_24%,rgba(255,255,255,0.0)_92%)]" />
+            <div className={`absolute right-[8%] top-1/2 h-[30%] w-[30%] -translate-y-1/2 rounded-full border ${accentClassName} bg-[radial-gradient(circle_at_32%_30%,rgba(255,255,255,0.34),rgba(255,255,255,0.1)_46%,rgba(15,23,42,0.45)_100%)] shadow-[0_0_22px_rgba(255,255,255,0.12)]`} />
+            <div className="absolute right-[16%] top-[38%] h-[10%] w-[10%] rounded-full bg-white/20 blur-[0.5px]" />
+          </div>
+        </div>
+      );
+    }
+
+    if (detail.shape === 'station') {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative h-full w-full">
+            <div className={`absolute inset-[10%] rounded-full border ${accentClassName} bg-[radial-gradient(circle_at_50%_50%,rgba(15,23,42,0.25),rgba(15,23,42,0.75)_60%,rgba(2,6,23,0.92)_100%)] shadow-[0_0_20px_rgba(255,255,255,0.06)]`} />
+            <div className="absolute left-1/2 top-1/2 h-[46%] w-[46%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/16 bg-white/6" />
+            <div className="absolute left-1/2 top-1/2 h-[16%] w-[16%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/28" />
+            <div className="absolute left-1/2 top-1/2 h-[10%] w-[92%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent)] opacity-80" />
+            <div className="absolute left-1/2 top-1/2 h-[92%] w-[10%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.16),transparent)] opacity-80" />
+            <div className={`absolute left-[18%] top-[30%] h-[18%] w-[22%] rotate-[-10deg] rounded-lg border ${accentClassName} bg-white/6`} />
+            <div className={`absolute right-[18%] bottom-[30%] h-[18%] w-[22%] rotate-[-10deg] rounded-lg border ${accentClassName} bg-white/6`} />
+          </div>
+        </div>
+      );
+    }
+
+    if (detail.shape === 'drone') {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative h-full w-full rotate-[10deg]">
+            <div className="absolute left-[10%] top-1/2 h-[10%] w-[64%] -translate-y-1/2 rounded-full bg-[linear-gradient(90deg,rgba(255,255,255,0.0),rgba(255,255,255,0.12)_18%,rgba(255,255,255,0.0)_92%)] blur-[1px]" />
+            <div className={`absolute right-[16%] top-1/2 h-[34%] w-[34%] -translate-y-1/2 rotate-45 rounded-[26%] border ${accentClassName} bg-[linear-gradient(135deg,rgba(255,255,255,0.22),rgba(15,23,42,0.78))] shadow-[0_0_18px_rgba(125,211,252,0.1)]`} />
+            <div className="absolute right-[28%] top-[42%] h-[10%] w-[10%] rounded-full bg-white/20" />
           </div>
         </div>
       );
@@ -415,8 +506,9 @@ export function SpaceRoadmap({
 
     return (
       <div className="absolute inset-0">
-        <div className="absolute left-[18%] top-[42%] h-[22%] w-[52%] -translate-y-1/2 rounded-full bg-white/16 blur-[1px]" />
-        <div className={`absolute right-[18%] top-[34%] h-[24%] w-[24%] rounded-full border ${accentClassName} bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.32),rgba(255,255,255,0.1)_40%,rgba(15,23,42,0.4)_100%)]`} />
+        <div className="absolute left-[6%] top-[18%] h-[56%] w-[120%] rotate-[-18deg] rounded-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.14)_16%,rgba(255,255,255,0.06)_46%,transparent_74%)] blur-[1px]" />
+        <div className={`absolute right-[14%] top-[22%] h-[28%] w-[28%] rounded-full border ${accentClassName} bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.34),rgba(255,255,255,0.08)_42%,rgba(15,23,42,0.4)_100%)] shadow-[0_0_18px_rgba(255,255,255,0.08)]`} />
+        <div className={`absolute left-[18%] top-[54%] h-[12%] w-[12%] rounded-full border ${accentClassName} bg-white/10`} />
       </div>
     );
   };
@@ -521,7 +613,14 @@ export function SpaceRoadmap({
             <div className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden rounded-3xl" style={{ height: mapHeight }}>
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.06),rgba(2,6,23,0.24)_18%,rgba(2,6,23,0.08)_42%,rgba(2,6,23,0.26)_100%)]" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_8%,rgba(255,255,255,0.11),rgba(255,255,255,0.02)_14%,transparent_24%),radial-gradient(circle_at_16%_22%,rgba(56,189,248,0.12),transparent_28%),radial-gradient(circle_at_86%_38%,rgba(192,132,252,0.12),transparent_30%),radial-gradient(circle_at_18%_68%,rgba(74,222,128,0.12),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(251,191,36,0.12),transparent_26%)] mix-blend-screen" />
+              <div className="absolute inset-0 opacity-65 [background-image:radial-gradient(circle_at_14%_18%,rgba(255,255,255,0.42)_1px,transparent_1.2px),radial-gradient(circle_at_74%_22%,rgba(186,230,253,0.34)_1px,transparent_1.3px),radial-gradient(circle_at_62%_68%,rgba(253,224,71,0.22)_1px,transparent_1.5px),radial-gradient(circle_at_28%_76%,rgba(255,255,255,0.18)_0.8px,transparent_1.2px)] [background-size:96px_96px,160px_160px,220px_220px,72px_72px]" />
+              <div className="absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_22%_36%,rgba(255,255,255,0.22)_1px,transparent_1.8px),radial-gradient(circle_at_62%_18%,rgba(226,232,240,0.14)_1px,transparent_1.8px),radial-gradient(circle_at_76%_62%,rgba(186,230,253,0.16)_1px,transparent_2px),radial-gradient(circle_at_18%_84%,rgba(253,224,71,0.12)_1px,transparent_2.2px)] [background-size:56px_56px,74px_74px,92px_92px,128px_128px]" />
               <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.05),transparent_16%,transparent_84%,rgba(255,255,255,0.04)),repeating-linear-gradient(180deg,rgba(148,163,184,0.05)_0,rgba(148,163,184,0.05)_1px,transparent_1px,transparent_96px)] opacity-45" />
+              <div className="absolute inset-0 opacity-18 [background-image:radial-gradient(circle_at_50%_50%,rgba(56,189,248,0.12),transparent_62%),radial-gradient(circle_at_24%_66%,rgba(192,132,252,0.1),transparent_66%),radial-gradient(circle_at_78%_40%,rgba(74,222,128,0.08),transparent_64%)]" />
+              <div className="absolute -left-[28%] top-[30%] h-[26%] w-[92%] rotate-[-16deg] [background-image:radial-gradient(circle_at_12%_52%,rgba(255,255,255,0.18)_1px,transparent_1.4px),radial-gradient(circle_at_38%_46%,rgba(255,255,255,0.12)_1px,transparent_1.6px),radial-gradient(circle_at_68%_60%,rgba(148,163,184,0.12)_1px,transparent_1.8px)] [background-size:18px_18px,26px_26px,38px_38px] opacity-55" />
+              <div className="absolute -right-[34%] top-[62%] h-[22%] w-[110%] rotate-[14deg] [background-image:radial-gradient(circle_at_20%_40%,rgba(255,255,255,0.14)_1px,transparent_1.5px),radial-gradient(circle_at_54%_52%,rgba(186,230,253,0.14)_1px,transparent_1.6px)] [background-size:20px_20px,32px_32px] opacity-45" />
+              <div className="absolute left-1/2 top-[34%] h-[1px] w-[64%] -translate-x-1/2 bg-[linear-gradient(90deg,transparent,rgba(56,189,248,0.22),transparent)] opacity-60" />
+              <div className="absolute left-1/2 top-[34%] h-[30%] w-[64%] -translate-x-1/2 [background-image:radial-gradient(circle,rgba(56,189,248,0.22)_1px,transparent_1.6px)] [background-size:22px_22px] opacity-18" />
               <div className="absolute inset-x-[18%] top-0 h-full rounded-[999px] bg-[linear-gradient(180deg,rgba(186,230,253,0.05),rgba(125,211,252,0.1)_18%,rgba(196,181,253,0.1)_58%,rgba(253,224,71,0.06)_100%)] blur-[18px]" />
               {nebulaBands.map((band, index) => (
                 <div
@@ -535,9 +634,34 @@ export function SpaceRoadmap({
                   }}
                 />
               ))}
+              <div className="absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_18%_38%,rgba(56,189,248,0.12),transparent_42%),radial-gradient(circle_at_84%_58%,rgba(34,211,238,0.1),transparent_44%),radial-gradient(circle_at_38%_86%,rgba(251,191,36,0.08),transparent_46%)]" />
+              <div className="absolute -left-[22%] top-[18%] h-[38%] w-[84%] rotate-[-12deg] rounded-full border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),transparent_68%)] shadow-[0_0_26px_rgba(56,189,248,0.08)]" />
+              <div className="absolute -right-[30%] top-[46%] h-[34%] w-[96%] rotate-[18deg] rounded-full border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_70%)] shadow-[0_0_26px_rgba(192,132,252,0.07)]" />
+              <div className="absolute left-6 top-6 h-10 w-10 rounded-2xl border border-white/12 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.0))]" />
+              <div className="absolute right-6 bottom-6 h-12 w-12 rounded-2xl border border-white/12 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.0))]" />
+              <div className="absolute left-6 bottom-6 h-9 w-9 rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.0))]" />
+              <div className="absolute right-6 top-6 h-9 w-9 rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.0))]" />
+              <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(120deg,transparent,rgba(255,255,255,0.08),transparent),radial-gradient(circle_at_12%_64%,rgba(255,255,255,0.08),transparent_52%),radial-gradient(circle_at_88%_28%,rgba(255,255,255,0.08),transparent_54%)] [background-size:320px_320px,100%_100%,100%_100%] animate-[pulse_6.5s_ease-in-out_infinite]" />
+              <div className="absolute left-[8%] top-[10%] h-[22%] w-[110%] rotate-[-10deg] [background-image:radial-gradient(circle_at_10%_40%,rgba(255,255,255,0.18)_1px,transparent_1.2px),radial-gradient(circle_at_24%_52%,rgba(56,189,248,0.22)_1px,transparent_1.3px),radial-gradient(circle_at_44%_32%,rgba(255,255,255,0.12)_1px,transparent_1.5px)] [background-size:22px_22px,34px_34px,46px_46px] opacity-55" />
+              <div className="absolute left-1/2 top-[14%] h-[1px] w-[78%] -translate-x-1/2 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent)]" />
+              <div className="absolute left-1/2 bottom-[12%] h-[1px] w-[78%] -translate-x-1/2 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.14),transparent)]" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_48%,rgba(2,6,23,0.2)_84%,rgba(2,6,23,0.38)_100%)]" />
             </div>
             <div className="relative mx-auto w-full max-w-[340px]" style={{ height: mapHeight }}>
+            {ambientOrnaments.map((ornament, index) => (
+              <div
+                key={`ambient-${index}`}
+                className="pointer-events-none absolute opacity-85"
+                style={{
+                  left: ornament.x - ornament.size / 2,
+                  top: ornament.yOffset - ornament.size / 2,
+                  width: ornament.size,
+                  height: ornament.size,
+                }}
+              >
+                {renderRoadmapDetail(ornament, ornament.accent)}
+              </div>
+            ))}
             {sectorAnchors.map(({ sector, startPoint, endPoint: sectorEndPoint }) => (
               <div key={sector.id} className="pointer-events-none absolute inset-x-0" style={{ top: Math.max(30, sectorEndPoint.y - 72), height: Math.max(180, startPoint.y - sectorEndPoint.y + 120) }}>
                 <div
