@@ -473,13 +473,13 @@ export function SpaceRoadmap({
             ref={scrollerRef}
             className="relative z-10 h-full overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-slate-950/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md"
           >
+            <div className="relative mx-auto w-full max-w-[340px]" style={{ height: mapHeight }}>
             <img
               src="/roadmap-space-bg.svg"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-95"
+              className="pointer-events-none absolute inset-x-0 top-0 h-full w-full object-fill opacity-95"
             />
-            <div className="relative mx-auto w-full max-w-[340px]" style={{ height: mapHeight }}>
             {sectorAnchors.map(({ sector, startPoint, endPoint: sectorEndPoint }) => (
               <div key={sector.id} className="pointer-events-none absolute inset-x-0" style={{ top: Math.max(30, sectorEndPoint.y - 72), height: Math.max(180, startPoint.y - sectorEndPoint.y + 120) }}>
                 <div
