@@ -124,6 +124,43 @@ export function SpaceRoadmap({
   }, [unlockedLevel]);
 
   const mapHeight = points[0].y + 64;
+  const nebulaBands = useMemo(
+    () => [
+      {
+        top: 180,
+        left: -54,
+        width: 252,
+        height: 1120,
+        className:
+          'bg-[radial-gradient(circle_at_30%_30%,rgba(125,211,252,0.42),rgba(56,189,248,0.16)_38%,rgba(8,15,36,0)_74%)]',
+      },
+      {
+        top: 1540,
+        left: 132,
+        width: 244,
+        height: 980,
+        className:
+          'bg-[radial-gradient(circle_at_58%_34%,rgba(196,181,253,0.38),rgba(168,85,247,0.16)_40%,rgba(14,16,36,0)_76%)]',
+      },
+      {
+        top: 3220,
+        left: -36,
+        width: 264,
+        height: 1040,
+        className:
+          'bg-[radial-gradient(circle_at_36%_40%,rgba(74,222,128,0.34),rgba(45,212,191,0.14)_42%,rgba(6,17,28,0)_78%)]',
+      },
+      {
+        top: 5060,
+        left: 142,
+        width: 236,
+        height: 1080,
+        className:
+          'bg-[radial-gradient(circle_at_62%_34%,rgba(251,191,36,0.34),rgba(249,115,22,0.14)_38%,rgba(12,10,28,0)_76%)]',
+      },
+    ],
+    [],
+  );
 
   const pathD = useMemo(() => {
     if (points.length === 0) return '';
@@ -471,15 +508,34 @@ export function SpaceRoadmap({
           </div>
           <div
             ref={scrollerRef}
-            className="relative z-10 h-full overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/22 bg-slate-950/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md"
+            className="relative z-10 h-full overflow-y-auto overscroll-y-none rounded-3xl border border-cyan-100/24 bg-[linear-gradient(180deg,rgba(2,6,23,0.34),rgba(2,6,23,0.18))] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_24px_80px_rgba(56,189,248,0.24),0_0_0_1px_rgba(148,163,184,0.12)] backdrop-blur-md"
           >
             <div className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden rounded-3xl" style={{ height: mapHeight }}>
               <img
                 src="/roadmap-space-bg.svg"
                 alt=""
                 aria-hidden="true"
-                className="h-full w-full object-cover object-center opacity-100"
+                className="h-full w-full object-cover object-center opacity-[0.96] saturate-[1.08]"
               />
+            </div>
+            <div className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden rounded-3xl" style={{ height: mapHeight }}>
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.06),rgba(2,6,23,0.24)_18%,rgba(2,6,23,0.08)_42%,rgba(2,6,23,0.26)_100%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_8%,rgba(255,255,255,0.11),rgba(255,255,255,0.02)_14%,transparent_24%),radial-gradient(circle_at_16%_22%,rgba(56,189,248,0.12),transparent_28%),radial-gradient(circle_at_86%_38%,rgba(192,132,252,0.12),transparent_30%),radial-gradient(circle_at_18%_68%,rgba(74,222,128,0.12),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(251,191,36,0.12),transparent_26%)] mix-blend-screen" />
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.05),transparent_16%,transparent_84%,rgba(255,255,255,0.04)),repeating-linear-gradient(180deg,rgba(148,163,184,0.05)_0,rgba(148,163,184,0.05)_1px,transparent_1px,transparent_96px)] opacity-45" />
+              <div className="absolute inset-x-[18%] top-0 h-full rounded-[999px] bg-[linear-gradient(180deg,rgba(186,230,253,0.05),rgba(125,211,252,0.1)_18%,rgba(196,181,253,0.1)_58%,rgba(253,224,71,0.06)_100%)] blur-[18px]" />
+              {nebulaBands.map((band, index) => (
+                <div
+                  key={index}
+                  className={`absolute rounded-full blur-[18px] ${band.className}`}
+                  style={{
+                    top: band.top,
+                    left: band.left,
+                    width: band.width,
+                    height: band.height,
+                  }}
+                />
+              ))}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_48%,rgba(2,6,23,0.2)_84%,rgba(2,6,23,0.38)_100%)]" />
             </div>
             <div className="relative mx-auto w-full max-w-[340px]" style={{ height: mapHeight }}>
             {sectorAnchors.map(({ sector, startPoint, endPoint: sectorEndPoint }) => (
