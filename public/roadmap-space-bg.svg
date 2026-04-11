@@ -32,6 +32,34 @@
       <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
     </radialGradient>
 
+    <linearGradient id="band-one" x1="170" y1="0" x2="170" y2="1784" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#67e8f9" stop-opacity="0.12"/>
+      <stop offset="0.28" stop-color="#38bdf8" stop-opacity="0.06"/>
+      <stop offset="0.72" stop-color="#0f172a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0f172a" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="band-two" x1="170" y1="1784" x2="170" y2="3568" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34d399" stop-opacity="0.1"/>
+      <stop offset="0.34" stop-color="#14b8a6" stop-opacity="0.06"/>
+      <stop offset="0.7" stop-color="#0f172a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0f172a" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="band-three" x1="170" y1="3568" x2="170" y2="5352" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c084fc" stop-opacity="0.11"/>
+      <stop offset="0.34" stop-color="#a855f7" stop-opacity="0.06"/>
+      <stop offset="0.72" stop-color="#0f172a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0f172a" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="band-four" x1="170" y1="5352" x2="170" y2="7136" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.11"/>
+      <stop offset="0.36" stop-color="#f59e0b" stop-opacity="0.06"/>
+      <stop offset="0.72" stop-color="#0f172a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0f172a" stop-opacity="0"/>
+    </linearGradient>
+
     <radialGradient id="left-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(44 1540) rotate(-4) scale(118 1680)">
       <stop offset="0" stop-color="#7dd3fc" stop-opacity="0.16"/>
       <stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/>
@@ -80,6 +108,10 @@
   </defs>
 
   <rect width="340" height="7136" fill="url(#space-base)"/>
+  <rect x="0" y="0" width="340" height="1784" fill="url(#band-one)"/>
+  <rect x="0" y="1784" width="340" height="1784" fill="url(#band-two)"/>
+  <rect x="0" y="3568" width="340" height="1784" fill="url(#band-three)"/>
+  <rect x="0" y="5352" width="340" height="1784" fill="url(#band-four)"/>
   <rect width="340" height="7136" fill="url(#sector-one)"/>
   <rect width="340" height="7136" fill="url(#sector-two)"/>
   <rect width="340" height="7136" fill="url(#sector-three)"/>
@@ -96,6 +128,20 @@
     <ellipse cx="96" cy="3380" rx="142" ry="34" transform="rotate(-10 96 3380)" fill="#34d399"/>
     <ellipse cx="258" cy="4980" rx="138" ry="32" transform="rotate(9 258 4980)" fill="#a855f7"/>
     <ellipse cx="92" cy="6380" rx="150" ry="38" transform="rotate(-12 92 6380)" fill="#f59e0b"/>
+    <ellipse cx="222" cy="1180" rx="122" ry="28" transform="rotate(10 222 1180)" fill="#67e8f9"/>
+    <ellipse cx="82" cy="2420" rx="134" ry="30" transform="rotate(-9 82 2420)" fill="#34d399"/>
+    <ellipse cx="250" cy="4140" rx="126" ry="28" transform="rotate(8 250 4140)" fill="#c084fc"/>
+    <ellipse cx="110" cy="5860" rx="136" ry="30" transform="rotate(-11 110 5860)" fill="#fbbf24"/>
+  </g>
+
+  <g opacity="0.18" filter="url(#blur-soft)">
+    <circle cx="92" cy="1340" r="22" fill="#7dd3fc"/>
+    <circle cx="256" cy="2120" r="18" fill="#93c5fd"/>
+    <circle cx="74" cy="3010" r="20" fill="#6ee7b7"/>
+    <circle cx="270" cy="3890" r="18" fill="#5eead4"/>
+    <circle cx="92" cy="4620" r="22" fill="#d8b4fe"/>
+    <circle cx="252" cy="5480" r="20" fill="#c084fc"/>
+    <circle cx="86" cy="6180" r="24" fill="#fcd34d"/>
   </g>
 
   <g stroke-linecap="round" opacity="0.28">
