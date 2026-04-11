@@ -1,204 +1,154 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 7136" width="340" height="7136" fill="none">
   <defs>
-    <linearGradient id="space-base" x1="170" y1="0" x2="170" y2="7136" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#081022"/>
-      <stop offset="0.28" stop-color="#0b1630"/>
-      <stop offset="0.56" stop-color="#09152b"/>
-      <stop offset="0.82" stop-color="#061020"/>
-      <stop offset="1" stop-color="#040915"/>
+    <linearGradient id="base" x1="170" y1="0" x2="170" y2="7136" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.28" stop-color="#091629"/>
+      <stop offset="0.55" stop-color="#081422"/>
+      <stop offset="0.8" stop-color="#06101c"/>
+      <stop offset="1" stop-color="#040914"/>
     </linearGradient>
-
-    <radialGradient id="sector-one" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(126 1080) rotate(-12) scale(236 740)">
-      <stop offset="0" stop-color="#4cc9f0" stop-opacity="0.28"/>
-      <stop offset="0.4" stop-color="#38bdf8" stop-opacity="0.18"/>
+    <linearGradient id="corridor" x1="170" y1="0" x2="170" y2="7136" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dbeafe" stop-opacity="0.04"/>
+      <stop offset="0.3" stop-color="#bae6fd" stop-opacity="0.06"/>
+      <stop offset="0.65" stop-color="#c4b5fd" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#fef3c7" stop-opacity="0.03"/>
+    </linearGradient>
+    <radialGradient id="zone1Glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(80 5650) rotate(-10) scale(220 1020)">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity="0.32"/>
+      <stop offset="0.38" stop-color="#60a5fa" stop-opacity="0.18"/>
       <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
     </radialGradient>
-
-    <radialGradient id="sector-two" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(210 2730) rotate(14) scale(226 780)">
-      <stop offset="0" stop-color="#34d399" stop-opacity="0.22"/>
-      <stop offset="0.45" stop-color="#10b981" stop-opacity="0.14"/>
-      <stop offset="1" stop-color="#10b981" stop-opacity="0"/>
+    <radialGradient id="zone2Glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(248 4040) rotate(8) scale(220 960)">
+      <stop offset="0" stop-color="#34d399" stop-opacity="0.24"/>
+      <stop offset="0.42" stop-color="#2dd4bf" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#34d399" stop-opacity="0"/>
     </radialGradient>
-
-    <radialGradient id="sector-three" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(132 4460) rotate(-8) scale(248 820)">
-      <stop offset="0" stop-color="#c084fc" stop-opacity="0.22"/>
-      <stop offset="0.44" stop-color="#8b5cf6" stop-opacity="0.14"/>
-      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+    <radialGradient id="zone3Glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(92 2380) rotate(-8) scale(220 960)">
+      <stop offset="0" stop-color="#c084fc" stop-opacity="0.24"/>
+      <stop offset="0.42" stop-color="#a855f7" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#c084fc" stop-opacity="0"/>
     </radialGradient>
-
-    <radialGradient id="sector-four" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(214 6130) rotate(9) scale(238 760)">
-      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.22"/>
-      <stop offset="0.44" stop-color="#f59e0b" stop-opacity="0.14"/>
+    <radialGradient id="zone4Glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(254 790) rotate(8) scale(230 1040)">
+      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.26"/>
+      <stop offset="0.4" stop-color="#f59e0b" stop-opacity="0.14"/>
       <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
     </radialGradient>
-
-    <linearGradient id="band-one" x1="170" y1="0" x2="170" y2="1784" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#67e8f9" stop-opacity="0.12"/>
-      <stop offset="0.28" stop-color="#38bdf8" stop-opacity="0.06"/>
-      <stop offset="0.72" stop-color="#0f172a" stop-opacity="0"/>
-      <stop offset="1" stop-color="#0f172a" stop-opacity="0"/>
-    </linearGradient>
-
-    <linearGradient id="band-two" x1="170" y1="1784" x2="170" y2="3568" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#34d399" stop-opacity="0.1"/>
-      <stop offset="0.34" stop-color="#14b8a6" stop-opacity="0.06"/>
-      <stop offset="0.7" stop-color="#0f172a" stop-opacity="0"/>
-      <stop offset="1" stop-color="#0f172a" stop-opacity="0"/>
-    </linearGradient>
-
-    <linearGradient id="band-three" x1="170" y1="3568" x2="170" y2="5352" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#c084fc" stop-opacity="0.11"/>
-      <stop offset="0.34" stop-color="#a855f7" stop-opacity="0.06"/>
-      <stop offset="0.72" stop-color="#0f172a" stop-opacity="0"/>
-      <stop offset="1" stop-color="#0f172a" stop-opacity="0"/>
-    </linearGradient>
-
-    <linearGradient id="band-four" x1="170" y1="5352" x2="170" y2="7136" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.11"/>
-      <stop offset="0.36" stop-color="#f59e0b" stop-opacity="0.06"/>
-      <stop offset="0.72" stop-color="#0f172a" stop-opacity="0"/>
-      <stop offset="1" stop-color="#0f172a" stop-opacity="0"/>
-    </linearGradient>
-
-    <radialGradient id="left-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(44 1540) rotate(-4) scale(118 1680)">
-      <stop offset="0" stop-color="#7dd3fc" stop-opacity="0.16"/>
-      <stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/>
-    </radialGradient>
-
-    <radialGradient id="right-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(296 5120) rotate(2) scale(126 1880)">
-      <stop offset="0" stop-color="#93c5fd" stop-opacity="0.14"/>
-      <stop offset="1" stop-color="#93c5fd" stop-opacity="0"/>
-    </radialGradient>
-
-    <linearGradient id="center-sheen" x1="170" y1="0" x2="170" y2="7136" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
-      <stop offset="0.08" stop-color="#e0f2fe" stop-opacity="0.05"/>
-      <stop offset="0.42" stop-color="#bae6fd" stop-opacity="0.08"/>
-      <stop offset="0.68" stop-color="#c4b5fd" stop-opacity="0.06"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-
-    <radialGradient id="planet-cyan" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(58 940) scale(36)">
+    <radialGradient id="planetBlue" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(10 6835) scale(185)">
       <stop offset="0" stop-color="#dbeafe"/>
-      <stop offset="0.5" stop-color="#38bdf8"/>
-      <stop offset="1" stop-color="#1e3a8a"/>
+      <stop offset="0.22" stop-color="#93c5fd"/>
+      <stop offset="0.58" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#102a53"/>
     </radialGradient>
-
-    <radialGradient id="planet-emerald" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(282 2860) scale(31)">
+    <radialGradient id="planetGreen" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(286 4230) scale(76)">
       <stop offset="0" stop-color="#d1fae5"/>
-      <stop offset="0.52" stop-color="#34d399"/>
-      <stop offset="1" stop-color="#064e3b"/>
+      <stop offset="0.4" stop-color="#6ee7b7"/>
+      <stop offset="0.78" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#062b2e"/>
     </radialGradient>
-
-    <radialGradient id="planet-violet" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(70 4700) scale(38)">
+    <radialGradient id="planetPurple" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(48 2670) scale(94)">
       <stop offset="0" stop-color="#f5d0fe"/>
-      <stop offset="0.55" stop-color="#a855f7"/>
-      <stop offset="1" stop-color="#4c1d95"/>
+      <stop offset="0.38" stop-color="#d8b4fe"/>
+      <stop offset="0.74" stop-color="#9333ea"/>
+      <stop offset="1" stop-color="#34105f"/>
     </radialGradient>
-
-    <radialGradient id="planet-amber" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(274 6420) scale(42)">
-      <stop offset="0" stop-color="#fef3c7"/>
-      <stop offset="0.54" stop-color="#f59e0b"/>
-      <stop offset="1" stop-color="#7c2d12"/>
+    <radialGradient id="sunAmber" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(336 520) scale(168)">
+      <stop offset="0" stop-color="#fff7d6"/>
+      <stop offset="0.34" stop-color="#fde68a"/>
+      <stop offset="0.66" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#78350f"/>
     </radialGradient>
-
-    <filter id="blur-soft" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="2.4"/>
+    <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <filter id="smallBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3"/>
     </filter>
   </defs>
-
-  <rect width="340" height="7136" fill="url(#space-base)"/>
-  <rect x="0" y="0" width="340" height="1784" fill="url(#band-one)"/>
-  <rect x="0" y="1784" width="340" height="1784" fill="url(#band-two)"/>
-  <rect x="0" y="3568" width="340" height="1784" fill="url(#band-three)"/>
-  <rect x="0" y="5352" width="340" height="1784" fill="url(#band-four)"/>
-  <rect width="340" height="7136" fill="url(#sector-one)"/>
-  <rect width="340" height="7136" fill="url(#sector-two)"/>
-  <rect width="340" height="7136" fill="url(#sector-three)"/>
-  <rect width="340" height="7136" fill="url(#sector-four)"/>
-  <rect width="340" height="7136" fill="url(#left-glow)"/>
-  <rect width="340" height="7136" fill="url(#right-glow)"/>
-
-  <rect x="130" y="0" width="80" height="7136" fill="url(#center-sheen)" opacity="0.75"/>
-  <rect x="146" y="0" width="48" height="7136" fill="url(#center-sheen)" opacity="0.58"/>
-
-  <g opacity="0.2" filter="url(#blur-soft)">
-    <ellipse cx="86" cy="760" rx="150" ry="36" transform="rotate(-8 86 760)" fill="#67e8f9"/>
-    <ellipse cx="252" cy="1860" rx="128" ry="30" transform="rotate(12 252 1860)" fill="#60a5fa"/>
-    <ellipse cx="96" cy="3380" rx="142" ry="34" transform="rotate(-10 96 3380)" fill="#34d399"/>
-    <ellipse cx="258" cy="4980" rx="138" ry="32" transform="rotate(9 258 4980)" fill="#a855f7"/>
-    <ellipse cx="92" cy="6380" rx="150" ry="38" transform="rotate(-12 92 6380)" fill="#f59e0b"/>
-    <ellipse cx="222" cy="1180" rx="122" ry="28" transform="rotate(10 222 1180)" fill="#67e8f9"/>
-    <ellipse cx="82" cy="2420" rx="134" ry="30" transform="rotate(-9 82 2420)" fill="#34d399"/>
-    <ellipse cx="250" cy="4140" rx="126" ry="28" transform="rotate(8 250 4140)" fill="#c084fc"/>
-    <ellipse cx="110" cy="5860" rx="136" ry="30" transform="rotate(-11 110 5860)" fill="#fbbf24"/>
+  <rect width="340" height="7136" fill="url(#base)"/>
+  <rect width="340" height="7136" fill="url(#zone1Glow)"/>
+  <rect width="340" height="7136" fill="url(#zone2Glow)"/>
+  <rect width="340" height="7136" fill="url(#zone3Glow)"/>
+  <rect width="340" height="7136" fill="url(#zone4Glow)"/>
+  <rect x="122" y="0" width="96" height="7136" fill="url(#corridor)" opacity="0.72"/>
+  <rect x="146" y="0" width="48" height="7136" fill="url(#corridor)" opacity="0.56"/>
+  <g opacity="0.22" filter="url(#softBlur)">
+    <ellipse cx="86" cy="6360" rx="182" ry="70" transform="rotate(-8 86 6360)" fill="#38bdf8"/>
+    <ellipse cx="256" cy="4540" rx="146" ry="54" transform="rotate(8 256 4540)" fill="#34d399"/>
+    <ellipse cx="98" cy="2510" rx="160" ry="58" transform="rotate(-10 98 2510)" fill="#c084fc"/>
+    <ellipse cx="252" cy="980" rx="176" ry="64" transform="rotate(10 252 980)" fill="#f59e0b"/>
   </g>
-
-  <g opacity="0.18" filter="url(#blur-soft)">
-    <circle cx="92" cy="1340" r="22" fill="#7dd3fc"/>
-    <circle cx="256" cy="2120" r="18" fill="#93c5fd"/>
-    <circle cx="74" cy="3010" r="20" fill="#6ee7b7"/>
-    <circle cx="270" cy="3890" r="18" fill="#5eead4"/>
-    <circle cx="92" cy="4620" r="22" fill="#d8b4fe"/>
-    <circle cx="252" cy="5480" r="20" fill="#c084fc"/>
-    <circle cx="86" cy="6180" r="24" fill="#fcd34d"/>
+  <g opacity="0.34">
+    <path d="M-24 6188C76 6136 226 6128 364 6184" stroke="#93c5fd" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M-12 5950C98 5892 236 5890 356 5948" stroke="#7dd3fc" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M-16 4310C94 4252 238 4246 356 4308" stroke="#86efac" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M-20 2620C86 2558 238 2556 356 2618" stroke="#d8b4fe" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M-18 960C86 900 242 898 362 958" stroke="#fcd34d" stroke-width="1.3" stroke-linecap="round"/>
   </g>
-
-  <g stroke-linecap="round" opacity="0.28">
-    <path d="M-18 610C84 548 248 540 364 594" stroke="#93c5fd" stroke-width="1.4"/>
-    <path d="M-8 1720C104 1640 228 1628 350 1688" stroke="#7dd3fc" stroke-width="1.2"/>
-    <path d="M-22 2580C86 2512 254 2508 362 2564" stroke="#34d399" stroke-width="1.3"/>
-    <path d="M-14 4020C92 3940 244 3928 360 3988" stroke="#c084fc" stroke-width="1.3"/>
-    <path d="M4 5600C114 5522 238 5514 344 5574" stroke="#f9a8d4" stroke-width="1.2"/>
-    <path d="M-18 6840C82 6780 246 6774 362 6836" stroke="#fcd34d" stroke-width="1.3"/>
-  </g>
-
-  <g opacity="0.4">
-    <path d="M42 1190l30-10" stroke="#7dd3fc" stroke-width="1.2" stroke-linecap="round"/>
-    <path d="M270 2180l38 12" stroke="#c4b5fd" stroke-width="1.1" stroke-linecap="round"/>
-    <path d="M44 3170l42-14" stroke="#86efac" stroke-width="1.1" stroke-linecap="round"/>
-    <path d="M256 4200l46 16" stroke="#c084fc" stroke-width="1.1" stroke-linecap="round"/>
-    <path d="M38 5880l50-18" stroke="#fcd34d" stroke-width="1.2" stroke-linecap="round"/>
-  </g>
-
   <g>
-    <circle cx="58" cy="940" r="36" fill="url(#planet-cyan)"/>
-    <ellipse cx="58" cy="940" rx="52" ry="10" fill="#dbeafe" fill-opacity="0.16" transform="rotate(-12 58 940)"/>
-    <circle cx="45" cy="926" r="5.5" fill="#ffffff" fill-opacity="0.22"/>
-
-    <circle cx="282" cy="2860" r="31" fill="url(#planet-emerald)"/>
-    <ellipse cx="282" cy="2860" rx="42" ry="8" fill="#d1fae5" fill-opacity="0.14" transform="rotate(14 282 2860)"/>
-    <circle cx="271" cy="2848" r="4.5" fill="#ffffff" fill-opacity="0.18"/>
-
-    <circle cx="70" cy="4700" r="38" fill="url(#planet-violet)"/>
-    <ellipse cx="70" cy="4700" rx="56" ry="10" fill="#ede9fe" fill-opacity="0.14" transform="rotate(-10 70 4700)"/>
-    <circle cx="55" cy="4686" r="5.5" fill="#ffffff" fill-opacity="0.18"/>
-
-    <circle cx="274" cy="6420" r="42" fill="url(#planet-amber)"/>
-    <ellipse cx="274" cy="6420" rx="62" ry="11" fill="#fef3c7" fill-opacity="0.16" transform="rotate(8 274 6420)"/>
-    <circle cx="258" cy="6404" r="6" fill="#ffffff" fill-opacity="0.2"/>
+    <circle cx="10" cy="6835" r="185" fill="url(#planetBlue)"/>
+    <ellipse cx="10" cy="6835" rx="236" ry="42" transform="rotate(-10 10 6835)" fill="#dbeafe" fill-opacity="0.18"/>
+    <ellipse cx="14" cy="6886" rx="208" ry="18" transform="rotate(-10 14 6886)" fill="#0f2443" fill-opacity="0.42"/>
+    <circle cx="74" cy="6732" r="16" fill="#ffffff" fill-opacity="0.18"/>
   </g>
-
-  <g opacity="0.82">
-    <path d="M274 760c10-14 22-24 36-32-6 18-12 31-22 42-7 8-14 13-24 16 2-9 5-17 10-26Z" fill="#e0f2fe" fill-opacity="0.1"/>
-    <path d="M42 2140c20 0 34 5 48 14-14 10-28 14-46 14-13 0-23-3-34-8 10-11 18-17 32-20Z" fill="#dbeafe" fill-opacity="0.08"/>
-    <path d="M272 3650c8-18 17-31 32-42 1 18-1 33-8 48-5 11-11 19-20 26-4-11-5-20-4-32Z" fill="#bbf7d0" fill-opacity="0.08"/>
-    <path d="M46 5440c18-6 34-7 51-3-10 13-22 22-39 29-12 5-22 7-34 7 5-14 10-24 22-33Z" fill="#f5d0fe" fill-opacity="0.1"/>
+  <g opacity="0.9">
+    <circle cx="286" cy="4230" r="76" fill="url(#planetGreen)"/>
+    <ellipse cx="286" cy="4230" rx="102" ry="18" transform="rotate(8 286 4230)" fill="#d1fae5" fill-opacity="0.14"/>
+    <circle cx="260" cy="4200" r="9" fill="#ffffff" fill-opacity="0.18"/>
   </g>
-
+  <g opacity="0.9">
+    <circle cx="48" cy="2670" r="94" fill="url(#planetPurple)"/>
+    <ellipse cx="48" cy="2670" rx="134" ry="22" transform="rotate(-10 48 2670)" fill="#ede9fe" fill-opacity="0.12"/>
+    <circle cx="16" cy="2634" r="10" fill="#ffffff" fill-opacity="0.16"/>
+  </g>
+  <g opacity="0.95">
+    <circle cx="336" cy="520" r="168" fill="url(#sunAmber)"/>
+    <ellipse cx="324" cy="520" rx="214" ry="46" transform="rotate(-10 324 520)" fill="#fde68a" fill-opacity="0.14"/>
+    <ellipse cx="330" cy="520" rx="250" ry="68" transform="rotate(-10 330 520)" stroke="#fbbf24" stroke-opacity="0.18" stroke-width="2"/>
+  </g>
+  <g opacity="0.68">
+    <path d="M261 6508l22 10-8 18-20-10 6-18Z" fill="#9cc8ff"/>
+    <path d="M283 6460l28 12-10 22-24-12 6-22Z" fill="#dbeafe" fill-opacity="0.42"/>
+    <path d="M250 6560l18 8-6 14-17-8 5-14Z" fill="#7dd3fc" fill-opacity="0.52"/>
+    <path d="M272 6408l46-18-20 50-44 18 18-50Z" fill="#a5f3fc" fill-opacity="0.14"/>
+    <path d="M278 6422l34-14-14 34-32 14 12-34Z" fill="#dbeafe" fill-opacity="0.12"/>
+  </g>
+  <g opacity="0.48">
+    <path d="M62 4300l34-22 18 12-28 28-24-18Z" fill="#d1fae5" fill-opacity="0.18"/>
+    <path d="M34 4396l26-18 16 10-22 24-20-16Z" fill="#6ee7b7" fill-opacity="0.14"/>
+    <path d="M284 4412l30-20 20 12-26 28-24-20Z" fill="#bbf7d0" fill-opacity="0.16"/>
+  </g>
+  <g opacity="0.46">
+    <path d="M276 2440c12-36 26-64 50-88 2 40-2 72-16 108-10 24-22 42-40 58-8-26-10-46 6-78Z" fill="#c084fc" fill-opacity="0.16"/>
+    <path d="M284 2524c6-22 14-38 28-52 2 24-2 42-10 64-6 14-12 24-22 34-4-16-4-28 4-46Z" fill="#f5d0fe" fill-opacity="0.18"/>
+    <path d="M244 2810l36-10 12 20-32 18-16-28Z" fill="#d8b4fe" fill-opacity="0.16"/>
+  </g>
+  <g opacity="0.44">
+    <path d="M88 1080l30-12 12 16-28 18-14-22Z" fill="#fde68a" fill-opacity="0.18"/>
+    <path d="M44 1300l44-18-18 50-42 20 16-52Z" fill="#fcd34d" fill-opacity="0.12"/>
+    <path d="M256 1220l26 16-18 18-22-12 14-22Z" fill="#fff7d6" fill-opacity="0.18"/>
+  </g>
+  <g opacity="0.22" filter="url(#smallBlur)">
+    <circle cx="282" cy="6538" r="18" fill="#7dd3fc"/>
+    <circle cx="246" cy="4468" r="16" fill="#6ee7b7"/>
+    <circle cx="272" cy="2484" r="18" fill="#d8b4fe"/>
+    <circle cx="254" cy="1120" r="20" fill="#fde68a"/>
+    <circle cx="54" cy="6608" r="16" fill="#ffffff" fill-opacity="0.08"/>
+    <circle cx="52" cy="4148" r="14" fill="#ffffff" fill-opacity="0.06"/>
+    <circle cx="290" cy="2288" r="14" fill="#ffffff" fill-opacity="0.06"/>
+  </g>
   <g fill="#ffffff">
-    <circle cx="24" cy="62" r="1.2" opacity="0.56"/>
-    <circle cx="118" cy="94" r="1.5" opacity="0.62"/>
+    <circle cx="24" cy="56" r="1.2" opacity="0.56"/>
+    <circle cx="118" cy="92" r="1.5" opacity="0.62"/>
     <circle cx="286" cy="68" r="1.1" opacity="0.5"/>
-    <circle cx="44" cy="184" r="1.4" opacity="0.58"/>
+    <circle cx="44" cy="182" r="1.4" opacity="0.58"/>
     <circle cx="178" cy="214" r="1.1" opacity="0.62"/>
     <circle cx="300" cy="286" r="1.6" opacity="0.44"/>
     <circle cx="74" cy="338" r="1.2" opacity="0.56"/>
     <circle cx="242" cy="412" r="1.3" opacity="0.64"/>
-    <circle cx="316" cy="492" r="1.4" opacity="0.48"/>
+    <circle cx="318" cy="490" r="1.4" opacity="0.48"/>
     <circle cx="34" cy="582" r="1.2" opacity="0.54"/>
     <circle cx="152" cy="660" r="1.5" opacity="0.58"/>
-    <circle cx="288" cy="736" r="1.2" opacity="0.6"/>
+    <circle cx="284" cy="736" r="1.2" opacity="0.6"/>
     <circle cx="92" cy="1028" r="1.4" opacity="0.56"/>
     <circle cx="202" cy="1102" r="1.1" opacity="0.62"/>
     <circle cx="316" cy="1188" r="1.5" opacity="0.44"/>
